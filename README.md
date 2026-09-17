@@ -103,7 +103,8 @@ appropriate `templates/`, `static/`, or `content/` directory.
 
 The Dockerfile starts from a pinned official nginx image, removes `/etc/nginx`,
 and replaces it with this repository's `nginx/` directory. No packaged default
-nginx configuration is used. Unknown hostnames receive HTTP 404.
+nginx configuration is used. Unmapped hostnames, including the Cloud Run service
+URL, serve the portfolio site.
 
 `poe run` publishes host port 8000 to container port 8080. Once the container is
 running, browse to `http://portfolio.raz:8000` or `http://blog.raz:8000`.
