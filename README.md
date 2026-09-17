@@ -109,4 +109,14 @@ URL, serve the portfolio site.
 `poe run` publishes host port 8000 to container port 8080. Once the container is
 running, browse to `http://portfolio.raz:8000` or `http://blog.raz:8000`.
 
-Cloud Run deployment and GitHub publication will be added later.
+## Cloud Run
+
+The image `asia-southeast1-docker.pkg.dev/personalexperiments01/docker/portfolio:8388af4`
+is stored in Artifact Registry. The public `portfolio` Cloud Run service in
+`asia-southeast1` serves it at
+`https://portfolio-865903743674.asia-southeast1.run.app/`. It listens on port
+8080, uses the `portfolio-runner` service account with no project roles, and
+scales from zero to two instances (1 CPU, 256 MiB memory).
+
+The Cloud Run URL serves the portfolio. Serving the blog at `blog.raz.sg`
+requires mapping that custom domain to the same service.
