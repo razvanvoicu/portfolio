@@ -1,0 +1,505 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="theme-color" content="#090c12" />
+    <meta
+      name="description"
+      content="A collection of full-stack and browser-based apps by Raz."
+    />
+    <title>Raz's Apps</title>
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <link rel="stylesheet" href="/style.css" />
+    <script src="/app.js" defer></script>
+  </head>
+  <body>
+    <header class="site-header">
+      <h1><a href="https://raz.sg">Raz</a><span>'s Apps</span></h1>
+      <button
+        class="about-link"
+        id="about-open"
+        type="button"
+        aria-haspopup="dialog"
+      >
+        About
+      </button>
+    </header>
+
+    <main class="app-shell">
+      <nav class="category-nav" aria-label="App categories">
+        <div class="nav-label">Browse by type</div>
+        <button
+          class="category-button is-active"
+          type="button"
+          data-category="full-stack"
+          aria-controls="full-stack-apps"
+          aria-selected="true"
+        >
+          <span class="category-icon" aria-hidden="true">⌘</span
+          ><span>Full-stack Apps</span><span class="category-count">05</span>
+        </button>
+        <button
+          class="category-button"
+          type="button"
+          data-category="browser"
+          aria-controls="browser-apps"
+          aria-selected="false"
+        >
+          <span class="category-icon" aria-hidden="true">◇</span
+          ><span>Browser Apps</span><span class="category-count">08</span>
+        </button>
+        <p class="nav-note">
+          A growing collection of useful things, built and maintained by Raz.
+        </p>
+      </nav>
+
+      <section class="content-pane" aria-live="polite">
+        <div class="content-header">
+          <div>
+            <p class="eyebrow" id="category-eyebrow">Connected experiences</p>
+            <h2 id="category-title">Full-stack Apps</h2>
+          </div>
+          <p class="category-description" id="category-description">
+            Account-based apps with secure, saved data.
+          </p>
+        </div>
+
+        <div class="app-list" id="full-stack-apps" data-panel="full-stack">
+          <article class="app-card">
+            <div class="app-row">
+              <button
+                class="app-toggle"
+                type="button"
+                aria-expanded="false"
+                aria-controls="full-stack-info-1"
+              >
+                <span class="app-number">01</span><span>Situational Behavior Assessment Simulator</span>
+              </button>
+              <a
+                class="play-button"
+                href="/apps/full-stack-app-1/"
+                target="_blank"
+                rel="noopener"
+                aria-label="Launch Full-stack App 1"
+                ><span aria-hidden="true">▶</span></a
+              >
+            </div>
+            <div class="app-info" id="full-stack-info-1" hidden>
+              <div class="rst-content">
+                <!-- ||situational-behavior-assessment-simulator-info.rst|| -->
+              </div>
+              <a
+                class="launch-button"
+                href="/apps/full-stack-app-1/"
+                target="_blank"
+                rel="noopener"
+                >Launch <span aria-hidden="true">↗</span></a
+              >
+            </div>
+          </article>
+          <article class="app-card">
+            <div class="app-row">
+              <button
+                class="app-toggle"
+                type="button"
+                aria-expanded="false"
+                aria-controls="full-stack-info-2"
+              >
+                <span class="app-number">02</span><span>Universal Rep/Calorie Counter</span>
+              </button>
+              <a
+                class="play-button"
+                href="/apps/full-stack-app-2/"
+                target="_blank"
+                rel="noopener"
+                aria-label="Launch Full-stack App 2"
+                ><span aria-hidden="true">▶</span></a
+              >
+            </div>
+            <div class="app-info" id="full-stack-info-2" hidden>
+              <div class="rst-content">
+                <!-- ||universal-rep-calorie-counter-info.rst|| -->
+              </div>
+              <a
+                class="launch-button"
+                href="/apps/full-stack-app-2/"
+                target="_blank"
+                rel="noopener"
+                >Launch <span aria-hidden="true">↗</span></a
+              >
+            </div>
+          </article>
+          <article class="app-card">
+            <div class="app-row">
+              <button
+                class="app-toggle"
+                type="button"
+                aria-expanded="false"
+                aria-controls="full-stack-info-3"
+              >
+                <span class="app-number">03</span><span>Foreign Language Training Game</span>
+              </button>
+              <a
+                class="play-button"
+                href="/apps/full-stack-app-3/"
+                target="_blank"
+                rel="noopener"
+                aria-label="Launch Full-stack App 3"
+                ><span aria-hidden="true">▶</span></a
+              >
+            </div>
+            <div class="app-info" id="full-stack-info-3" hidden>
+              <div class="rst-content">
+                <!-- ||foreign-language-training-game-info.rst|| -->
+              </div>
+              <a
+                class="launch-button"
+                href="/apps/full-stack-app-3/"
+                target="_blank"
+                rel="noopener"
+                >Launch <span aria-hidden="true">↗</span></a
+              >
+            </div>
+          </article>
+          <article class="app-card">
+            <div class="app-row">
+              <button
+                class="app-toggle"
+                type="button"
+                aria-expanded="false"
+                aria-controls="full-stack-info-4"
+              >
+                <span class="app-number">04</span><span>Working Capital POC</span>
+              </button>
+              <a
+                class="play-button"
+                href="/apps/full-stack-app-4/"
+                target="_blank"
+                rel="noopener"
+                aria-label="Launch Full-stack App 4"
+                ><span aria-hidden="true">▶</span></a
+              >
+            </div>
+            <div class="app-info" id="full-stack-info-4" hidden>
+              <div class="rst-content">
+                <!-- ||working-capital-poc-info.rst|| -->
+              </div>
+              <a
+                class="launch-button"
+                href="/apps/full-stack-app-4/"
+                target="_blank"
+                rel="noopener"
+                >Launch <span aria-hidden="true">↗</span></a
+              >
+            </div>
+          </article>
+          <article class="app-card">
+            <div class="app-row">
+              <button
+                class="app-toggle"
+                type="button"
+                aria-expanded="false"
+                aria-controls="full-stack-info-5"
+              >
+                <span class="app-number">05</span><span>AIs Playing Chess</span>
+              </button>
+              <a
+                class="play-button"
+                href="/apps/full-stack-app-5/"
+                target="_blank"
+                rel="noopener"
+                aria-label="Launch Full-stack App 5"
+                ><span aria-hidden="true">▶</span></a
+              >
+            </div>
+            <div class="app-info" id="full-stack-info-5" hidden>
+              <div class="rst-content">
+                <!-- ||ais-playing-chess-info.rst|| -->
+              </div>
+              <a
+                class="launch-button"
+                href="/apps/full-stack-app-5/"
+                target="_blank"
+                rel="noopener"
+                >Launch <span aria-hidden="true">↗</span></a
+              >
+            </div>
+          </article>
+        </div>
+
+        <div class="app-list" id="browser-apps" data-panel="browser" hidden>
+          <article class="app-card">
+            <div class="app-row">
+              <button
+                class="app-toggle"
+                type="button"
+                aria-expanded="false"
+                aria-controls="browser-info-1"
+              >
+                <span class="app-number">01</span><span>A Simple Counter</span>
+              </button>
+              <a
+                class="play-button"
+                href="/apps/browser-app-1/"
+                target="_blank"
+                rel="noopener"
+                aria-label="Launch the simple counter app"
+                ><span aria-hidden="true">▶</span></a
+              >
+            </div>
+            <div class="app-info" id="browser-info-1" hidden>
+              <div class="rst-content">
+                <!-- ||simple-counter-info.rst|| -->
+              </div>
+              <a
+                class="launch-button"
+                href="/apps/browser-app-1/"
+                target="_blank"
+                rel="noopener"
+                >Launch <span aria-hidden="true">↗</span></a
+              >
+            </div>
+          </article>
+          <article class="app-card">
+            <div class="app-row">
+              <button
+                class="app-toggle"
+                type="button"
+                aria-expanded="false"
+                aria-controls="browser-info-2"
+              >
+                <span class="app-number">02</span><span>Graphic Code / Math Formula Builder</span>
+              </button>
+              <a
+                class="play-button"
+                href="/apps/browser-app-1/"
+                target="_blank"
+                rel="noopener"
+                aria-label="Launch the graphic code / math formula builder"
+                ><span aria-hidden="true">▶</span></a
+              >
+            </div>
+            <div class="app-info" id="browser-info-2" hidden>
+              <div class="rst-content">
+                <!-- ||graphic-formula-builder-info.rst|| -->
+              </div>
+              <a
+                class="launch-button"
+                href="/apps/browser-app-1/"
+                target="_blank"
+                rel="noopener"
+                >Launch <span aria-hidden="true">↗</span></a
+              >
+            </div>
+          </article>
+          <article class="app-card">
+            <div class="app-row">
+              <button
+                class="app-toggle"
+                type="button"
+                aria-expanded="false"
+                aria-controls="browser-info-3"
+              >
+                <span class="app-number">03</span><span>Curve Synthesizer</span>
+              </button>
+              <a
+                class="play-button"
+                href="/apps/browser-app-1/"
+                target="_blank"
+                rel="noopener"
+                aria-label="Launch the simple counter app"
+                ><span aria-hidden="true">▶</span></a
+              >
+            </div>
+            <div class="app-info" id="browser-info-3" hidden>
+              <div class="rst-content">
+                <!-- ||curve-synthesizer-info.rst|| -->
+              </div>
+              <a
+                class="launch-button"
+                href="/apps/browser-app-1/"
+                target="_blank"
+                rel="noopener"
+                >Launch <span aria-hidden="true">↗</span></a
+              >
+            </div>
+          </article>
+          <article class="app-card">
+            <div class="app-row">
+              <button
+                class="app-toggle"
+                type="button"
+                aria-expanded="false"
+                aria-controls="browser-info-4"
+              >
+                <span class="app-number">04</span><span>Spreadsheet Transformation POC</span>
+              </button>
+              <a
+                class="play-button"
+                href="/apps/browser-app-2/"
+                target="_blank"
+                rel="noopener"
+                aria-label="Launch Browser App 2"
+                ><span aria-hidden="true">▶</span></a
+              >
+            </div>
+            <div class="app-info" id="browser-info-4" hidden>
+              <div class="rst-content">
+                <!-- ||spreadsheet-transformation-poc-info.rst|| -->
+              </div>
+              <a
+                class="launch-button"
+                href="/apps/browser-app-2/"
+                target="_blank"
+                rel="noopener"
+                >Launch <span aria-hidden="true">↗</span></a
+              >
+            </div>
+          </article>
+          <article class="app-card">
+            <div class="app-row">
+              <button
+                class="app-toggle"
+                type="button"
+                aria-expanded="false"
+                aria-controls="browser-info-5"
+              >
+                <span class="app-number">05</span><span>Concurrent Drawing POC</span>
+              </button>
+              <a
+                class="play-button"
+                href="/apps/browser-app-3/"
+                target="_blank"
+                rel="noopener"
+                aria-label="Launch curve animations app"
+                ><span aria-hidden="true">▶</span></a
+              >
+            </div>
+            <div class="app-info" id="browser-info-5" hidden>
+              <div class="rst-content">
+                <!-- ||concurrent-drawing-poc-info.rst|| -->
+              </div>
+              <a
+                class="launch-button"
+                href="/apps/browser-app-3/"
+                target="_blank"
+                rel="noopener"
+                >Launch <span aria-hidden="true">↗</span></a
+              >
+            </div>
+          </article>
+          <article class="app-card">
+            <div class="app-row">
+              <button
+                class="app-toggle"
+                type="button"
+                aria-expanded="false"
+                aria-controls="browser-info-6"
+              >
+                <span class="app-number">06</span><span>Curve Morphing</span>
+              </button>
+              <a
+                class="play-button"
+                href="/apps/browser-app-4/"
+                target="_blank"
+                rel="noopener"
+                aria-label="Launch Browser App 4"
+                ><span aria-hidden="true">▶</span></a
+              >
+            </div>
+            <div class="app-info" id="browser-info-6" hidden>
+              <div class="rst-content">
+                <!-- ||curve-morphing-info.rst|| -->
+              </div>
+              <a
+                class="launch-button"
+                href="/apps/browser-app-4/"
+                target="_blank"
+                rel="noopener"
+                >Launch <span aria-hidden="true">↗</span></a
+              >
+            </div>
+          </article>
+          <article class="app-card">
+            <div class="app-row">
+              <button
+                class="app-toggle"
+                type="button"
+                aria-expanded="false"
+                aria-controls="browser-info-7"
+              >
+                <span class="app-number">07</span><span>Lissajous Curves</span>
+              </button>
+              <a
+                class="play-button"
+                href="/apps/browser-app-5/"
+                target="_blank"
+                rel="noopener"
+                aria-label="Launch Browser App 5"
+                ><span aria-hidden="true">▶</span></a
+              >
+            </div>
+            <div class="app-info" id="browser-info-7" hidden>
+              <div class="rst-content">
+                <!-- ||lissajous-curves-info.rst|| -->
+              </div>
+              <a
+                class="launch-button"
+                href="/apps/browser-app-5/"
+                target="_blank"
+                rel="noopener"
+                >Launch <span aria-hidden="true">↗</span></a
+              >
+            </div>
+          </article>
+          <article class="app-card">
+            <div class="app-row">
+              <button
+                class="app-toggle"
+                type="button"
+                aria-expanded="false"
+                aria-controls="browser-info-8"
+              >
+                <span class="app-number">08</span><span>Screen Savers</span>
+              </button>
+              <a
+                class="play-button"
+                href="/apps/browser-app-5/"
+                target="_blank"
+                rel="noopener"
+                aria-label="Launch Screeen Savers app"
+                ><span aria-hidden="true">▶</span></a
+              >
+            </div>
+            <div class="app-info" id="browser-info-8" hidden>
+              <div class="rst-content">
+                <!-- ||screen-savers-info.rst|| -->
+              </div>
+              <a
+                class="launch-button"
+                href="/apps/browser-app-5/"
+                target="_blank"
+                rel="noopener"
+                >Launch <span aria-hidden="true">↗</span></a
+              >
+            </div>
+          </article>
+        </div>
+      </section>
+    </main>
+
+    <dialog
+      class="about-dialog"
+      id="about-dialog"
+      aria-labelledby="about-dialog-title"
+    >
+      <button class="dialog-close" type="button" aria-label="Close about dialog">
+        ×
+      </button>
+      <div class="about-content" id="about-dialog-title">
+        <!-- ||about-portfolio.rst|| -->
+      </div>
+    </dialog>
+  </body>
+</html>

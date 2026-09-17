@@ -1,0 +1,212 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="theme-color" content="#f7f4ed" />
+    <meta name="description" content="Of Musings and Excogitations: notes on software and other worldly things." />
+    <title>Of Musings and Excogitations</title>
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <link rel="stylesheet" href="/style.css" />
+    <script src="/app.js" defer></script>
+  </head>
+  <body>
+    <header class="site-header" id="site-header">
+      <button class="menu-toggle" id="menu-toggle" type="button" aria-controls="book-nav" aria-expanded="false" aria-label="Open table of contents">
+        <span aria-hidden="true"></span><span aria-hidden="true"></span><span aria-hidden="true"></span>
+      </button>
+      <div class="site-heading" id="site-heading">
+        <h1 id="site-title">Of Musings and Excogitations</h1>
+        <p id="site-subtitle">About Software and Other Worldly Things</p>
+      </div>
+      <a class="portrait-link" id="portrait-link" href="https://raz.sg" aria-label="Visit Raz's website">
+        <img id="portrait-image" src="/mug.jpg" alt="Portrait of Raz" />
+      </a>
+    </header>
+
+    <div class="site-shell" id="site-shell">
+      <div class="nav-backdrop" id="nav-backdrop" hidden></div>
+      <nav class="book-nav" id="book-nav" aria-label="Table of contents">
+        <p class="nav-heading" id="nav-heading">Table of contents</p>
+        <div class="book" id="book-small-systems">
+          <button class="book-toggle" id="book-toggle-small-systems" type="button" aria-expanded="true" aria-controls="chapters-small-systems">
+            <span class="book-title" id="book-title-small-systems">Small Systems, Big Questions</span><span class="chevron" aria-hidden="true"></span>
+          </button>
+          <div class="chapter-list" id="chapters-small-systems">
+            <a class="chapter-link is-active" id="link-the-shape-of-a-simple-thing" href="#the-shape-of-a-simple-thing" aria-current="page">The Shape of a Simple Thing</a>
+            <a class="chapter-link" id="link-notes-from-the-debugging-desk" href="#notes-from-the-debugging-desk">Notes from the Debugging Desk</a>
+          </div>
+        </div>
+        <div class="book" id="book-elsewhere">
+          <button class="book-toggle" id="book-toggle-elsewhere" type="button" aria-expanded="false" aria-controls="chapters-elsewhere">
+            <span class="book-title" id="book-title-elsewhere">A Field Guide to Elsewhere</span><span class="chevron" aria-hidden="true"></span>
+          </button>
+          <div class="chapter-list" id="chapters-elsewhere" hidden>
+            <a class="chapter-link" id="link-a-map-of-ordinary-places" href="#a-map-of-ordinary-places">A Map of Ordinary Places</a>
+            <a class="chapter-link" id="link-the-art-of-looking-again" href="#the-art-of-looking-again">The Art of Looking Again</a>
+          </div>
+        </div>
+        <p class="nav-footnote" id="nav-footnote">A small collection of thoughts, observations, and experiments.</p>
+      </nav>
+
+      <figure class="pigasus">
+        <button class="pigasus-trigger" type="button" aria-label="Pigasus, a winged pig" aria-describedby="pigasus-hint">
+          <img src="/pigasus.svg" alt="" />
+        </button>
+        <span class="pigasus-hint" id="pigasus-hint" role="tooltip">&quot;...when pigs would fly!&quot; I was told many times in my youth. And guess what happened?</span>
+        <figcaption class="pigasus-caption"><span>The pig that grew wings</span><span>as I defied the odds...</span></figcaption>
+      </figure>
+
+      <main class="reading-pane" id="reading-pane">
+        <article class="chapter" id="article-the-shape-of-a-simple-thing" data-chapter="the-shape-of-a-simple-thing">
+          <div class="chapter-heading" id="heading-the-shape-of-a-simple-thing">
+            <span class="chapter-book-title" id="chapter-book-the-shape-of-a-simple-thing">Small Systems, Big Questions</span>
+            <span class="chapter-date" id="date-the-shape-of-a-simple-thing">Add date</span>
+          </div>
+          <div class="chapter-content" id="content-the-shape-of-a-simple-thing">
+            <!-- ||the-shape-of-a-simple-thing.rst|| -->
+              <section id="the-shape-of-a-simple-thing">
+              <h2>The Shape of a Simple Thing</h2>
+              <section id="a-modest-beginning">
+              <h3>A modest beginning</h3>
+              <p>Lorem ipsum dolor sit amet, consectetur adipiscing elit. Integer blandit, sem at varius posuere, justo massa pulvinar lacus, sed dictum lectus nulla vitae est. Praesent tristique feugiat augue, sit amet pharetra nisi dictum ut. Vivamus euismod, lectus in suscipit tincidunt, quam arcu lacinia sapien, vitae vulputate nibh magna vel erat. Aliquam erat volutpat. Mauris id magna a justo convallis volutpat, et commodo lacus cursus.</p>
+              <p>Sed ut perspiciatis unde omnis iste natus error sit voluptatem accusantium doloremque laudantium. Nemo enim ipsam voluptatem quia voluptas sit aspernatur aut odit aut fugit. Ut enim ad minima veniam, quis nostrum exercitationem ullam corporis suscipit laboriosam, nisi ut aliquid ex ea commodi consequatur. Curabitur in augue sed nibh tempor facilisis; donec placerat porta justo, vitae aliquam metus.</p>
+              </section>
+              <section id="the-parts-we-overlook">
+              <h3>The parts we overlook</h3>
+              <p>Sed ut perspiciatis unde omnis iste natus error sit voluptatem accusantium doloremque laudantium. Nemo enim ipsam voluptatem quia voluptas sit aspernatur aut odit aut fugit. Ut enim ad minima veniam, quis nostrum exercitationem ullam corporis suscipit laboriosam, nisi ut aliquid ex ea commodi consequatur. Curabitur in augue sed nibh tempor facilisis; donec placerat porta justo, vitae aliquam metus.</p>
+              <p>Lorem ipsum dolor sit amet, consectetur adipiscing elit. Aenean euismod sapien sed neque luctus, in dignissim purus tincidunt. Pellentesque habitant morbi tristique senectus et netus et malesuada fames ac turpis egestas. Suspendisse potenti. Donec aliquet, sapien quis pulvinar commodo, enim risus egestas libero, nec finibus velit orci et nunc. Fusce viverra nibh sed tellus porttitor, vel ullamcorper purus bibendum.</p>
+              </section>
+              <section id="edges-and-expectations">
+              <h3>Edges and expectations</h3>
+              <p>Lorem ipsum dolor sit amet, consectetur adipiscing elit. Aenean euismod sapien sed neque luctus, in dignissim purus tincidunt. Pellentesque habitant morbi tristique senectus et netus et malesuada fames ac turpis egestas. Suspendisse potenti. Donec aliquet, sapien quis pulvinar commodo, enim risus egestas libero, nec finibus velit orci et nunc. Fusce viverra nibh sed tellus porttitor, vel ullamcorper purus bibendum.</p>
+              <p>Lorem ipsum dolor sit amet, consectetur adipiscing elit. Integer blandit, sem at varius posuere, justo massa pulvinar lacus, sed dictum lectus nulla vitae est. Praesent tristique feugiat augue, sit amet pharetra nisi dictum ut. Vivamus euismod, lectus in suscipit tincidunt, quam arcu lacinia sapien, vitae vulputate nibh magna vel erat. Aliquam erat volutpat. Mauris id magna a justo convallis volutpat, et commodo lacus cursus.</p>
+              </section>
+              <section id="room-to-change">
+              <h3>Room to change</h3>
+              <p>Lorem ipsum dolor sit amet, consectetur adipiscing elit. Integer blandit, sem at varius posuere, justo massa pulvinar lacus, sed dictum lectus nulla vitae est. Praesent tristique feugiat augue, sit amet pharetra nisi dictum ut. Vivamus euismod, lectus in suscipit tincidunt, quam arcu lacinia sapien, vitae vulputate nibh magna vel erat. Aliquam erat volutpat. Mauris id magna a justo convallis volutpat, et commodo lacus cursus.</p>
+              <p>Sed ut perspiciatis unde omnis iste natus error sit voluptatem accusantium doloremque laudantium. Nemo enim ipsam voluptatem quia voluptas sit aspernatur aut odit aut fugit. Ut enim ad minima veniam, quis nostrum exercitationem ullam corporis suscipit laboriosam, nisi ut aliquid ex ea commodi consequatur. Curabitur in augue sed nibh tempor facilisis; donec placerat porta justo, vitae aliquam metus.</p>
+              </section>
+              <section id="a-useful-ending">
+              <h3>A useful ending</h3>
+              <p>Sed ut perspiciatis unde omnis iste natus error sit voluptatem accusantium doloremque laudantium. Nemo enim ipsam voluptatem quia voluptas sit aspernatur aut odit aut fugit. Ut enim ad minima veniam, quis nostrum exercitationem ullam corporis suscipit laboriosam, nisi ut aliquid ex ea commodi consequatur. Curabitur in augue sed nibh tempor facilisis; donec placerat porta justo, vitae aliquam metus.</p>
+              <p>Lorem ipsum dolor sit amet, consectetur adipiscing elit. Aenean euismod sapien sed neque luctus, in dignissim purus tincidunt. Pellentesque habitant morbi tristique senectus et netus et malesuada fames ac turpis egestas. Suspendisse potenti. Donec aliquet, sapien quis pulvinar commodo, enim risus egestas libero, nec finibus velit orci et nunc. Fusce viverra nibh sed tellus porttitor, vel ullamcorper purus bibendum.</p>
+              </section>
+              </section>
+          </div>
+        </article>
+        <article class="chapter" id="article-notes-from-the-debugging-desk" data-chapter="notes-from-the-debugging-desk" hidden>
+          <div class="chapter-heading" id="heading-notes-from-the-debugging-desk">
+            <span class="chapter-book-title" id="chapter-book-notes-from-the-debugging-desk">Small Systems, Big Questions</span>
+            <span class="chapter-date" id="date-notes-from-the-debugging-desk">Add date</span>
+          </div>
+          <div class="chapter-content" id="content-notes-from-the-debugging-desk">
+            <!-- ||notes-from-the-debugging-desk.rst|| -->
+              <section id="notes-from-the-debugging-desk">
+              <h2>Notes from the Debugging Desk</h2>
+              <section id="the-first-clue">
+              <h3>The first clue</h3>
+              <p>Lorem ipsum dolor sit amet, consectetur adipiscing elit. Integer blandit, sem at varius posuere, justo massa pulvinar lacus, sed dictum lectus nulla vitae est. Praesent tristique feugiat augue, sit amet pharetra nisi dictum ut. Vivamus euismod, lectus in suscipit tincidunt, quam arcu lacinia sapien, vitae vulputate nibh magna vel erat. Aliquam erat volutpat. Mauris id magna a justo convallis volutpat, et commodo lacus cursus.</p>
+              <p>Sed ut perspiciatis unde omnis iste natus error sit voluptatem accusantium doloremque laudantium. Nemo enim ipsam voluptatem quia voluptas sit aspernatur aut odit aut fugit. Ut enim ad minima veniam, quis nostrum exercitationem ullam corporis suscipit laboriosam, nisi ut aliquid ex ea commodi consequatur. Curabitur in augue sed nibh tempor facilisis; donec placerat porta justo, vitae aliquam metus.</p>
+              </section>
+              <section id="following-the-thread">
+              <h3>Following the thread</h3>
+              <p>Sed ut perspiciatis unde omnis iste natus error sit voluptatem accusantium doloremque laudantium. Nemo enim ipsam voluptatem quia voluptas sit aspernatur aut odit aut fugit. Ut enim ad minima veniam, quis nostrum exercitationem ullam corporis suscipit laboriosam, nisi ut aliquid ex ea commodi consequatur. Curabitur in augue sed nibh tempor facilisis; donec placerat porta justo, vitae aliquam metus.</p>
+              <p>Lorem ipsum dolor sit amet, consectetur adipiscing elit. Aenean euismod sapien sed neque luctus, in dignissim purus tincidunt. Pellentesque habitant morbi tristique senectus et netus et malesuada fames ac turpis egestas. Suspendisse potenti. Donec aliquet, sapien quis pulvinar commodo, enim risus egestas libero, nec finibus velit orci et nunc. Fusce viverra nibh sed tellus porttitor, vel ullamcorper purus bibendum.</p>
+              </section>
+              <section id="a-quieter-hypothesis">
+              <h3>A quieter hypothesis</h3>
+              <p>Lorem ipsum dolor sit amet, consectetur adipiscing elit. Aenean euismod sapien sed neque luctus, in dignissim purus tincidunt. Pellentesque habitant morbi tristique senectus et netus et malesuada fames ac turpis egestas. Suspendisse potenti. Donec aliquet, sapien quis pulvinar commodo, enim risus egestas libero, nec finibus velit orci et nunc. Fusce viverra nibh sed tellus porttitor, vel ullamcorper purus bibendum.</p>
+              <p>Lorem ipsum dolor sit amet, consectetur adipiscing elit. Integer blandit, sem at varius posuere, justo massa pulvinar lacus, sed dictum lectus nulla vitae est. Praesent tristique feugiat augue, sit amet pharetra nisi dictum ut. Vivamus euismod, lectus in suscipit tincidunt, quam arcu lacinia sapien, vitae vulputate nibh magna vel erat. Aliquam erat volutpat. Mauris id magna a justo convallis volutpat, et commodo lacus cursus.</p>
+              </section>
+              <section id="the-value-of-a-pause">
+              <h3>The value of a pause</h3>
+              <p>Lorem ipsum dolor sit amet, consectetur adipiscing elit. Integer blandit, sem at varius posuere, justo massa pulvinar lacus, sed dictum lectus nulla vitae est. Praesent tristique feugiat augue, sit amet pharetra nisi dictum ut. Vivamus euismod, lectus in suscipit tincidunt, quam arcu lacinia sapien, vitae vulputate nibh magna vel erat. Aliquam erat volutpat. Mauris id magna a justo convallis volutpat, et commodo lacus cursus.</p>
+              <p>Sed ut perspiciatis unde omnis iste natus error sit voluptatem accusantium doloremque laudantium. Nemo enim ipsam voluptatem quia voluptas sit aspernatur aut odit aut fugit. Ut enim ad minima veniam, quis nostrum exercitationem ullam corporis suscipit laboriosam, nisi ut aliquid ex ea commodi consequatur. Curabitur in augue sed nibh tempor facilisis; donec placerat porta justo, vitae aliquam metus.</p>
+              </section>
+              <section id="after-the-fix">
+              <h3>After the fix</h3>
+              <p>Sed ut perspiciatis unde omnis iste natus error sit voluptatem accusantium doloremque laudantium. Nemo enim ipsam voluptatem quia voluptas sit aspernatur aut odit aut fugit. Ut enim ad minima veniam, quis nostrum exercitationem ullam corporis suscipit laboriosam, nisi ut aliquid ex ea commodi consequatur. Curabitur in augue sed nibh tempor facilisis; donec placerat porta justo, vitae aliquam metus.</p>
+              <p>Lorem ipsum dolor sit amet, consectetur adipiscing elit. Aenean euismod sapien sed neque luctus, in dignissim purus tincidunt. Pellentesque habitant morbi tristique senectus et netus et malesuada fames ac turpis egestas. Suspendisse potenti. Donec aliquet, sapien quis pulvinar commodo, enim risus egestas libero, nec finibus velit orci et nunc. Fusce viverra nibh sed tellus porttitor, vel ullamcorper purus bibendum.</p>
+              </section>
+              </section>
+          </div>
+        </article>
+        <article class="chapter" id="article-a-map-of-ordinary-places" data-chapter="a-map-of-ordinary-places" hidden>
+          <div class="chapter-heading" id="heading-a-map-of-ordinary-places">
+            <span class="chapter-book-title" id="chapter-book-a-map-of-ordinary-places">A Field Guide to Elsewhere</span>
+            <span class="chapter-date" id="date-a-map-of-ordinary-places">Add date</span>
+          </div>
+          <div class="chapter-content" id="content-a-map-of-ordinary-places">
+            <!-- ||a-map-of-ordinary-places.rst|| -->
+              <section id="a-map-of-ordinary-places">
+              <h2>A Map of Ordinary Places</h2>
+              <section id="the-familiar-street">
+              <h3>The familiar street</h3>
+              <p>Lorem ipsum dolor sit amet, consectetur adipiscing elit. Integer blandit, sem at varius posuere, justo massa pulvinar lacus, sed dictum lectus nulla vitae est. Praesent tristique feugiat augue, sit amet pharetra nisi dictum ut. Vivamus euismod, lectus in suscipit tincidunt, quam arcu lacinia sapien, vitae vulputate nibh magna vel erat. Aliquam erat volutpat. Mauris id magna a justo convallis volutpat, et commodo lacus cursus.</p>
+              <p>Sed ut perspiciatis unde omnis iste natus error sit voluptatem accusantium doloremque laudantium. Nemo enim ipsam voluptatem quia voluptas sit aspernatur aut odit aut fugit. Ut enim ad minima veniam, quis nostrum exercitationem ullam corporis suscipit laboriosam, nisi ut aliquid ex ea commodi consequatur. Curabitur in augue sed nibh tempor facilisis; donec placerat porta justo, vitae aliquam metus.</p>
+              </section>
+              <section id="small-landmarks">
+              <h3>Small landmarks</h3>
+              <p>Sed ut perspiciatis unde omnis iste natus error sit voluptatem accusantium doloremque laudantium. Nemo enim ipsam voluptatem quia voluptas sit aspernatur aut odit aut fugit. Ut enim ad minima veniam, quis nostrum exercitationem ullam corporis suscipit laboriosam, nisi ut aliquid ex ea commodi consequatur. Curabitur in augue sed nibh tempor facilisis; donec placerat porta justo, vitae aliquam metus.</p>
+              <p>Lorem ipsum dolor sit amet, consectetur adipiscing elit. Aenean euismod sapien sed neque luctus, in dignissim purus tincidunt. Pellentesque habitant morbi tristique senectus et netus et malesuada fames ac turpis egestas. Suspendisse potenti. Donec aliquet, sapien quis pulvinar commodo, enim risus egestas libero, nec finibus velit orci et nunc. Fusce viverra nibh sed tellus porttitor, vel ullamcorper purus bibendum.</p>
+              </section>
+              <section id="a-different-route">
+              <h3>A different route</h3>
+              <p>Lorem ipsum dolor sit amet, consectetur adipiscing elit. Aenean euismod sapien sed neque luctus, in dignissim purus tincidunt. Pellentesque habitant morbi tristique senectus et netus et malesuada fames ac turpis egestas. Suspendisse potenti. Donec aliquet, sapien quis pulvinar commodo, enim risus egestas libero, nec finibus velit orci et nunc. Fusce viverra nibh sed tellus porttitor, vel ullamcorper purus bibendum.</p>
+              <p>Lorem ipsum dolor sit amet, consectetur adipiscing elit. Integer blandit, sem at varius posuere, justo massa pulvinar lacus, sed dictum lectus nulla vitae est. Praesent tristique feugiat augue, sit amet pharetra nisi dictum ut. Vivamus euismod, lectus in suscipit tincidunt, quam arcu lacinia sapien, vitae vulputate nibh magna vel erat. Aliquam erat volutpat. Mauris id magna a justo convallis volutpat, et commodo lacus cursus.</p>
+              </section>
+              <section id="what-the-map-leaves-out">
+              <h3>What the map leaves out</h3>
+              <p>Lorem ipsum dolor sit amet, consectetur adipiscing elit. Integer blandit, sem at varius posuere, justo massa pulvinar lacus, sed dictum lectus nulla vitae est. Praesent tristique feugiat augue, sit amet pharetra nisi dictum ut. Vivamus euismod, lectus in suscipit tincidunt, quam arcu lacinia sapien, vitae vulputate nibh magna vel erat. Aliquam erat volutpat. Mauris id magna a justo convallis volutpat, et commodo lacus cursus.</p>
+              <p>Sed ut perspiciatis unde omnis iste natus error sit voluptatem accusantium doloremque laudantium. Nemo enim ipsam voluptatem quia voluptas sit aspernatur aut odit aut fugit. Ut enim ad minima veniam, quis nostrum exercitationem ullam corporis suscipit laboriosam, nisi ut aliquid ex ea commodi consequatur. Curabitur in augue sed nibh tempor facilisis; donec placerat porta justo, vitae aliquam metus.</p>
+              </section>
+              <section id="finding-our-way-back">
+              <h3>Finding our way back</h3>
+              <p>Sed ut perspiciatis unde omnis iste natus error sit voluptatem accusantium doloremque laudantium. Nemo enim ipsam voluptatem quia voluptas sit aspernatur aut odit aut fugit. Ut enim ad minima veniam, quis nostrum exercitationem ullam corporis suscipit laboriosam, nisi ut aliquid ex ea commodi consequatur. Curabitur in augue sed nibh tempor facilisis; donec placerat porta justo, vitae aliquam metus.</p>
+              <p>Lorem ipsum dolor sit amet, consectetur adipiscing elit. Aenean euismod sapien sed neque luctus, in dignissim purus tincidunt. Pellentesque habitant morbi tristique senectus et netus et malesuada fames ac turpis egestas. Suspendisse potenti. Donec aliquet, sapien quis pulvinar commodo, enim risus egestas libero, nec finibus velit orci et nunc. Fusce viverra nibh sed tellus porttitor, vel ullamcorper purus bibendum.</p>
+              </section>
+              </section>
+          </div>
+        </article>
+        <article class="chapter" id="article-the-art-of-looking-again" data-chapter="the-art-of-looking-again" hidden>
+          <div class="chapter-heading" id="heading-the-art-of-looking-again">
+            <span class="chapter-book-title" id="chapter-book-the-art-of-looking-again">A Field Guide to Elsewhere</span>
+            <span class="chapter-date" id="date-the-art-of-looking-again">Add date</span>
+          </div>
+          <div class="chapter-content" id="content-the-art-of-looking-again">
+            <!-- ||the-art-of-looking-again.rst|| -->
+              <section id="the-art-of-looking-again">
+              <h2>The Art of Looking Again</h2>
+              <section id="a-second-glance">
+              <h3>A second glance</h3>
+              <p>Lorem ipsum dolor sit amet, consectetur adipiscing elit. Integer blandit, sem at varius posuere, justo massa pulvinar lacus, sed dictum lectus nulla vitae est. Praesent tristique feugiat augue, sit amet pharetra nisi dictum ut. Vivamus euismod, lectus in suscipit tincidunt, quam arcu lacinia sapien, vitae vulputate nibh magna vel erat. Aliquam erat volutpat. Mauris id magna a justo convallis volutpat, et commodo lacus cursus.</p>
+              <p>Sed ut perspiciatis unde omnis iste natus error sit voluptatem accusantium doloremque laudantium. Nemo enim ipsam voluptatem quia voluptas sit aspernatur aut odit aut fugit. Ut enim ad minima veniam, quis nostrum exercitationem ullam corporis suscipit laboriosam, nisi ut aliquid ex ea commodi consequatur. Curabitur in augue sed nibh tempor facilisis; donec placerat porta justo, vitae aliquam metus.</p>
+              </section>
+              <section id="light-on-the-details">
+              <h3>Light on the details</h3>
+              <p>Sed ut perspiciatis unde omnis iste natus error sit voluptatem accusantium doloremque laudantium. Nemo enim ipsam voluptatem quia voluptas sit aspernatur aut odit aut fugit. Ut enim ad minima veniam, quis nostrum exercitationem ullam corporis suscipit laboriosam, nisi ut aliquid ex ea commodi consequatur. Curabitur in augue sed nibh tempor facilisis; donec placerat porta justo, vitae aliquam metus.</p>
+              <p>Lorem ipsum dolor sit amet, consectetur adipiscing elit. Aenean euismod sapien sed neque luctus, in dignissim purus tincidunt. Pellentesque habitant morbi tristique senectus et netus et malesuada fames ac turpis egestas. Suspendisse potenti. Donec aliquet, sapien quis pulvinar commodo, enim risus egestas libero, nec finibus velit orci et nunc. Fusce viverra nibh sed tellus porttitor, vel ullamcorper purus bibendum.</p>
+              </section>
+              <section id="questions-worth-keeping">
+              <h3>Questions worth keeping</h3>
+              <p>Lorem ipsum dolor sit amet, consectetur adipiscing elit. Aenean euismod sapien sed neque luctus, in dignissim purus tincidunt. Pellentesque habitant morbi tristique senectus et netus et malesuada fames ac turpis egestas. Suspendisse potenti. Donec aliquet, sapien quis pulvinar commodo, enim risus egestas libero, nec finibus velit orci et nunc. Fusce viverra nibh sed tellus porttitor, vel ullamcorper purus bibendum.</p>
+              <p>Lorem ipsum dolor sit amet, consectetur adipiscing elit. Integer blandit, sem at varius posuere, justo massa pulvinar lacus, sed dictum lectus nulla vitae est. Praesent tristique feugiat augue, sit amet pharetra nisi dictum ut. Vivamus euismod, lectus in suscipit tincidunt, quam arcu lacinia sapien, vitae vulputate nibh magna vel erat. Aliquam erat volutpat. Mauris id magna a justo convallis volutpat, et commodo lacus cursus.</p>
+              </section>
+              <section id="the-unexpected-pattern">
+              <h3>The unexpected pattern</h3>
+              <p>Lorem ipsum dolor sit amet, consectetur adipiscing elit. Integer blandit, sem at varius posuere, justo massa pulvinar lacus, sed dictum lectus nulla vitae est. Praesent tristique feugiat augue, sit amet pharetra nisi dictum ut. Vivamus euismod, lectus in suscipit tincidunt, quam arcu lacinia sapien, vitae vulputate nibh magna vel erat. Aliquam erat volutpat. Mauris id magna a justo convallis volutpat, et commodo lacus cursus.</p>
+              <p>Sed ut perspiciatis unde omnis iste natus error sit voluptatem accusantium doloremque laudantium. Nemo enim ipsam voluptatem quia voluptas sit aspernatur aut odit aut fugit. Ut enim ad minima veniam, quis nostrum exercitationem ullam corporis suscipit laboriosam, nisi ut aliquid ex ea commodi consequatur. Curabitur in augue sed nibh tempor facilisis; donec placerat porta justo, vitae aliquam metus.</p>
+              </section>
+              <section id="seeing-with-fresh-eyes">
+              <h3>Seeing with fresh eyes</h3>
+              <p>Sed ut perspiciatis unde omnis iste natus error sit voluptatem accusantium doloremque laudantium. Nemo enim ipsam voluptatem quia voluptas sit aspernatur aut odit aut fugit. Ut enim ad minima veniam, quis nostrum exercitationem ullam corporis suscipit laboriosam, nisi ut aliquid ex ea commodi consequatur. Curabitur in augue sed nibh tempor facilisis; donec placerat porta justo, vitae aliquam metus.</p>
+              <p>Lorem ipsum dolor sit amet, consectetur adipiscing elit. Aenean euismod sapien sed neque luctus, in dignissim purus tincidunt. Pellentesque habitant morbi tristique senectus et netus et malesuada fames ac turpis egestas. Suspendisse potenti. Donec aliquet, sapien quis pulvinar commodo, enim risus egestas libero, nec finibus velit orci et nunc. Fusce viverra nibh sed tellus porttitor, vel ullamcorper purus bibendum.</p>
+              </section>
+              </section>
+          </div>
+        </article>
+      </main>
+    </div>
+  </body>
+</html>
