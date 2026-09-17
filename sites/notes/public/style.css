@@ -88,7 +88,7 @@ button:focus-visible, a:focus-visible { outline: 3px solid var(--accent); outlin
 .chapter-book-title { text-align: left; }
 .chapter-date { flex: 0 0 auto; text-align: right; }
 .chapter-content { font: 1.22rem/1.85 Georgia, "Times New Roman", serif; }
-.chapter-content h2 { margin: 1.4rem auto 3.3rem; max-width: 42rem; text-align: center; font: 500 clamp(1.85rem, 3.4vw, 3.2rem)/1.12 Georgia, serif; letter-spacing: -.04em; }
+.chapter-content h2 { margin: 1.4rem auto 3.3rem; max-width: 42rem; text-align: center; font: 500 clamp(1.5rem, 2.4vw, 2.5rem)/1.2 Georgia, serif; letter-spacing: -.04em; }
 .chapter-content h3 { margin: 3rem 0 1rem; padding-top: 1.5rem; border-top: 1px solid var(--line); font: 600 1.78rem/1.25 Georgia, serif; letter-spacing: -.02em; }
 .chapter-content p { margin: 0 0 1.35rem; }
 .chapter-content section { margin: 0; }
@@ -98,7 +98,7 @@ button:focus-visible, a:focus-visible { outline: 3px solid var(--accent); outlin
   :root { --header-height: 7rem; }
   .site-header { padding: 0 1rem; gap: .85rem; }
   .site-heading h1 { font-size: clamp(1.3rem, 5.5vw, 1.9rem); }
-  .site-heading p { margin-top: .3rem; font-size: .72rem; line-height: 1.3; letter-spacing: .02em; }
+  .site-heading p { margin: .3rem 0 0 .125rem; font-size: .72rem; line-height: 1.3; letter-spacing: .02em; }
   .portrait-link { width: 3.35rem; height: 3.35rem; }
   .menu-toggle { flex: 0 0 2.55rem; width: 2.55rem; height: 2.55rem; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: .28rem; padding: 0; border: 1px solid var(--line); border-radius: .35rem; background: var(--page); cursor: pointer; }
   .menu-toggle span { width: 1.15rem; height: 1.5px; background: var(--ink); }
@@ -113,7 +113,7 @@ button:focus-visible, a:focus-visible { outline: 3px solid var(--accent); outlin
   .chapter-link { font-size: .98rem; }
   .reading-pane { height: 100%; padding: 2.4rem 1.25rem 11rem; }
   .chapter-content { font-size: 1.15rem; line-height: 1.75; }
-  .chapter-content h2 { margin: 1.2rem auto 2.7rem; font-size: clamp(1.75rem, 6.8vw, 2.4rem); }
+  .chapter-content h2 { margin: 1.2rem auto 2.7rem; font-size: clamp(1.2rem, 4.6vw, 1.7rem); }
   .chapter-content h3 { margin-top: 2.5rem; font-size: 1.61rem; }
 }
 
