@@ -122,7 +122,7 @@ h1, h2, p { margin: 0; }
   transition: color 160ms ease, border-color 160ms ease, transform 160ms ease;
 }
 .dialog-close:hover { color: var(--accent); border-color: rgba(116, 225, 193, 0.45); transform: rotate(6deg); }
-.about-content h2 { margin: 0 3rem 1rem 0; font: 600 clamp(1.75rem, 5vw, 2.5rem)/1.05 "Space Grotesk", sans-serif; letter-spacing: -0.045em; }
+.about-content h2 { margin: 0 3rem 1rem 0; font: 600 clamp(1.25rem, 3.6vw, 2rem)/1.05 "Space Grotesk", sans-serif; letter-spacing: -0.045em; }
 .about-content p { color: #b2bdcc; font-size: 1rem; line-height: 1.7; }
 
 .app-shell {
@@ -174,10 +174,10 @@ h1, h2, p { margin: 0; }
   scrollbar-color: var(--line-bright) transparent;
 }
 
-.content-header { display: flex; align-items: end; justify-content: space-between; gap: 2rem; max-width: 88rem; margin-bottom: clamp(2rem, 5vw, 4.25rem); }
+.content-header { display: grid; grid-template-columns: minmax(0, 1fr); row-gap: clamp(10px, 1.2vw, 18px); max-width: 88rem; margin-bottom: clamp(2rem, 5vw, 4.25rem); }
 .eyebrow { margin-bottom: 0.7rem; color: var(--accent); }
-.content-header h2 { font: 600 clamp(1.7rem, 2.7vw, 3rem)/1.05 "Space Grotesk", sans-serif; letter-spacing: -0.055em; }
-.category-description { max-width: 22rem; padding-bottom: 0.35rem; color: var(--muted); line-height: 1.55; }
+.content-header h2 { font: 550 clamp(26px, 2.2vw, 40px)/1.05 "Space Grotesk", sans-serif; letter-spacing: -0.055em; white-space: nowrap; }
+.category-description { justify-self: end; color: var(--muted); font-size: clamp(14px, 1.05vw, 18px); line-height: 1.55; text-align: right; white-space: nowrap; }
 
 .app-list { max-width: 88rem; border-top: 1px solid var(--line); }
 .app-list[hidden], .app-info[hidden] { display: none; }
@@ -262,9 +262,9 @@ h1, h2, p { margin: 0; }
   .category-button { min-height: 3rem; display: block; margin: 0; padding: 0.7rem 0.5rem; text-align: center; font-size: 0.86rem; }
   .category-button.is-active { box-shadow: inset 0 -2px 0 var(--accent); }
   .content-pane { overflow: visible; padding: 2.25rem 1rem 3rem; }
-  .content-header { display: block; margin-bottom: 2rem; }
-  .content-header h2 { font-size: clamp(1.6rem, 5vw, 1.9rem); }
-  .category-description { margin-top: 1rem; font-size: 0.92rem; }
+  .content-header { row-gap: clamp(8px, 2vw, 14px); margin-bottom: 2rem; }
+  .content-header h2 { font-size: clamp(19px, 3.6vw, 26px); }
+  .category-description { font-size: clamp(10px, 2.8vw, 14px); }
   .app-row { gap: 0.5rem; padding: 0.65rem 0; }
   .app-toggle { min-height: 4.25rem; grid-template-columns: 2.1rem minmax(0, 1fr); padding: 0 0.85rem; font-size: 1rem; }
   .play-button { width: 2.75rem; min-width: 2.75rem; min-height: 2.75rem; }

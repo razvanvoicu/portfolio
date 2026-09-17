@@ -87,9 +87,9 @@ button:focus-visible, a:focus-visible { outline: 3px solid var(--accent); outlin
 .chapter-heading { display: flex; justify-content: space-between; align-items: baseline; gap: 1rem; color: var(--accent); font-size: .72rem; font-weight: 700; letter-spacing: .14em; text-transform: uppercase; }
 .chapter-book-title { text-align: left; }
 .chapter-date { flex: 0 0 auto; text-align: right; }
-.chapter-content { font: 1.22rem/1.85 Georgia, "Times New Roman", serif; }
+.chapter-content { font: clamp(0.8rem, 1.8vw, 1.2rem)/1.5 Georgia, "Times New Roman", serif; }
 .chapter-content h2 { margin: 1.4rem auto 3.3rem; max-width: 42rem; text-align: center; font: 500 clamp(1.5rem, 2.4vw, 2.5rem)/1.2 Georgia, serif; letter-spacing: -.04em; }
-.chapter-content h3 { margin: 3rem 0 1rem; padding-top: 1.5rem; border-top: 1px solid var(--line); font: 600 1.78rem/1.25 Georgia, serif; letter-spacing: -.02em; }
+.chapter-content h3 { margin: 3rem 0 1rem; padding-top: 1.5rem; border-top: 1px solid var(--line); font: 550 clamp(1.25rem, 2vw, 2.2rem)/1.25 Georgia, serif; letter-spacing: -.02em; }
 .chapter-content p { margin: 0 0 1.35rem; }
 .chapter-content section { margin: 0; }
 .chapter-content a { color: var(--accent); }
@@ -112,9 +112,9 @@ button:focus-visible, a:focus-visible { outline: 3px solid var(--accent); outlin
   .book-title { font-size: 1.07rem; }
   .chapter-link { font-size: .98rem; }
   .reading-pane { height: 100%; padding: 2.4rem 1.25rem 11rem; }
-  .chapter-content { font-size: 1.15rem; line-height: 1.75; }
+  .chapter-content { line-height: 1.5; font-size: clamp(0.8rem, 3.2vw, 1.2rem);}
   .chapter-content h2 { margin: 1.2rem auto 2.7rem; font-size: clamp(1.2rem, 4.6vw, 1.7rem); }
-  .chapter-content h3 { margin-top: 2.5rem; font-size: 1.61rem; }
+  .chapter-content h3 { margin-top: 2.5rem; font-weight: 550; font-size: clamp(1rem, 3.8vw, 1.4rem); }
 }
 
 @media (prefers-reduced-motion: reduce) {
