@@ -1,6 +1,6 @@
 [project]
 name = "portfolio"
-version = "1.0.0"
+version = "1.0.1"
 description = "Build and package host-routed static sites for nginx."
 readme = "README.md"
 requires-python = ">=3.12"
