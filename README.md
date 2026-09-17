@@ -5,8 +5,8 @@ nginx. Nginx selects a site from the HTTP `Host` header, so several domain names
 can point to the same service and IP address.
 
 The portfolio is available as `portfolio.raz.sg` in deployment and as
-`http://portfolio.raz:8000` during local testing. The blog is available as
-`blog.raz.sg` in deployment and as `http://blog.raz:8000` locally. Configuring
+`http://portfolio.raz:8000` during local testing. The notes site is available as
+`notes.raz.sg` in deployment and as `http://notes.raz:8000` locally. Configuring
 the local hostnames is intentionally outside this repository.
 
 ## Prerequisites
@@ -50,7 +50,7 @@ sites/
     templates/           Source HTML containing insertion markers
     static/              Source CSS, images, JavaScript, fonts, and binaries
     public/              Generated deployable files, tracked in Git
-  blog/                  Blog site with the same content/templates/static/public layout
+  notes/                 Notes site with the same content/templates/static/public layout
 tests/                   Automation tests (Selenium tests can be added here)
 tmp/                     Disposable build staging; ignored by Git
 ```
@@ -107,16 +107,17 @@ nginx configuration is used. Unmapped hostnames, including the Cloud Run service
 URL, serve the portfolio site.
 
 `poe run` publishes host port 8000 to container port 8080. Once the container is
-running, browse to `http://portfolio.raz:8000` or `http://blog.raz:8000`.
+running, browse to `http://portfolio.raz:8000` or `http://notes.raz:8000`.
 
 ## Cloud Run
 
-The image `asia-southeast1-docker.pkg.dev/personalexperiments01/docker/portfolio:8388af4`
-is stored in Artifact Registry. The public `portfolio` Cloud Run service in
-`asia-southeast1` serves it at
+Images are stored in Artifact Registry at
+`asia-southeast1-docker.pkg.dev/personalexperiments01/docker/portfolio`. The
+public `portfolio` Cloud Run service in
+`asia-southeast1` runs the image at
 `https://portfolio-865903743674.asia-southeast1.run.app/`. It listens on port
 8080, uses the `portfolio-runner` service account with no project roles, and
 scales from zero to two instances (1 CPU, 256 MiB memory).
 
-The Cloud Run URL serves the portfolio. Serving the blog at `blog.raz.sg`
-requires mapping that custom domain to the same service.
+The Cloud Run URL serves the portfolio. The `notes.raz.sg` custom domain maps to
+the same service, with a CNAME pointing to `ghs.googlehosted.com`.
