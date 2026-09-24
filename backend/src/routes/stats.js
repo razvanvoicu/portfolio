@@ -29,13 +29,19 @@ function clientIp(c) {
   return "unknown";
 }
 
-// Cookies can only be scoped to the exact host, or to a parent domain of it.
-// "qr.raz.sg" (3 labels) can share a cookie at "raz.sg" with its siblings.
-// "qr.raz" (2 labels, local dev) has no shareable parent, so we leave the
-// cookie host-only rather than send an invalid/rejected Domain attribute.
+// Cookies can only be scoped to the exact host, or to a registrable parent
+// domain of it - never to a public suffix (browsers reject that outright).
+// A label-count heuristic isn't safe here: Cloud Run's own default hostname
+// (*.run.app) has enough labels to look like a real subdomain, but "run.app"
+// is itself a public suffix shared by every Cloud Run customer. So this only
+// widens the scope for the one domain family this project actually owns;
+// everything else (local *.raz hosts, the raw *.run.app URL) stays host-only.
+const SHARED_COOKIE_DOMAIN = "raz.sg";
+
 function cookieDomain(host) {
-  const labels = host.split(".");
-  return labels.length >= 3 ? labels.slice(-2).join(".") : null;
+  return host === SHARED_COOKIE_DOMAIN || host.endsWith(`.${SHARED_COOKIE_DOMAIN}`)
+    ? SHARED_COOKIE_DOMAIN
+    : null;
 }
 
 async function readBodyKey(c) {
