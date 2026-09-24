@@ -72,6 +72,34 @@ document.querySelectorAll(".app-toggle").forEach((toggle) => {
   });
 });
 
+// Best-effort visit tracking, via the shared backend proxied at /stats/.
+// Runs once per page load; never blocks or breaks the page on failure.
+(function () {
+  const STORAGE_KEY = "stats-key";
+  let key = null;
+  try {
+    key = localStorage.getItem(STORAGE_KEY);
+  } catch {
+    // localStorage unavailable (e.g. private browsing); proceed keyless.
+  }
+
+  fetch("/stats/visit", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(key ? { key } : {}),
+  })
+    .then((response) => (response.ok ? response.json() : null))
+    .then((data) => {
+      if (!data || !data.key) return;
+      try {
+        localStorage.setItem(STORAGE_KEY, data.key);
+      } catch {
+        // ignore
+      }
+    })
+    .catch(() => {});
+})();
+
 document.addEventListener("DOMContentLoaded", function () {
   const links = document.querySelectorAll("a.external");
   links.forEach(function (link) {

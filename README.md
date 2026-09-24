@@ -43,9 +43,13 @@ uv run python scripts/insert.py test.rst
 ## Repository layout
 
 ```text
+backend/                 Shared Node backend (stats tracking), proxied at /stats/
+  package.json
+  src/
 nginx/                   Complete nginx configuration copied into the image
   nginx.conf
   mime.types
+  stats-location.conf    Shared /stats/ proxy location, included by every site
   sites/                 Host-specific server blocks
 scripts/                 All build and Docker automation
 sites/
@@ -116,6 +120,38 @@ URL, serve the portfolio site.
 running, browse to `http://portfolio.raz:8000`, `http://notes.raz:8000`,
 `http://qr.raz:8000`, or `http://simplecounter.raz:8000`.
 
+## Shared backend and visit tracking
+
+`backend/` is a small Node/Hono service, common to every site, built in its own
+Docker stage (`npm ci` for `backend/`) and copied into the final nginx image as
+plain JS plus `node_modules`. `docker-entrypoint.sh` starts it in the background
+on `127.0.0.1:8081` (not the `PORT` Cloud Run assigns nginx — that's a separate,
+internal-only port) before `exec`-ing nginx in the foreground.
+
+Every site's `nginx/sites/*.conf` includes `nginx/stats-location.conf`, which
+proxies any path starting with `/stats/` to that backend, regardless of which
+site's hostname the request arrived on, and adds an `X-Site-Host` header so the
+backend knows which site the call came from. Because the proxy keeps the
+browser's original hostname, calls from each site's own JS to `/stats/...` are
+same-origin: no CORS, and `fetch()` sends/receives cookies with no special
+options needed.
+
+Each site's `app.js` calls `POST /stats/visit` once per page load, sending
+whatever key is in `localStorage` (or none, on a first visit). The backend
+resolves an identity for the caller — preferring an existing `sid` cookie,
+falling back to the key the client sent, generating a new one otherwise —
+records the visit in Firestore, and returns that key both as JSON (for the
+client to persist to `localStorage`) and as an `HttpOnly` cookie. In production,
+the cookie is scoped to `Domain=raz.sg`, so it's shared across every
+`*.raz.sg` site; locally, `*.raz` hostnames can't share a cookie domain (not a
+registrable domain), so each local site gets its own identity. The write is
+best-effort: a Firestore failure is logged and swallowed, never surfaced to the
+page, and can't crash the backend process.
+
+Firestore layout (default database): collection `SiteAccess`, one document per
+site (keyed by hostname), each with a `browsers` subcollection keyed by the
+generated identifier, holding an `accesses` array of `{ip, at}` entries.
+
 ## Cloud Run
 
 Images are stored in Artifact Registry at
@@ -123,8 +159,9 @@ Images are stored in Artifact Registry at
 public `portfolio` Cloud Run service in
 `asia-southeast1` runs the image at
 `https://portfolio-865903743674.asia-southeast1.run.app/`. It listens on port
-8080, uses the `portfolio-runner` service account with no project roles, and
-scales from zero to two instances (1 CPU, 256 MiB memory).
+8080, uses the `portfolio-runner` service account (granted `roles/datastore.user`
+for the shared backend's Firestore writes, no other project roles), and scales
+from zero to two instances (1 CPU, 256 MiB memory).
 
 The Cloud Run URL serves the portfolio. The `notes.raz.sg` custom domain maps to
 the same service, with a CNAME pointing to `ghs.googlehosted.com`.
