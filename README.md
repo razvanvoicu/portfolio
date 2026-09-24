@@ -6,8 +6,9 @@ can point to the same service and IP address.
 
 The portfolio is available as `portfolio.raz.sg` in deployment and as
 `http://portfolio.raz:8000` during local testing. The notes site is available as
-`notes.raz.sg` in deployment and as `http://notes.raz:8000` locally. Configuring
-the local hostnames is intentionally outside this repository.
+`notes.raz.sg` in deployment and as `http://notes.raz:8000` locally. The QR
+generator is available as `http://qr.raz:8000` during local testing.
+Configuring the local hostnames is intentionally outside this repository.
 
 ## Prerequisites
 
@@ -28,6 +29,7 @@ poe image            Build portfolio:local in Docker Desktop
 poe run              Build and run it on localhost port 8000
 poe stop             Remove the local container
 poe test             Run automated tests
+poe deploy           Push the image to Artifact Registry and deploy it to Cloud Run
 ```
 
 The direct standalone insertion command is also supported:
@@ -51,6 +53,7 @@ sites/
     static/              Source CSS, images, JavaScript, fonts, and binaries
     public/              Generated deployable files, tracked in Git
   notes/                 Notes site with the same content/templates/static/public layout
+  qr/                    Browser-only QR code generator, same layout
 tests/                   Automation tests (Selenium tests can be added here)
 tmp/                     Disposable build staging; ignored by Git
 ```
@@ -107,7 +110,8 @@ nginx configuration is used. Unmapped hostnames, including the Cloud Run service
 URL, serve the portfolio site.
 
 `poe run` publishes host port 8000 to container port 8080. Once the container is
-running, browse to `http://portfolio.raz:8000` or `http://notes.raz:8000`.
+running, browse to `http://portfolio.raz:8000`, `http://notes.raz:8000`, or
+`http://qr.raz:8000`.
 
 ## Cloud Run
 
@@ -121,3 +125,11 @@ scales from zero to two instances (1 CPU, 256 MiB memory).
 
 The Cloud Run URL serves the portfolio. The `notes.raz.sg` custom domain maps to
 the same service, with a CNAME pointing to `ghs.googlehosted.com`.
+
+`poe deploy` builds the image locally, tags it
+`vMAJOR.MINOR.PATCH-<short-sha>` (from `pyproject.toml` and the current commit),
+pushes it to Artifact Registry, and runs `gcloud run deploy`. It also pushes and
+deploys a plain `vMAJOR.MINOR.PATCH` tag when `HEAD` is exactly a matching `vX.Y.Z`
+git tag. The working tree must be clean, since the tag is derived from the
+current commit; requires `gcloud` on `PATH`, authenticated against the
+`personalexperiments01` project.

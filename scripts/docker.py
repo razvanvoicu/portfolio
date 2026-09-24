@@ -51,7 +51,11 @@ def run() -> None:
     build()
     stop()
     docker("run", "--detach", "--name", CONTAINER, "--publish", "8000:8080", IMAGE)
-    print("Serving portfolio.raz at http://portfolio.raz:8000 and notes.raz at http://notes.raz:8000")
+    print(
+        "Serving portfolio.raz at http://portfolio.raz:8000, "
+        "notes.raz at http://notes.raz:8000, "
+        "and qr.raz at http://qr.raz:8000"
+    )
 
 
 def main() -> int:

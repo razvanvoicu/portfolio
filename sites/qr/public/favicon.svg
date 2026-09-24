@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="Free QR Generator">
+  <rect width="64" height="64" rx="14" fill="#090c12"/>
+  <g fill="none" stroke="#74e1c1" stroke-width="4">
+    <rect x="10" y="10" width="16" height="16"/>
+    <rect x="38" y="10" width="16" height="16"/>
+    <rect x="10" y="38" width="16" height="16"/>
+  </g>
+  <g fill="#74e1c1">
+    <rect x="16" y="16" width="4" height="4"/>
+    <rect x="44" y="16" width="4" height="4"/>
+    <rect x="16" y="44" width="4" height="4"/>
+    <rect x="38" y="38" width="6" height="6"/>
+    <rect x="48" y="38" width="4" height="4"/>
+    <rect x="38" y="48" width="4" height="4"/>
+    <rect x="48" y="48" width="6" height="6"/>
+  </g>
+</svg>

@@ -1,0 +1,57 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="theme-color" content="#090c12" />
+    <meta
+      name="description"
+      content="Generate a QR code from any text, entirely in your browser."
+    />
+    <title>Free QR Code Generator</title>
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <link rel="stylesheet" href="/style.css" />
+    <script src="/vendor/qrcode.js" defer></script>
+    <script src="/vendor/qrcode-utf8.js" defer></script>
+    <script src="/app.js" defer></script>
+  </head>
+  <body>
+    <main class="page">
+      <h1 class="title">Free QR Code Generator</h1>
+      <p class="subtitle">
+        Type or paste any text, then encode it as a QR code. Everything
+        happens in your browser &mdash; nothing you enter is ever sent
+        anywhere.
+      </p>
+
+      <form class="encode-form" id="encode-form">
+        <label class="field-label" for="qr-text">Text to encode</label>
+        <textarea
+          class="text-field"
+          id="qr-text"
+          name="text"
+          rows="5"
+          maxlength="4000"
+          placeholder="Type or paste a URL, message, or any text&hellip;"
+          autocomplete="off"
+        ></textarea>
+        <button class="encode-button" type="submit">Encode</button>
+      </form>
+
+      <p class="error-message" id="error-message" role="alert" hidden></p>
+
+      <section class="qr-result" id="qr-result" hidden>
+        <div class="qr-frame">
+          <canvas
+            class="qr-canvas"
+            id="qr-canvas"
+            aria-label="Generated QR code"
+          ></canvas>
+          <button class="download-button" id="download-button" type="button">
+            Download
+          </button>
+        </div>
+      </section>
+    </main>
+  </body>
+</html>

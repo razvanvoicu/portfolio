@@ -47,7 +47,7 @@
           aria-selected="false"
         >
           <span class="category-icon" aria-hidden="true">◇</span
-          ><span>Browser Apps</span><span class="category-count">08</span>
+          ><span>Browser Apps</span><span class="category-count">09</span>
         </button>
         <p class="nav-note">
           A growing collection of useful things, built and maintained by Raz.
@@ -66,13 +66,13 @@
         </div>
 
         <div class="app-list" id="full-stack-apps" data-panel="full-stack">
-          <article class="app-card">
+          <article class="app-card" id="article-situational-behavior-assessment-simulator">
             <div class="app-row">
               <button
                 class="app-toggle"
                 type="button"
                 aria-expanded="false"
-                aria-controls="full-stack-info-1"
+                aria-controls="aria-situational-behavior-assessment-simulator-info"
               >
                 <span class="app-number">01</span><span>Situational Behavior Assessment Simulator</span>
               </button>
@@ -81,11 +81,11 @@
                 href="/apps/full-stack-app-1/"
                 target="_blank"
                 rel="noopener"
-                aria-label="Launch Full-stack App 1"
+                aria-label="Launch Situational Behavior Assessment Simulator"
                 ><span aria-hidden="true">▶</span></a
               >
             </div>
-            <div class="app-info" id="full-stack-info-1" hidden>
+            <div class="app-info" id="aria-situational-behavior-assessment-simulator-info" hidden>
               <div class="rst-content">
                 <!-- ||situational-behavior-assessment-simulator-info.rst|| -->
                   <section id="about-this-app">
@@ -103,7 +103,7 @@
               >
             </div>
           </article>
-          <article class="app-card">
+          <article class="app-card" id="article-universal-rep-calorie-counter">
             <div class="app-row">
               <button
                 class="app-toggle"
@@ -118,17 +118,45 @@
                 href="https://cadencecam.raz.sg"
                 target="_blank"
                 rel="noopener"
-                aria-label="Launch Full-stack App 2"
+                aria-label="Launch Universal Rep/Calorie Counter"
                 ><span aria-hidden="true">▶</span></a
               >
             </div>
             <div class="app-info" id="universal-rep-calorie-counter-info" hidden>
               <div class="rst-content">
                 <!-- ||universal-rep-calorie-counter-info.rst|| -->
-                  <section id="about-this-app">
-                  <h2>About this app</h2>
-                  <p>Add the app description, sign-in notes, and help content here.
-                  This app requires an account and opens in a new tab.</p>
+                  <section id="a-quirky-one">
+                  <h2>A Quirky One...</h2>
+                  <p>I like to exercise at home, and I rig my own gym equipment to increase the resistance.
+                  The result of that is that the embedded calorie counter becomes useless,
+                  because it is calibrated for the original resistance. A simple solution is to count
+                  the number of repetitions and the elapsed time, and figure out a formula to estimate the calories burned.
+                  How do you count the number of repetitions? This is what this app does.
+                  <span class="urcci-emph">Point the camera at a repetitive motion, and it will count the number of repetitions.</span>
+                  It also allows you to input some parameters and use that in a formula to estimate the calories burned.
+                  How do you figure out the values of those parameters? I have a few articles about that...</p>
+                  <p>While one phone is pointing at the repetitive motion,
+                  you can use another phone to open this app and see the count in real time.
+                  For that to work, you need to log in with a Google account.</p>
+                  <p>This app could be useful to you if...</p>
+                  <ul class="simple">
+                  <li><p>You don't trust your equipment's embedded calorie counter,
+                  and you want to estimate the calories burned based on your own formula.</p></li>
+                  <li><p>You want to keep a unified history of your workouts across multiple pieces of equipment.</p></li>
+                  <li><p>Your calorie counter is broken, and you don't want to replace your equipment just for that.</p></li>
+                  <li><p>Like me, you like to rig/customize your own equipment, and you need a flexible way to estimate the calories burned.</p></li>
+                  <li><p><strong>You want to see how much computation can be done inside a browser.</strong></p></li>
+                  </ul>
+                  <p>Yes, that is correct. This app runs entirely in your (phone's) browser.
+                  It also runs on a laptop, and you can use a laptop's camera to count reps if you want,
+                  and have a convenient way to place your laptop in front of the repetitive motion.</p>
+                  <p>Why would one do that?</p>
+                  <ul class="simple">
+                  <li><p>It reduces cloud costs (less to pay for me -- it's a free app, after all).</p></li>
+                  <li><p>No installation.</p></li>
+                  <li><p>Automatic updates (no need to check for updates, or install them).</p></li>
+                  </ul>
+                  <p>Find me on <a class="reference external" href="https://www.linkedin.com/in/razvan-voicu-89061711/">LinkedIn</a> if you want to report a bug, submit a feature request, or just say hi.</p>
                   </section>
               </div>
               <a
@@ -254,15 +282,56 @@
         </div>
 
         <div class="app-list" id="browser-apps" data-panel="browser" hidden>
-          <article class="app-card">
+          <article class="app-card" id="article-free-qr-code-generator">
+            <div class="app-row">
+              <button
+                class="app-toggle"
+                id="button-free-qr-code-generator"
+                type="button"
+                aria-expanded="false"
+                aria-controls="article-free-qr-code-generator-info"
+              >
+                <span class="app-number">01</span><span>A Free QR Code Generator</span>
+              </button>
+              <a
+                class="play-button"
+                href="https://qr.raz.sg"
+                target="_blank"
+                rel="noopener"
+                aria-label="Launch the free QR code generator"
+                ><span aria-hidden="true">▶</span></a
+              >
+            </div>
+            <div class="app-info" id="article-free-qr-code-generator-info" hidden>
+              <div class="rst-content">
+                <!-- ||free-qr-code-generator-info.rst|| -->
+                  <section id="free-no-ads">
+                  <h2>Free, No Ads</h2>
+                  <p>QR codes are so pervasive these days, and there are many QR code generators out there.
+                  In spite of many free, open source QR generator libraries being available,
+                  I am yet to find one (except for my own) that is completely free, has no ads,
+                  and does not require an account or sign-in.</p>
+                  <p>I completed this one in less than 1 hour, so I can only release it for free. Enjoy!</p>
+                  </section>
+              </div>
+              <a
+                class="launch-button"
+                href="https://qr.raz.sg"
+                target="_blank"
+                rel="noopener"
+                >Launch <span aria-hidden="true">↗</span></a
+              >
+            </div>
+          </article>
+          <article class="app-card" id="article-simple-counter">
             <div class="app-row">
               <button
                 class="app-toggle"
                 type="button"
                 aria-expanded="false"
-                aria-controls="browser-info-1"
+                aria-controls="aria-simple-counter-info"
               >
-                <span class="app-number">01</span><span>A Simple Counter</span>
+                <span class="app-number">02</span><span>A Simple Counter</span>
               </button>
               <a
                 class="play-button"
@@ -273,13 +342,18 @@
                 ><span aria-hidden="true">▶</span></a
               >
             </div>
-            <div class="app-info" id="browser-info-1" hidden>
+            <div class="app-info" id="aria-simple-counter-info" hidden>
               <div class="rst-content">
                 <!-- ||simple-counter-info.rst|| -->
-                  <section id="about-this-app">
-                  <h2>About this app</h2>
-                  <p>Add the app description and help content here.
-                  This app runs locally in the browser and opens in a new tab.</p>
+                  <section id="press-a-button-increment-by-1">
+                  <h2>Press a button, increment by 1</h2>
+                  <p>Have you ever had to count people going through a gate? Or how many times something happens? Did you lose count?</p>
+                  <p>This simple app will help you keep track of a count.
+                  It has a big button that is easy to press, and it will show how many times you pressed it.
+                  You can reset the count to zero, or input any initial value you want (even negative numbers).
+                  The count is saved in your browser, so you can close the app and come back later to see the same count.
+                  Everything happens in your browser. No data leaves your phone or computer. You don't need an account,
+                  and you don't need to sign in. Just open the app and start counting.</p>
                   </section>
               </div>
               <a
@@ -299,7 +373,7 @@
                 aria-expanded="false"
                 aria-controls="browser-info-2"
               >
-                <span class="app-number">02</span><span>Graphic Code / Math Formula Builder</span>
+                <span class="app-number">03</span><span>Graphic Code / Math Formula Builder</span>
               </button>
               <a
                 class="play-button"
@@ -336,7 +410,7 @@
                 aria-expanded="false"
                 aria-controls="browser-info-3"
               >
-                <span class="app-number">03</span><span>Curve Synthesizer</span>
+                <span class="app-number">04</span><span>Curve Synthesizer</span>
               </button>
               <a
                 class="play-button"
@@ -373,7 +447,7 @@
                 aria-expanded="false"
                 aria-controls="browser-info-4"
               >
-                <span class="app-number">04</span><span>Spreadsheet Transformation POC</span>
+                <span class="app-number">05</span><span>Spreadsheet Transformation POC</span>
               </button>
               <a
                 class="play-button"
@@ -410,7 +484,7 @@
                 aria-expanded="false"
                 aria-controls="browser-info-5"
               >
-                <span class="app-number">05</span><span>Concurrent Drawing POC</span>
+                <span class="app-number">06</span><span>Concurrent Drawing POC</span>
               </button>
               <a
                 class="play-button"
@@ -447,7 +521,7 @@
                 aria-expanded="false"
                 aria-controls="browser-info-6"
               >
-                <span class="app-number">06</span><span>Curve Morphing</span>
+                <span class="app-number">07</span><span>Curve Morphing</span>
               </button>
               <a
                 class="play-button"
@@ -484,7 +558,7 @@
                 aria-expanded="false"
                 aria-controls="browser-info-7"
               >
-                <span class="app-number">07</span><span>Lissajous Curves</span>
+                <span class="app-number">08</span><span>Lissajous Curves</span>
               </button>
               <a
                 class="play-button"
@@ -519,9 +593,9 @@
                 class="app-toggle"
                 type="button"
                 aria-expanded="false"
-                aria-controls="browser-info-8"
+                aria-controls="aria-screen-savers-info"
               >
-                <span class="app-number">08</span><span>Screen Savers</span>
+                <span class="app-number">09</span><span>Screen Savers</span>
               </button>
               <a
                 class="play-button"
@@ -532,7 +606,7 @@
                 ><span aria-hidden="true">▶</span></a
               >
             </div>
-            <div class="app-info" id="browser-info-8" hidden>
+            <div class="app-info" id="aria-screen-savers-info" hidden>
               <div class="rst-content">
                 <!-- ||screen-savers-info.rst|| -->
                   <section id="about-this-app">
@@ -566,7 +640,11 @@
         <!-- ||about-portfolio.rst|| -->
           <section id="about-this-site">
           <h2>About this site</h2>
-          <p>This is an app portfolio repository.</p>
+          <p>Some of these apps are built for (my own) convenience. Others, as proof of concept. And some are built just for fun.
+          Feel free to use them (at your own risk -- fair disclaimer) if you find them useful or enjoyable.
+          I do collect some usage statistics (e.g. how many distinct browsers have accessed each app in a month),
+          but I do not collect any personal information.</p>
+          <p>Catch me on <a class="reference external" href="https://www.linkedin.com/in/razvan-voicu-89061711/">LinkedIn</a> if you want to report a bug, submit a feature request, or just say hi.</p>
           </section>
       </div>
     </dialog>

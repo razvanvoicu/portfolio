@@ -45,6 +45,10 @@ help = "Replace and run the local container on port 8000."
 cmd = "python scripts/docker.py stop"
 help = "Stop and remove the local container."
 
+[tool.poe.tasks.deploy]
+cmd = "python scripts/deploy.py"
+help = "Push the image to Artifact Registry and deploy it to Cloud Run."
+
 [tool.poe.tasks.test]
 cmd = "pytest"
 help = "Run the automated tests."

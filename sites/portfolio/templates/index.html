@@ -47,7 +47,7 @@
           aria-selected="false"
         >
           <span class="category-icon" aria-hidden="true">◇</span
-          ><span>Browser Apps</span><span class="category-count">08</span>
+          ><span>Browser Apps</span><span class="category-count">09</span>
         </button>
         <p class="nav-note">
           A growing collection of useful things, built and maintained by Raz.
@@ -66,13 +66,13 @@
         </div>
 
         <div class="app-list" id="full-stack-apps" data-panel="full-stack">
-          <article class="app-card">
+          <article class="app-card" id="article-situational-behavior-assessment-simulator">
             <div class="app-row">
               <button
                 class="app-toggle"
                 type="button"
                 aria-expanded="false"
-                aria-controls="full-stack-info-1"
+                aria-controls="aria-situational-behavior-assessment-simulator-info"
               >
                 <span class="app-number">01</span><span>Situational Behavior Assessment Simulator</span>
               </button>
@@ -81,11 +81,11 @@
                 href="/apps/full-stack-app-1/"
                 target="_blank"
                 rel="noopener"
-                aria-label="Launch Full-stack App 1"
+                aria-label="Launch Situational Behavior Assessment Simulator"
                 ><span aria-hidden="true">▶</span></a
               >
             </div>
-            <div class="app-info" id="full-stack-info-1" hidden>
+            <div class="app-info" id="aria-situational-behavior-assessment-simulator-info" hidden>
               <div class="rst-content">
                 <!-- ||situational-behavior-assessment-simulator-info.rst|| -->
               </div>
@@ -98,7 +98,7 @@
               >
             </div>
           </article>
-          <article class="app-card">
+          <article class="app-card" id="article-universal-rep-calorie-counter">
             <div class="app-row">
               <button
                 class="app-toggle"
@@ -113,7 +113,7 @@
                 href="https://cadencecam.raz.sg"
                 target="_blank"
                 rel="noopener"
-                aria-label="Launch Full-stack App 2"
+                aria-label="Launch Universal Rep/Calorie Counter"
                 ><span aria-hidden="true">▶</span></a
               >
             </div>
@@ -229,15 +229,48 @@
         </div>
 
         <div class="app-list" id="browser-apps" data-panel="browser" hidden>
-          <article class="app-card">
+          <article class="app-card" id="article-free-qr-code-generator">
+            <div class="app-row">
+              <button
+                class="app-toggle"
+                id="button-free-qr-code-generator"
+                type="button"
+                aria-expanded="false"
+                aria-controls="article-free-qr-code-generator-info"
+              >
+                <span class="app-number">01</span><span>A Free QR Code Generator</span>
+              </button>
+              <a
+                class="play-button"
+                href="https://qr.raz.sg"
+                target="_blank"
+                rel="noopener"
+                aria-label="Launch the free QR code generator"
+                ><span aria-hidden="true">▶</span></a
+              >
+            </div>
+            <div class="app-info" id="article-free-qr-code-generator-info" hidden>
+              <div class="rst-content">
+                <!-- ||free-qr-code-generator-info.rst|| -->
+              </div>
+              <a
+                class="launch-button"
+                href="https://qr.raz.sg"
+                target="_blank"
+                rel="noopener"
+                >Launch <span aria-hidden="true">↗</span></a
+              >
+            </div>
+          </article>
+          <article class="app-card" id="article-simple-counter">
             <div class="app-row">
               <button
                 class="app-toggle"
                 type="button"
                 aria-expanded="false"
-                aria-controls="browser-info-1"
+                aria-controls="aria-simple-counter-info"
               >
-                <span class="app-number">01</span><span>A Simple Counter</span>
+                <span class="app-number">02</span><span>A Simple Counter</span>
               </button>
               <a
                 class="play-button"
@@ -248,7 +281,7 @@
                 ><span aria-hidden="true">▶</span></a
               >
             </div>
-            <div class="app-info" id="browser-info-1" hidden>
+            <div class="app-info" id="aria-simple-counter-info" hidden>
               <div class="rst-content">
                 <!-- ||simple-counter-info.rst|| -->
               </div>
@@ -269,7 +302,7 @@
                 aria-expanded="false"
                 aria-controls="browser-info-2"
               >
-                <span class="app-number">02</span><span>Graphic Code / Math Formula Builder</span>
+                <span class="app-number">03</span><span>Graphic Code / Math Formula Builder</span>
               </button>
               <a
                 class="play-button"
@@ -301,7 +334,7 @@
                 aria-expanded="false"
                 aria-controls="browser-info-3"
               >
-                <span class="app-number">03</span><span>Curve Synthesizer</span>
+                <span class="app-number">04</span><span>Curve Synthesizer</span>
               </button>
               <a
                 class="play-button"
@@ -333,7 +366,7 @@
                 aria-expanded="false"
                 aria-controls="browser-info-4"
               >
-                <span class="app-number">04</span><span>Spreadsheet Transformation POC</span>
+                <span class="app-number">05</span><span>Spreadsheet Transformation POC</span>
               </button>
               <a
                 class="play-button"
@@ -365,7 +398,7 @@
                 aria-expanded="false"
                 aria-controls="browser-info-5"
               >
-                <span class="app-number">05</span><span>Concurrent Drawing POC</span>
+                <span class="app-number">06</span><span>Concurrent Drawing POC</span>
               </button>
               <a
                 class="play-button"
@@ -397,7 +430,7 @@
                 aria-expanded="false"
                 aria-controls="browser-info-6"
               >
-                <span class="app-number">06</span><span>Curve Morphing</span>
+                <span class="app-number">07</span><span>Curve Morphing</span>
               </button>
               <a
                 class="play-button"
@@ -429,7 +462,7 @@
                 aria-expanded="false"
                 aria-controls="browser-info-7"
               >
-                <span class="app-number">07</span><span>Lissajous Curves</span>
+                <span class="app-number">08</span><span>Lissajous Curves</span>
               </button>
               <a
                 class="play-button"
@@ -459,9 +492,9 @@
                 class="app-toggle"
                 type="button"
                 aria-expanded="false"
-                aria-controls="browser-info-8"
+                aria-controls="aria-screen-savers-info"
               >
-                <span class="app-number">08</span><span>Screen Savers</span>
+                <span class="app-number">09</span><span>Screen Savers</span>
               </button>
               <a
                 class="play-button"
@@ -472,7 +505,7 @@
                 ><span aria-hidden="true">▶</span></a
               >
             </div>
-            <div class="app-info" id="browser-info-8" hidden>
+            <div class="app-info" id="aria-screen-savers-info" hidden>
               <div class="rst-content">
                 <!-- ||screen-savers-info.rst|| -->
               </div>
