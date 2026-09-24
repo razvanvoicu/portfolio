@@ -7,8 +7,10 @@ can point to the same service and IP address.
 The portfolio is available as `portfolio.raz.sg` in deployment and as
 `http://portfolio.raz:8000` during local testing. The notes site is available as
 `notes.raz.sg` in deployment and as `http://notes.raz:8000` locally. The QR
-generator is available as `http://qr.raz:8000` during local testing.
-Configuring the local hostnames is intentionally outside this repository.
+generator is available as `http://qr.raz:8000` during local testing, and the
+simple counter is available as `http://simplecounter.raz:8000` during local
+testing. Configuring the local hostnames is intentionally outside this
+repository.
 
 ## Prerequisites
 
@@ -54,6 +56,7 @@ sites/
     public/              Generated deployable files, tracked in Git
   notes/                 Notes site with the same content/templates/static/public layout
   qr/                    Browser-only QR code generator, same layout
+  simplecounter/         Browser-only click counter, same layout
 tests/                   Automation tests (Selenium tests can be added here)
 tmp/                     Disposable build staging; ignored by Git
 ```
@@ -110,8 +113,8 @@ nginx configuration is used. Unmapped hostnames, including the Cloud Run service
 URL, serve the portfolio site.
 
 `poe run` publishes host port 8000 to container port 8080. Once the container is
-running, browse to `http://portfolio.raz:8000`, `http://notes.raz:8000`, or
-`http://qr.raz:8000`.
+running, browse to `http://portfolio.raz:8000`, `http://notes.raz:8000`,
+`http://qr.raz:8000`, or `http://simplecounter.raz:8000`.
 
 ## Cloud Run
 

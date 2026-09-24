@@ -1,0 +1,55 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="theme-color" content="#090c12" />
+    <meta
+      name="description"
+      content="A simple, big-button click counter that remembers your count."
+    />
+    <title>A Simple Counter</title>
+    <link rel="icon" type="image/png" href="/favicon.png" />
+    <link rel="apple-touch-icon" href="/icons/icon-192.png" />
+    <link rel="manifest" href="/manifest.json" />
+    <link rel="stylesheet" href="/style.css" />
+    <script src="/app.js" defer></script>
+  </head>
+  <body>
+    <main class="page">
+      <h1 class="title">A Simple Counter</h1>
+
+      <div class="counter-row">
+        <button
+          class="icon-button"
+          id="reset-button"
+          type="button"
+          aria-label="Reset the count to zero"
+        >&#8634;</button>
+        <input
+          class="count-field"
+          id="count-field"
+          type="text"
+          autocomplete="off"
+          inputmode="text"
+          readonly
+          aria-label="Current count"
+          value="0"
+        />
+        <button
+          class="icon-button"
+          id="edit-button"
+          type="button"
+          aria-label="Edit the count"
+        >&#9998;</button>
+      </div>
+
+      <button
+        class="increment-button"
+        id="increment-button"
+        type="button"
+        aria-label="Increment the count by one"
+      >+1</button>
+    </main>
+  </body>
+</html>

@@ -54,7 +54,8 @@ def run() -> None:
     print(
         "Serving portfolio.raz at http://portfolio.raz:8000, "
         "notes.raz at http://notes.raz:8000, "
-        "and qr.raz at http://qr.raz:8000"
+        "qr.raz at http://qr.raz:8000, "
+        "and simplecounter.raz at http://simplecounter.raz:8000"
     )
 
 

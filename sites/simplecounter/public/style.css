@@ -1,0 +1,109 @@
+@import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&display=swap');
+
+:root {
+  color-scheme: dark;
+  --bg: #090c12;
+  --panel: #0e131c;
+  --line: #273142;
+  --text: #f2f5f8;
+  --accent: #74e1c1;
+  --cell: 15vw;
+  --light-blue: #4fc3f7;
+  --light-blue-strong: #7ad4fb;
+  --increment-ink: #242162;
+  font-family: "DM Sans", system-ui, sans-serif;
+  font-synthesis: none;
+}
+
+* { box-sizing: border-box; }
+html, body { height: 100%; }
+
+body {
+  margin: 0;
+  color: var(--text);
+  background: radial-gradient(circle at 75% -20%, rgba(53, 124, 110, 0.18), transparent 38rem), var(--bg);
+}
+
+button, input { font: inherit; }
+button:focus-visible, input:focus-visible { outline: 2vw solid var(--accent); outline-offset: 0.4vw; }
+h1 { margin: 0; }
+
+.page {
+  height: 100vh;
+  display: grid;
+  grid-template-rows: auto var(--cell) 1fr;
+  row-gap: 2vh;
+  padding: 3vh 3vw;
+}
+
+.title {
+  text-align: left;
+  font: 600 7vw/1.1 "Space Grotesk", sans-serif;
+  letter-spacing: -0.03em;
+}
+
+.counter-row {
+  display: grid;
+  grid-template-columns: var(--cell) 1fr var(--cell);
+  grid-template-rows: var(--cell);
+  column-gap: 2vw;
+}
+
+#reset-button { grid-row: 1; grid-column: 1; }
+#edit-button { grid-row: 1; grid-column: 3; }
+
+.icon-button {
+  display: grid;
+  place-items: center;
+  color: var(--text);
+  border: 0.15vw solid var(--line);
+  border-radius: 1.2vw;
+  background: var(--panel);
+  font-size: 6vw;
+  line-height: 1;
+  cursor: pointer;
+  transition: color 160ms ease, border-color 160ms ease, background 160ms ease, transform 160ms ease;
+}
+.icon-button:hover { color: var(--accent); border-color: rgba(116, 225, 193, 0.4); }
+.icon-button:active { transform: scale(0.95); }
+
+.count-field {
+  grid-row: 1;
+  grid-column: 2;
+  min-width: 0;
+  padding: 0 1vw;
+  color: var(--text);
+  border: 0.15vw solid var(--line);
+  border-radius: 1.2vw;
+  background: var(--panel);
+  text-align: center;
+  font: 700 8vw/1 "Space Grotesk", sans-serif;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.02em;
+}
+.count-field:read-only { caret-color: transparent; cursor: default; }
+.count-field:focus { outline: none; border-color: var(--accent); }
+
+.increment-button {
+  color: var(--increment-ink);
+  border: 0;
+  border-radius: 3vw;
+  background: linear-gradient(160deg, var(--light-blue-strong), var(--light-blue));
+  box-shadow: 0 2vh 4vh rgba(79, 195, 247, 0.25), inset 0 0.2vh 0 rgba(255, 255, 255, 0.35);
+  font: 700 min(48vw, 30vh)/1 "Space Grotesk", sans-serif;
+  cursor: pointer;
+  transition: transform 120ms ease, box-shadow 120ms ease;
+}
+.increment-button:hover { box-shadow: 0 2.5vh 5vh rgba(79, 195, 247, 0.35), inset 0 0.2vh 0 rgba(255, 255, 255, 0.35); }
+.increment-button:active { transform: scale(0.97); }
+
+@keyframes button-pulse {
+  0% { transform: scale(1); }
+  40% { transform: scale(0.93); }
+  100% { transform: scale(1); }
+}
+.increment-button.is-pressed { animation: button-pulse 220ms ease-out; }
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { transition-duration: 0.01ms !important; animation-duration: 0.01ms !important; }
+}

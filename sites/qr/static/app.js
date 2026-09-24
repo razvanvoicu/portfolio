@@ -97,3 +97,9 @@ downloadButton.addEventListener("click", () => {
     URL.revokeObjectURL(url);
   }, "image/png");
 });
+
+if ("serviceWorker" in navigator) {
+  window.addEventListener("load", () => {
+    navigator.serviceWorker.register("/sw.js");
+  });
+}
