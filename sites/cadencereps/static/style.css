@@ -1,0 +1,220 @@
+@import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&display=swap');
+
+:root {
+  color-scheme: dark;
+  --black: #000000;
+  --blue: #5ecbff;
+  --yellow: #ffe500;
+  --green: #1ee85f;
+  --muted: #7f97ad;
+  --panel: #0b1016;
+  --line: #22303e;
+  /* Advance width of one tabular digit, in em, with some safety margin. */
+  --digit-width: 0.68;
+  font-family: "Space Grotesk", system-ui, sans-serif;
+  font-synthesis: none;
+}
+
+* { box-sizing: border-box; }
+[hidden] { display: none !important; }
+
+html, body {
+  height: 100%;
+  margin: 0;
+  background: var(--black);
+  color: var(--blue);
+}
+
+body {
+  overflow: hidden;
+  -webkit-tap-highlight-color: transparent;
+}
+
+button, input { font: inherit; color: inherit; }
+span, input { white-space: nowrap; }
+button { cursor: pointer; }
+button:focus-visible, input:focus-visible { outline: 0.6vmin solid var(--yellow); outline-offset: 0.4vmin; }
+h1 { margin: 0; font-weight: inherit; }
+
+/* Every cell below is a size container, so its text can be sized in cqh/cqw
+   and fill exactly the space the grid gives it, on any screen shape. */
+
+/* ---------- Setup (landing) screen ---------- */
+
+.setup {
+  height: 100vh;
+  height: 100dvh;
+  display: grid;
+  grid-template-columns: 1fr;
+  grid-template-rows: 1.2fr 1fr 1fr 0.9fr;
+  grid-template-areas: "title" "reps" "period" "start";
+  gap: 3vh;
+  padding: 5vh 6vw;
+}
+
+.setup-cell { container-type: size; min-width: 0; min-height: 0; }
+
+.title {
+  grid-area: title;
+  display: grid;
+  align-items: center;
+  font-weight: 700;
+  letter-spacing: -0.03em;
+}
+.title span { font-size: min(55cqh, 14cqw); line-height: 1; }
+
+.field {
+  display: grid;
+  grid-template-rows: 30% 70%;
+  row-gap: 0;
+}
+.field-reps { grid-area: reps; }
+.field-period { grid-area: period; }
+
+.field-label {
+  align-self: end;
+  padding-bottom: 4cqh;
+  color: var(--muted);
+  font-size: min(22cqh, 9cqw);
+  font-weight: 500;
+  line-height: 1;
+}
+
+.field-input {
+  min-width: 0;
+  width: 100%;
+  height: 100%;
+  padding: 0 4cqw;
+  border: 0.3vmin solid var(--line);
+  border-radius: 2vmin;
+  background: var(--panel);
+  color: var(--blue);
+  font-size: min(42cqh, 16cqw);
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  line-height: 1;
+}
+.field-input::placeholder { color: var(--line); }
+.field-input:focus { outline: none; border-color: var(--blue); }
+
+.start-button {
+  grid-area: start;
+  display: grid;
+  place-items: center;
+  border: 0;
+  border-radius: 2vmin;
+  background: var(--blue);
+  color: var(--black);
+  font-weight: 700;
+}
+.start-button span { font-size: min(55cqh, 18cqw); line-height: 1; }
+.start-button:disabled { background: var(--panel); color: var(--line); cursor: default; }
+.start-button:not(:disabled):active { background: var(--yellow); }
+
+@media (orientation: landscape) {
+  .setup {
+    grid-template-columns: 1fr 1fr;
+    grid-template-rows: 1fr 1.1fr 0.8fr;
+    grid-template-areas: "title title" "reps period" "start start";
+    gap: 5vh 4vw;
+    padding: 5vh 5vw;
+  }
+  .title span { font-size: min(75cqh, 13cqw); }
+  .field-label { font-size: min(22cqh, 11cqw); }
+  .field-input { font-size: min(42cqh, 16cqw); }
+  .start-button span { font-size: min(60cqh, 12cqw); }
+}
+
+/* ---------- Workout screen ---------- */
+
+.workout {
+  height: 100vh;
+  height: 100dvh;
+  display: grid;
+  grid-template-rows: 9vh 1fr 13vh;
+  grid-template-columns: 100%;
+}
+
+@media (orientation: landscape) {
+  .workout { grid-template-rows: 12vh 1fr 16vh; }
+}
+
+.clock {
+  container-type: size;
+  display: grid;
+  place-items: center;
+  color: var(--muted);
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+.clock span { font-size: min(70cqh, 16cqw); line-height: 1; }
+
+.stage {
+  container-type: size;
+  display: grid;
+  grid-template-areas: "stack";
+  overflow: hidden;
+  --digits: 1;
+}
+
+.layer {
+  grid-area: stack;
+  display: grid;
+  place-items: center;
+  overflow: hidden;
+}
+.layer-rest { background: var(--black); color: var(--blue); }
+.layer-fill { background: var(--blue); color: var(--yellow); clip-path: inset(100% 0 0 0); }
+.layer-flash { background: var(--green); color: var(--black); }
+
+.rep-number {
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0;
+  line-height: 1;
+  /* Trim the line box to the digits' ink, so they sit dead-center. */
+  text-box: trim-both cap alphabetic;
+  font-size: min(118cqh, calc(94cqw / (var(--digits) * var(--digit-width))));
+}
+
+.play-button {
+  grid-area: stack;
+  place-self: center;
+  display: grid;
+  place-items: center;
+  width: min(45cqw, 45cqh);
+  height: min(45cqw, 45cqh);
+  border: 0.8vmin solid var(--blue);
+  border-radius: 50%;
+  background: var(--black);
+  color: var(--blue);
+  z-index: 1;
+}
+.play-button svg { width: 60%; height: 60%; fill: currentColor; transform: translateX(6%); }
+.play-button:active { color: var(--yellow); border-color: var(--yellow); }
+
+.controls {
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: 1fr;
+  gap: 3vw;
+  padding: 1.5vh 4vw 2.5vh;
+}
+
+.control {
+  container-type: size;
+  min-width: 0;
+  display: grid;
+  grid-template-columns: auto auto;
+  justify-content: center;
+  align-items: center;
+  column-gap: 1.5vh;
+  border: 0.3vmin solid var(--line);
+  border-radius: 2vmin;
+  background: var(--panel);
+  color: var(--blue);
+  font-weight: 600;
+}
+.control svg { width: min(48cqh, 16cqw); height: min(48cqh, 16cqw); fill: currentColor; }
+.control span { font-size: min(42cqh, 14cqw); line-height: 1; }
+.control:active { color: var(--yellow); border-color: var(--yellow); }

@@ -1,0 +1,87 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <meta name="theme-color" content="#000000" />
+    <meta
+      name="description"
+      content="A cadence setter that paces and counts your reps, so you can just follow the rhythm."
+    />
+    <title>Cadence Reps</title>
+    <link rel="icon" type="image/png" href="/favicon.png" />
+    <link rel="apple-touch-icon" href="/icons/icon-192.png" />
+    <link rel="manifest" href="/manifest.json" />
+    <link rel="stylesheet" href="/style.css" />
+    <script src="/app.js" defer></script>
+  </head>
+  <body>
+    <main class="setup" id="setup">
+      <h1 class="setup-cell title"><span>Cadence Reps</span></h1>
+
+      <label class="setup-cell field field-reps" for="reps-field">
+        <span class="field-label">Reps</span>
+        <input
+          class="field-input"
+          id="reps-field"
+          type="text"
+          inputmode="numeric"
+          autocomplete="off"
+          enterkeyhint="next"
+          placeholder="1 – 9999"
+        />
+      </label>
+
+      <label class="setup-cell field field-period" for="period-field">
+        <span class="field-label">Seconds per rep</span>
+        <input
+          class="field-input"
+          id="period-field"
+          type="text"
+          inputmode="decimal"
+          autocomplete="off"
+          enterkeyhint="go"
+          placeholder="0.6 – 999.9"
+        />
+      </label>
+
+      <button class="setup-cell start-button" id="start-button" type="button" disabled>
+        <span>Start</span>
+      </button>
+    </main>
+
+    <main class="workout" id="workout" hidden>
+      <header class="clock"><span id="clock-text">0:00</span></header>
+
+      <section class="stage" id="stage">
+        <div class="layer layer-rest"><span class="rep-number"></span></div>
+        <div class="layer layer-fill" id="fill-layer"><span class="rep-number"></span></div>
+        <div class="layer layer-flash" id="flash-layer" hidden><span class="rep-number"></span></div>
+        <button class="play-button" id="play-button" type="button" aria-label="Start counting">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 4.5v15l13-7.5z" /></svg>
+        </button>
+      </section>
+
+      <nav class="controls">
+        <button class="control" id="pause-button" type="button">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 4h4v16H6zM14 4h4v16h-4z" /></svg>
+          <span>Pause</span>
+        </button>
+        <button class="control" id="resume-button" type="button" hidden>
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 4.5v15l13-7.5z" /></svg>
+          <span>Resume</span>
+        </button>
+        <button class="control" id="stop-button" type="button" hidden>
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 5h14v14H5z" /></svg>
+          <span>Stop</span>
+        </button>
+        <button class="control" id="back-button" type="button" hidden>
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M20 11H7.8l5.6-5.6L12 4l-8 8 8 8 1.4-1.4L7.8 13H20z" />
+          </svg>
+          <span>Back</span>
+        </button>
+      </nav>
+    </main>
+  </body>
+</html>
