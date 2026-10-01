@@ -51,7 +51,21 @@
     </main>
 
     <main class="workout" id="workout" hidden>
-      <header class="clock"><span id="clock-text">0:00</span></header>
+      <header class="clock">
+        <span id="clock-text">0:00</span>
+        <button class="voice-toggle" id="voice-toggle" type="button" aria-pressed="true" aria-label="Voice counting">
+          <svg class="icon-voice-on" viewBox="0 0 24 24" aria-hidden="true">
+            <path class="speaker" d="M3 9h4l5-4v14l-5-4H3z" />
+            <path class="stroke" d="M15.5 8.5a5 5 0 0 1 0 7M18.5 5.5a9.2 9.2 0 0 1 0 13" />
+          </svg>
+          <svg class="icon-voice-off" viewBox="0 0 24 24" aria-hidden="true">
+            <path class="speaker" d="M3 9h4l5-4v14l-5-4H3z" />
+            <path class="stroke" d="M15.5 8.5a5 5 0 0 1 0 7M18.5 5.5a9.2 9.2 0 0 1 0 13" />
+            <path class="halo" d="M2.5 2.5l19 19" />
+            <path class="stroke" d="M2.5 2.5l19 19" />
+          </svg>
+        </button>
+      </header>
 
       <section class="stage" id="stage">
         <div class="layer layer-rest"><span class="rep-number"></span></div>

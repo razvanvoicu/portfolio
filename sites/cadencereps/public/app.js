@@ -1,5 +1,6 @@
 const REPS_KEY = "cadencereps:reps";
 const PERIOD_KEY = "cadencereps:period";
+const VOICE_KEY = "cadencereps:voice";
 
 const MIN_REPS = 1;
 const MAX_REPS = 9999;
@@ -10,6 +11,9 @@ const MIN_PERIOD = 0.6;
 const MAX_PERIOD = 999.9;
 const START_WARMUP = 1;
 const RESUME_WARMUP = 5;
+// The speech engine takes a moment to start talking, so each count is
+// spoken this many seconds before its flash.
+const SPEECH_LEAD = 0.2;
 
 const setupScreen = document.querySelector("#setup");
 const repsField = document.querySelector("#reps-field");
@@ -18,6 +22,7 @@ const startButton = document.querySelector("#start-button");
 
 const workoutScreen = document.querySelector("#workout");
 const clockText = document.querySelector("#clock-text");
+const voiceToggle = document.querySelector("#voice-toggle");
 const stage = document.querySelector("#stage");
 const repNumbers = stage.querySelectorAll(".rep-number");
 const fillLayer = document.querySelector("#fill-layer");
@@ -163,6 +168,10 @@ function beginActive(warmup, hideNumber) {
   hideNumberInWarmup = hideNumber;
   warmupStart = now();
   anchor = warmupStart + warmup;
+  spokenBeat = 0;
+  // Spoken from inside the Play/Resume tap, which is what lets iOS speak at
+  // all, and it gets the engine past its slow first utterance.
+  say("Get ready");
   renderControls();
   tick();
 }
@@ -207,6 +216,7 @@ function tick() {
   const t = now();
   const state = timelineAt(t);
   count = state.count;
+  speakDue(t);
   renderClock(activeElapsed(t));
   if (state.finished) {
     finish();
@@ -299,6 +309,45 @@ backButton.addEventListener("click", leaveWorkout);
 window.addEventListener("popstate", () => {
   if (!workoutScreen.hidden) showSetup();
 });
+
+// ---------- Voice counting ----------
+
+const synth = "speechSynthesis" in window ? window.speechSynthesis : null;
+let voiceOn = recall(VOICE_KEY) !== "off";
+// Beats after the anchor whose count has been spoken; the warm-up flash
+// (beat 0) is covered by "Get ready".
+let spokenBeat = 0;
+
+function say(text) {
+  if (!synth || !voiceOn) return;
+  // Never let counts queue up behind one another when a number takes
+  // longer to say than the period lasts.
+  if (synth.speaking || synth.pending) synth.cancel();
+  const utterance = new SpeechSynthesisUtterance(text);
+  utterance.lang = document.documentElement.lang;
+  synth.speak(utterance);
+}
+
+function speakDue(t) {
+  const beat = Math.floor((t + SPEECH_LEAD - anchor) / period);
+  if (beat < 1 || beat <= spokenBeat) return;
+  spokenBeat = beat;
+  const rep = baseCount + beat;
+  if (rep <= targetReps) say(String(rep));
+}
+
+function renderVoiceToggle() {
+  voiceToggle.setAttribute("aria-pressed", String(voiceOn));
+}
+
+voiceToggle.hidden = !synth;
+voiceToggle.addEventListener("click", () => {
+  voiceOn = !voiceOn;
+  store(VOICE_KEY, voiceOn ? "on" : "off");
+  if (!voiceOn && synth) synth.cancel();
+  renderVoiceToggle();
+});
+renderVoiceToggle();
 
 // ---------- Keep the screen awake while exercising ----------
 

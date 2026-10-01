@@ -139,15 +139,40 @@ h1 { margin: 0; font-weight: inherit; }
   .workout { grid-template-rows: 12vh 1fr 16vh; }
 }
 
+/* The time and the voice toggle share one grid cell, so the time stays
+   centered on the full screen width whatever the toggle's size. */
 .clock {
   container-type: size;
   display: grid;
+  grid-template-areas: "row";
   place-items: center;
   color: var(--muted);
   font-weight: 600;
   font-variant-numeric: tabular-nums;
 }
-.clock span { font-size: min(70cqh, 16cqw); line-height: 1; }
+.clock span { grid-area: row; font-size: min(70cqh, 16cqw); line-height: 1; }
+
+.voice-toggle {
+  grid-area: row;
+  justify-self: end;
+  display: grid;
+  place-items: center;
+  height: 86cqh;
+  aspect-ratio: 1;
+  margin-right: 3vw;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--blue);
+}
+.voice-toggle svg { width: 80%; height: 80%; }
+.voice-toggle .speaker { fill: currentColor; }
+.voice-toggle .stroke { fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; }
+.voice-toggle .halo { fill: none; stroke: var(--black); stroke-width: 5; }
+.voice-toggle[aria-pressed="true"] .icon-voice-off,
+.voice-toggle[aria-pressed="false"] .icon-voice-on { display: none; }
+.voice-toggle[aria-pressed="false"] { color: var(--muted); }
+.voice-toggle:active { color: var(--yellow); }
 
 .stage {
   container-type: size;
