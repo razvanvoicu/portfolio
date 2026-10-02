@@ -93,6 +93,8 @@ button:focus-visible, a:focus-visible { outline: 3px solid var(--accent); outlin
 .chapter-content p { margin: 0 0 1.35rem; }
 .chapter-content section { margin: 0; }
 .chapter-content a { color: var(--accent); }
+.chapter-content .shots { display: grid; grid-auto-flow: column; grid-auto-columns: min(14rem, 36vw); justify-content: center; gap: 1rem; margin: 1.6rem 0 2rem; }
+.chapter-content .shots img { display: block; width: 100%; height: auto; border: 1px solid var(--line); border-radius: .9rem; }
 
 @media (max-width: 760px) {
   :root { --header-height: 7rem; }

@@ -1,173 +1,134 @@
-Cadence Reps: Keep the Rhythm
-=============================
-
 .. raw:: html
 
-   <div class="hero-animation">
-   <img src="/assets/cadence-reps/hero.gif" alt="Cadence Reps workflow animation" loading="lazy" style="width: 100%; max-width: 480px; margin: 0 auto; display: block;" />
-   </div>
+   <style>
+     img.scaled-60 {
+       zoom: 0.6;
+       /* or use: transform: scale(0.6); transform-origin: center; */
+     }
+   </style>
 
-**Cadence Reps** is a progressive web app designed to help you maintain consistent rhythm and pace during your workouts. Whether you're doing strength training, calisthenics, flexibility work, or any exercise routine, staying consistent is key to progress. This guide will show you how to use Cadence Reps to nail your cadence and build better training habits.
+Set a Cadence for Your Reps
+===========================
 
-Why Cadence Matters
--------------------
+Somewhere around rep fifteen, I usually lose count. Or the rhythm. Usually both.
+Counting is a surprisingly bad job for a tired brain, and keeping an even pace
+while you do it is worse. The first reps are brisk, the last ones crawl, and
+the set ends up as a different workout than the one you planned.
 
-In fitness, **cadence** refers to the speed or tempo at which you perform an exercise—specifically, the number of seconds you spend on each repetition. It sounds simple, but it's powerful:
+.. container:: shots
 
-- **Time Under Tension (TUT)**: Slower, controlled movements with proper cadence increase time under tension, which is crucial for muscle hypertrophy and strength development.
-- **Consistency**: Your body adapts to consistent stimuli. By maintaining the same cadence across workouts, you create predictable progression.
-- **Injury Prevention**: Rushing through reps often leads to poor form. A controlled cadence keeps you focused on technique.
-- **Mind-Muscle Connection**: Slowing down your movement allows you to "feel" the muscle working, improving the quality of each rep.
+   .. image:: /assets/cadence-reps/cycle.gif
+      :align: center
+      :alt: Three reps at two seconds each: the blue fill rises, then the screen flashes green and the count goes up.
 
-Athletes across disciplines—from CrossFit to powerlifting, from yoga to physical therapy—use cadence training to unlock progress that raw volume alone can't provide. Cadence Reps makes this approach accessible to anyone.
+So I stopped counting and built a small app that does it for me. You tell it
+how many reps and how many seconds each one should take. It does the rest.
 
-Getting Started
----------------
-
-Opening Cadence Reps is straightforward. You'll see a clean, mobile-friendly setup screen:
-
-.. image:: /assets/cadence-reps/setup-screen.svg
-   :alt: Cadence Reps setup screen with reps and cadence inputs
-   :class: mobile-screenshot
-   :width: 100%
-
-The setup has two simple inputs:
-
-1. **Reps**: Enter the number of repetitions (1–9999). This is how many reps you'll perform in this set.
-2. **Seconds per Rep**: Enter the cadence duration (0.6–999.9 seconds). This is the target time for each single repetition.
-
-For example, if you're doing squats with a 3-second lowering phase and 1-second drive up, that's 4 seconds per rep. If you're doing slower strength work like paused bench press, you might set 6–10 seconds per rep. For calisthenics or conditioning work, you might use 1–2 seconds per rep.
-
-Once you've entered your values, just tap **Start** and the workout begins. The app will count each rep and keep you on pace.
-
-The Workout Experience
-----------------------
-
-When you start a workout, you enter the heart of Cadence Reps. Here's what you see:
-
-.. image:: /assets/cadence-reps/workout-idle.svg
-   :alt: Cadence Reps workout screen ready to begin, with timer and play button
-   :class: mobile-screenshot
-   :width: 100%
-
-The workout screen shows:
-
-- **Timer (top left)**: Displays elapsed time (0:00, 0:01, 0:02, etc.). This helps you track how long your set has been running.
-- **Sound Toggle (top right)**: A speaker icon that lets you mute or unmute audio cues. By default, the app will count each rep using text-to-speech ("Rep 1," "Rep 2," etc.).
-- **Play Button (center)**: A large cyan play icon ready to begin your set.
-- **Back Button (bottom)**: Returns you to the setup screen to start a different workout.
-
-Tap the play button to start your set. The app begins counting down your first rep:
-
-.. image:: /assets/cadence-reps/workout-active.svg
-   :alt: Cadence Reps mid-workout with rep counter and progress visualization
-   :class: mobile-screenshot
-   :width: 100%
-
-Once you start, notice:
-
-- **Rep Counter (center)**: Large, bold numbers showing your current rep (0, 1, 2, 3, etc.). This keeps you focused on what you need to do.
-- **Color Feedback**: A bright cyan progress fill animates from top to bottom, filling during each rep cycle. When the rep is complete, the screen flashes to signal you to move on to the next rep.
-- **Audio Announcement**: If sound is enabled, the app announces the next rep number in a clear, robotic voice. This lets you focus on form without looking at your phone.
-- **Timer Update**: The elapsed time updates at the top, showing total workout duration.
-- **Control Buttons (bottom)**: Pause and Stop buttons let you manage your workout.
-
-This visual and audio feedback creates a rhythm. Your body learns to anticipate the flash and the voice cue, settling into a flow state where form and pacing happen naturally.
-
-Real-World Applications
+Two numbers, that's all
 -----------------------
 
-**Strength Training**
+The first screen asks for exactly two things: how many reps, and how many
+seconds per rep. Reps go from 1 to 9999, and seconds from 0.6 to 999.9, so it
+works for a slow three-second squat or a fast set of jumping jacks. The app
+remembers what you typed last time, because most of us do the same set again
+tomorrow.
 
-If you're doing barbell or dumbbell work, cadence is essential. A typical hypertrophy-focused squat might use a 3-second lowering phase (eccentric), 1-second pause (isometric), and 1-second drive up (concentric)—totaling 5 seconds per rep. Cadence Reps ensures you're not rushing the eccentric, which is where most strength gains happen.
+.. container:: shots
 
-**Calisthenics and Bodyweight Training**
+   .. image:: /assets/cadence-reps/setup.png
+      :align: center
+      :class: scaled-60
+      :alt: The setup screen with 12 reps and 3.0 seconds per rep entered.
 
-Calisthenic athletes often use moderate tempos: 2 seconds per rep for push-ups, 3–4 seconds per rep for pull-ups. Cadence Reps keeps you honest. Instead of doing 20 sloppy, fast reps, you might do 10 quality reps with proper form, and the difference in results is night and day.
+Tap Start and you land on a mostly empty screen with a clock and a big play
+button. Get into position, then tap it.
 
-**Flexibility and Mobility Work**
+.. container:: shots
 
-When stretching or doing mobility work, a slower cadence—say, 10–20 seconds per rep—helps you sink into the stretch safely. Cadence Reps's voice cues remind you when to move to the next stretch or repeat, creating a structured mobility session.
+   .. image:: /assets/cadence-reps/ready.png
+      :align: center
+      :class: scaled-60
+      :alt: The workout screen before starting, with a large play button.
 
-**Core Training**
 
-Planks, dead bugs, and core holds benefit hugely from cadence. You might hold for 30 seconds per rep, rest 20 seconds, and repeat. Cadence Reps counts you through it.
+The screen does the counting
+----------------------------
 
-**Conditioning and Endurance**
+You get one second to settle, and a voice says "Get ready". Then the work
+starts. Each rep is one cycle, and this is the whole idea: the screen slowly
+fills with blue from the bottom up. The big number sits on top of it, and
+wherever the blue has reached, the digit turns yellow. When the blue reaches
+the top, the rep is over and the whole screen flashes green while the number
+ticks up by one.
 
-For circuits or interval work, faster cadence—0.6–1 second per rep—keeps you moving. Cadence Reps announces each rep sharply, maintaining intensity and preventing you from slowing down mid-set.
+.. container:: shots
 
-Mastering the Controls
+   .. image:: /assets/cadence-reps/fill.png
+      :align: center
+      :class: scaled-60
+      :alt: Rep four, with the blue fill about two thirds of the way up and the digit turning yellow where it overlaps.
+
+That's it. You never have to read anything. Lower the weight while the blue
+climbs, finish the rep as it tops out, and the flash tells you "that's one".
+It works in the corner of your eye, which matters when you're in a plank and
+your phone is on the floor.
+
+.. container:: shots
+
+   .. image:: /assets/cadence-reps/flash.png
+      :align: center
+      :class: scaled-60
+      :alt: The green flash that marks the end of a rep.
+
+The flash lasts half a second, so a rep needs to be longer than that. That's
+where the 0.6 second minimum comes from.
+
+It counts out loud too
 ----------------------
 
-During a workout, you have simple but effective controls:
+If you'd rather not look at the screen at all, the app also says each number
+as it flashes, using the voice your phone already has. The speaker icon in the
+top corner turns it off, and the app remembers your choice. On a quiet
+morning at home it's nice. In a crowded gym, you'll probably want it off.
 
-.. raw:: html
+One small detail I'm fond of: speech engines take a moment to start talking, so
+the app begins each number a fraction of a second early. The voice and the
+flash land together, instead of the voice trailing behind.
 
-   <div class="controls-demo">
-   <img src="/assets/cadence-reps/controls-demo.gif" alt="Control interactions: pause, resume, stop" loading="lazy" />
-   </div>
+Pausing without losing your place
+---------------------------------
 
-- **Pause**: Tap the pause button to freeze your workout. The timer pauses, rep counting pauses. This is useful if you need a quick breather or to reset your form mid-set.
-- **Resume**: After pausing, the play button returns. Tap it to resume where you left off.
-- **Stop**: End your workout early. This takes you back to the setup screen so you can start fresh or adjust your parameters.
-- **Back**: Available on the idle screen, this returns you to setup without starting a workout.
+Real life interrupts sets. Tap Pause and you get two buttons: Resume and Stop.
 
-This simplicity is intentional. Once you hit play, there's nothing to distract you—just focus on form, rhythm, and hitting your cadence.
+.. container:: shots
 
-Advanced Features
------------------
+   .. image:: /assets/cadence-reps/paused.png
+      :align: center
+      :class: scaled-60
+      :alt: The paused screen, showing rep six, a Resume button and a Stop button.
 
-**Offline Functionality**
+Resume doesn't throw you straight back in. You get a five-second run-up to get
+back into position, and then the count carries on from where you left it. The
+clock at the top only counts time you actually spent working, so pauses and
+run-ups don't inflate your total. When the last rep flashes, the clock stops
+and a Back button takes you home.
 
-Cadence Reps is a progressive web app (PWA), which means it works anywhere—even without an internet connection. Install it on your home screen, and it launches like a native app. No ads, no interruptions, just your workout.
+Things that quietly help
+------------------------
 
-**Installable on Any Device**
+A few small details that make it nicer to use mid-set:
 
-Whether you're on iOS, Android, or desktop, you can add Cadence Reps to your home screen. Look for "Add to Home Screen" or "Install App" in your browser menu. The app stores your preferences locally, so your settings persist.
+- The screen stays awake during a set, so it doesn't go dark halfway through.
+- Your phone's back gesture works like Stop, so you don't have to hunt for a
+  button with sweaty hands.
+- It works in landscape, if you prop the phone up against a wall.
+- There's nothing to sign up for, and once it has loaded, it works offline.
+  Add it to your home screen and it opens like any other app.
 
-**Responsive Design**
+Try it
+------
 
-The UI adapts to your device's screen size. Use it on a phone for portability, a tablet for visibility, or even a computer for group sessions or coaching.
-
-**Voice Accessibility**
-
-Text-to-speech voice cues mean you don't have to look at your screen to know what rep you're on. Especially useful in the gym where your hands are full.
-
-Performance Insights
---------------------
-
-Each time you complete a workout, the app logs the data locally in your device. While Cadence Reps doesn't (yet) provide detailed analytics dashboards, the data persists in your browser's local storage. Over time, you can:
-
-- Notice which exercises and cadences feel best.
-- Identify rep ranges where your form stays solid (a sign of true strength).
-- Spot patterns in your training (e.g., "I do better with 3-rep sets than 5-rep sets").
-- Build confidence as you complete more workouts with stricter cadence control.
-
-Tips for Getting the Most Out of Cadence Reps
-----------------------------------------------
-
-1. **Start Conservative**: If you're new to cadence training, start with longer rep times (3–5 seconds) so you can focus on form without rushing.
-
-2. **Progressive Overload**: Once a cadence feels easy, either increase reps, decrease seconds per rep, or add sets. Small changes compound.
-
-3. **Match Your Goal**: Hypertrophy? Use 3–5 seconds. Strength? Use 4–6 seconds with heavier weight. Endurance? Use 0.8–1.5 seconds. Your cadence should align with your training goal.
-
-4. **Keep It Consistent**: The real power of cadence is consistency. Use the same tempo across multiple workouts to let your body adapt and progress predictably.
-
-5. **Use Sound in Quiet Environments**: The voice cues are motivating but can be loud in gyms. Mute if needed, but in home workouts, let it coach you.
-
-6. **Experiment**: There's no one "right" cadence. Try different tempos for different exercises and see what feels best for your body.
-
-Conclusion
-----------
-
-Cadence Reps is a simple tool for a powerful training principle. By maintaining consistent tempo, you remove one variable from your workouts and force your body to adapt and grow. Whether you're lifting, training bodyweight, doing mobility work, or coaching others, Cadence Reps keeps you accountable to your cadence.
-
-Give it a try: set 10 reps at 3 seconds per rep, and pay attention to how focused and controlled your movement becomes. Then imagine building a whole training program on that foundation. That's the promise of cadence training—and Cadence Reps makes it easy.
-
-**Ready to start?** Visit `cadencereps.raz.sg <https://cadencereps.raz.sg>`_ and keep the rhythm.
-
-----
-
-*Cadence Reps is a free, open-source progressive web app. It works offline and is installable on any device.*
+It lives at `cadencereps.raz.sg <https://cadencereps.raz.sg>`_. Start with something easy, say 10 reps at 3 seconds, and see how different a
+familiar exercise feels when someone else is keeping time. If something breaks
+or you'd like it to do something else, find me on
+`LinkedIn <https://www.linkedin.com/in/razvan-voicu-89061711/>`_.
