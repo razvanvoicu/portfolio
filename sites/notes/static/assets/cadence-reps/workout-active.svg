@@ -1,0 +1,31 @@
+<svg viewBox="0 0 480 1024" xmlns="http://www.w3.org/2000/svg">
+  <!-- Background -->
+  <rect width="480" height="1024" fill="#0f172a"/>
+
+  <!-- Green progress fill (top 40%) -->
+  <rect width="480" height="410" fill="#10b981"/>
+
+  <!-- Timer -->
+  <text x="60" y="80" font-size="56" fill="#ffffff">0:00</text>
+
+  <!-- Speaker Icon -->
+  <g transform="translate(420, 40)">
+    <path d="M -15 -20 L 0 -10 L 0 10 L -15 20 M 5 -25 Q 20 -10 20 0 Q 20 10 5 25" stroke="#ffffff" stroke-width="3" fill="none" stroke-linecap="round"/>
+  </g>
+
+  <!-- Large Rep Counter "0" -->
+  <text x="240" y="550" font-size="280" font-weight="bold" fill="#000000" text-anchor="middle">0</text>
+
+  <!-- Control Buttons -->
+  <!-- Pause Button -->
+  <rect x="40" y="750" width="200" height="80" fill="none" stroke="#06b6d4" stroke-width="2" rx="8"/>
+  <text x="140" y="810" font-size="32" fill="#06b6d4" text-anchor="middle">⏸ Pause</text>
+
+  <!-- Stop Button -->
+  <rect x="260" y="750" width="180" height="80" fill="none" stroke="#ef4444" stroke-width="2" rx="8"/>
+  <text x="350" y="810" font-size="32" fill="#ef4444" text-anchor="middle">Stop</text>
+
+  <!-- Back Button -->
+  <rect x="40" y="900" width="400" height="90" fill="none" stroke="#06b6d4" stroke-width="2" rx="8"/>
+  <text x="240" y="970" font-size="40" fill="#06b6d4" text-anchor="middle">← Back</text>
+</svg>
