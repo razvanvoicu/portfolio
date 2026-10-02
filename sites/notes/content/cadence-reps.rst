@@ -95,7 +95,7 @@ One small detail I'm fond of: speech engines take a moment to start talking, so
 the app begins each number a fraction of a second early. The voice and the
 flash land together, instead of the voice trailing behind.
 
-Pausing without losing your place
+Pausing without losing your count
 ---------------------------------
 
 Real life interrupts sets. Tap Pause and you get two buttons: Resume and Stop.
