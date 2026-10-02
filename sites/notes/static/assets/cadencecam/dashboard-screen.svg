@@ -1,0 +1,26 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 920 560" role="img" aria-labelledby="title desc">
+  <title id="title">CadenceCam Dashboard screen illustration</title>
+  <desc id="desc">A tablet dashboard showing 12 reps, an estimated 8 calories, pace, and elapsed workout time.</desc>
+  <rect width="920" height="560" rx="26" fill="#0b0d0f"/>
+  <rect x="18" y="18" width="884" height="524" rx="20" fill="#0b0d0f" stroke="#1d2326" stroke-width="2"/>
+  <text x="55" y="82" fill="#e9edec" font-family="Arial, sans-serif" font-size="30" letter-spacing="3">SQUATS</text>
+  <text x="58" y="113" fill="#798887" font-family="Arial, sans-serif" font-size="17">factor 1.25 · by rep count</text>
+  <text x="790" y="82" text-anchor="middle" fill="#e9edec" font-family="Arial, sans-serif" font-size="28">06:42</text>
+  <rect x="48" y="148" width="398" height="334" rx="18" fill="#111517" stroke="#1d2326" stroke-width="2"/>
+  <rect x="474" y="148" width="398" height="334" rx="18" fill="#111517" stroke="#1d2326" stroke-width="2"/>
+  <text x="82" y="204" fill="#798887" font-family="Arial, sans-serif" font-size="18" letter-spacing="3">REPS</text>
+  <text x="246" y="355" text-anchor="middle" fill="#e8b04b" font-family="Arial, sans-serif" font-size="150" font-weight="600">12</text>
+  <text x="506" y="204" fill="#798887" font-family="Arial, sans-serif" font-size="18" letter-spacing="3">CALORIES</text>
+  <text x="673" y="355" text-anchor="middle" fill="#5ec8d8" font-family="Arial, sans-serif" font-size="142" font-weight="600">8</text>
+  <path d="M247 403v38M673 403v38M80 435h322M506 435h322" stroke="#1d2326" stroke-width="2"/>
+  <text x="90" y="462" fill="#798887" font-family="Arial, sans-serif" font-size="15">Per minute</text>
+  <text x="385" y="462" text-anchor="end" fill="#e8b04b" font-family="Arial, sans-serif" font-size="16">18.2</text>
+  <text x="90" y="486" fill="#798887" font-family="Arial, sans-serif" font-size="14">At 07:00</text>
+  <text x="385" y="486" text-anchor="end" fill="#e8b04b" font-family="Arial, sans-serif" font-size="15">18.5 reps</text>
+  <text x="516" y="462" fill="#798887" font-family="Arial, sans-serif" font-size="15">Per minute</text>
+  <text x="855" y="462" text-anchor="end" fill="#5ec8d8" font-family="Arial, sans-serif" font-size="16">12.4</text>
+  <text x="516" y="486" fill="#798887" font-family="Arial, sans-serif" font-size="14">At 07:00</text>
+  <text x="855" y="486" text-anchor="end" fill="#5ec8d8" font-family="Arial, sans-serif" font-size="15">9.1 cal</text>
+  <circle cx="461" cy="514" r="15" fill="#202024" stroke="#3a3a40" stroke-width="2"/>
+  <path d="M457 505v18l13-9z" fill="#e6e6e8"/>
+</svg>
