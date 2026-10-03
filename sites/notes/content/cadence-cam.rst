@@ -1,75 +1,156 @@
+.. raw:: html
+
+   <style>
+     img.width-200-percent {
+       width: 200% !important;
+       margin-left: -50% !important;
+     }
+   </style>
+   
 Have Your Phone Count Your Reps
 ===============================
 
-By the end of a set, I’m usually asking the same question: was that eleven, or
-twelve? CadenceCam gives that small job to your phone, so you can pay attention
-to the movement instead.
+Since COVID, a lot of us have gotten used to exercising at home. There is no
+commute, no queue for a machine, and no audience when the last few reps become
+less graceful than the first few.
+
+It has also become surprisingly cheap to bring the gym home. Stationary bikes,
+stair climbers, elliptical cross-trainers and arm-cranking bikes are easy to
+find without spending a fortune. The catch is that cheap equipment can feel,
+well, cheap — especially when it comes to resistance.
+
+When the resistance is no longer standard
+-----------------------------------------
+
+Many of these machines use eddy-current resistance. In simple terms, magnets
+create drag against a moving metal part without touching it. It is quiet and
+smooth, but on inexpensive equipment the maximum resistance is often rather
+weak.
+
+I have a habit of fixing that by finding ways to add powerful neodymium
+magnets. The extra magnetic field can increase the resistance many times over
+and turn a gentle spin into a serious workout.
+
+There is one obvious casualty: the machine's calorie counter. It was calibrated
+for the resistance the manufacturer supplied, not my collection of extra
+magnets. Its estimate no longer means much — and the calorie figures on budget
+machines tend to be fairly approximate even before anyone modifies them.
+
+My first answer involved an Arduino
+------------------------------------
+
+For a while, I built Arduino-based counters. They worked: sensors watched the
+machine, a small screen showed the pace and totals, and my own formula produced
+a calorie estimate that matched the exercise I was actually doing.
 
 .. container:: shots
 
-   .. image:: /assets/cadencecam/gym-counter.png
+   .. image:: /assets/cadencecam/arduino-calorie-counter.jpg
+      :class: width-200-percent
       :align: center
-      :alt: An illustration of a phone watching a dumbbell curl in a gym.
+      :alt: An Arduino-based workout display showing steps, time, pace, calories, and height climbed.
 
-The idea is simple. Prop your phone where it can see a movement that repeats —
-a curl, a pedal turning, or a stepper in motion — and CadenceCam keeps a running
-tally. It works best when the movement is easy to see and happens at a steady
-pace.
+I enjoyed the result more than the process. I would rather write software than
+solder wires — not that an Arduino lets you avoid software. It simply gives you
+software *and* wires.
 
-Let the phone watch
--------------------
+That led to a more convenient question: could a phone already sitting in a
+drawer do the sensing instead?
 
-Open `cadencecam.raz.sg <https://cadencecam.raz.sg>`_ on the phone you’ll use
-for counting and sign in with Google. Choose **Counter** and allow camera
-access. Set the phone somewhere steady, with the moving part of your exercise
-in view, then start your workout.
+Let the camera watch the movement
+---------------------------------
 
-The first few seconds are a settling-in period while the app gets a feel for
-your rhythm. It still includes those early reps in the count. A small status
-indicator gives you a hint about how clearly it can see the movement. If the
-count seems unsure, try a steadier phone position, a clearer view, or better
-light.
+Almost every exercise machine has something that moves in a regular cycle: a
+pedal, a flywheel, a handle, a step or a leg. A phone camera can watch that
+movement, detect each repetition and measure its frequency. From those two
+signals, a customizable formula can estimate calories.
+
+That is how `CadenceCam <https://cadencecam.raz.sg>`_ emerged.
+
+Open it on one phone, choose **Counter**, allow camera access and point the
+phone at the repeating movement. The first few seconds let it settle into the
+rhythm, then the count follows the machine one rep at a time.
 
 .. container:: shots
 
-   .. image:: /assets/cadencecam/counter-screen.svg
+   .. image:: /assets/cadencecam/counter-screen.png
       :align: center
-      :alt: Counter screen illustration showing a camera view, a count of 12 reps, and a movement status.
+      :alt: CadenceCam Counter watching a stationary bike and counting repetitions.
 
-   .. image:: /assets/cadencecam/rep-count.gif
+   .. image:: /assets/cadencecam/counter-live.gif
       :align: center
-      :alt: Animated illustration of a curl and the rep count changing from 12 to 13.
+      :alt: CadenceCam Counter increasing one rep at a time from 24 through 28 while a stationary bike pedal moves.
 
-The picture stays on your phone. CadenceCam doesn’t record or upload photos or
-video; it uses the camera view on the device to follow the movement.
+The camera image is processed on the phone; CadenceCam does not need to record
+or upload video. The Counter phone can concentrate on the movement and nothing
+else.
 
-A second screen for the big picture
------------------------------------
+Two devices make the setup practical
+------------------------------------
 
-Want to see the numbers from across the room? Sign in on a tablet or another
-phone with the same account and choose **Dashboard**. It follows the counter
-and shows your reps, time, pace, and an estimate of calories alongside them.
-The dashboard can also reset the counter, so you don’t have to walk over to
-the phone between sets.
+The best camera position is rarely the best screen position. On a stationary
+bike, the Counter phone may be low beside a pedal, facing away from you or
+otherwise impossible to read while riding. That is why CadenceCam has a second
+role: **Dashboard**.
+
+Open the Dashboard on another phone, tablet, or even a laptop and put it
+in a place where you can see the screen clearly while exercising. 
+It mirrors the live rep count and adds the figures you
+actually want in front of you: elapsed time, current pace and estimated
+calories.
 
 .. container:: shots
 
-   .. image:: /assets/cadencecam/dashboard-screen.svg
+   .. image:: /assets/cadencecam/dashboard-screen.png
+      :class: width-200-percent
       :align: center
-      :alt: Dashboard illustration with large rep and calorie totals, pace, and workout time.
+      :alt: CadenceCam Dashboard showing live repetitions, pace, time, and estimated calories.
 
-Add your weight and choose an exercise in Settings to make the calorie estimate
-more useful for you. Treat it as a handy guide, rather than an exact measure of
-what you burned. Your workout history keeps the sessions together, and you can
-export it when you want a closer look.
+The Dashboard is also the remote control. Press **Start** and the Counter begins
+recording reps for a new workout. Press **Stop** when you are done, and the
+session is completed without reaching down to the phone beside the pedal.
 
-Two devices aren’t required: the phone’s count is useful on its own. But if you
-already bring a tablet or spare phone to the gym, the dashboard makes it easy
-to check your progress without hovering over the camera.
+Teach it what the exercise means
+--------------------------------
+
+A repetition does not burn the same amount of energy on every machine, at every
+setting, or for every person. CadenceCam therefore lets you enter your weight
+and create presets for different exercises.
+
+Each preset can have its own description and factor. It can calculate from the
+plain rep count, or use repetition frequency so a faster pace contributes more
+to the estimate. The aim is not to pretend a phone is a laboratory. It is to
+give you a consistent, adjustable model that still makes sense after the
+equipment has been modified.
+
+.. container:: shots
+
+   .. image:: /assets/cadencecam/settings-screen.png
+      :class: width-200-percent
+      :align: center
+      :alt: CadenceCam Settings with weight, calorie factor, and a customizable exercise preset based on rep count or frequency.
+
+CadenceCam also keeps a workout history, so the useful part is not only the
+number on today's screen. You can look back at completed sessions and compare
+your pace, duration and estimated effort over time.
+
+Private by design
+-----------------
+
+CadenceCam runs in the browser, so there is no app to install in the usual
+sense. You can optionally install it as a Progressive Web App for easier
+access, but it remains the same browser-based application.
+
+All movement detection and calorie calculations happen in the browser. After
+the initial pairing, the Counter and Dashboard communicate directly over your
+local network, without sending the live workout through a server.
+
+The only data CadenceCam stores is your exercise history. If you no longer want
+to keep it, you can delete it at any time.
 
 Give it a try
 -------------
 
-Pick a movement you already know, prop the phone where it has a clear view, and
-let it count one easy set. You can keep your attention on the rep — and leave
-the “what number was I on?” moment to CadenceCam.
+Put one phone where it can see the pedal, put the Dashboard where you can see
+it, and ride. CadenceCam handles the counting while you keep your eyes forward
+and your attention on the workout — no soldering iron required.
