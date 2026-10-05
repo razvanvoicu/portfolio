@@ -11,8 +11,8 @@ const MIN_PERIOD = 0.6;
 const MAX_PERIOD = 999.9;
 const START_WARMUP = 1;
 const RESUME_WARMUP = 5;
-// The speech engine takes a moment to start talking, so each count is
-// spoken this many seconds before its flash.
+// The speech engine takes a moment to start talking, so each spoken count
+// begins this many seconds before its flash.
 const SPEECH_LEAD = 0.2;
 
 const setupScreen = document.querySelector("#setup");
@@ -171,6 +171,7 @@ function beginActive(warmup, hideNumber) {
   spokenBeat = 0;
   // Spoken from inside the Play/Resume tap, which is what lets iOS speak at
   // all, and it gets the engine past its slow first utterance.
+  prepareAudio();
   say("Get ready");
   renderControls();
   tick();
@@ -320,20 +321,61 @@ let spokenBeat = 0;
 
 function say(text) {
   if (!synth || !voiceOn) return;
-  // Never let counts queue up behind one another when a number takes
-  // longer to say than the period lasts.
+  // Never let counts queue up behind one another.
   if (synth.speaking || synth.pending) synth.cancel();
   const utterance = new SpeechSynthesisUtterance(text);
   utterance.lang = document.documentElement.lang;
   synth.speak(utterance);
 }
 
+// Audio sessions that "ambient" mix with other apps' sound (a TV stream, music)
+// instead of interrupting it, where the browser supports saying so.
+try {
+  if (navigator.audioSession) navigator.audioSession.type = "ambient";
+} catch {
+  // Unsupported; the sound just behaves as the browser defaults.
+}
+
+let audioContext = null;
+
+// Must be called from inside a tap, so the browser lets the clicks sound.
+function prepareAudio() {
+  if (audioContext) {
+    if (audioContext.state === "suspended") audioContext.resume().catch(() => {});
+    return;
+  }
+  const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+  if (AudioContextClass) audioContext = new AudioContextClass();
+}
+
+// A short, quiet tick of a metronome, `delay` seconds from now.
+function click(delay) {
+  if (!audioContext || !voiceOn) return;
+  const start = audioContext.currentTime + Math.max(0, delay);
+  const oscillator = audioContext.createOscillator();
+  const gain = audioContext.createGain();
+  oscillator.type = "square";
+  oscillator.frequency.value = 1000;
+  gain.gain.setValueAtTime(0.0001, start);
+  gain.gain.exponentialRampToValueAtTime(0.25, start + 0.002);
+  gain.gain.exponentialRampToValueAtTime(0.0001, start + 0.04);
+  oscillator.connect(gain).connect(audioContext.destination);
+  oscillator.start(start);
+  oscillator.stop(start + 0.05);
+}
+
+// Long numbers take too long to say to keep up, so only every tenth rep is
+// spoken, as the number of tens; hundreds and thousands are spoken in full.
+// Every other rep is a metronome tick.
 function speakDue(t) {
   const beat = Math.floor((t + SPEECH_LEAD - anchor) / period);
   if (beat < 1 || beat <= spokenBeat) return;
   spokenBeat = beat;
   const rep = baseCount + beat;
-  if (rep <= targetReps) say(String(rep));
+  if (rep > targetReps) return;
+  if (rep % 100 === 0) say(String(rep));
+  else if (rep % 10 === 0) say(String(rep / 10));
+  else click(anchor + beat * period - t);
 }
 
 function renderVoiceToggle() {

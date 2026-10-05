@@ -86,10 +86,14 @@ where the 0.6 second minimum comes from.
 It counts out loud too
 ----------------------
 
-If you'd rather not look at the screen at all, the app also says each number
-as it flashes, using the voice your phone already has. The speaker icon in the
-top corner turns it off, and the app remembers your choice. On a quiet
-morning at home it's nice. In a crowded gym, you'll probably want it off.
+If you'd rather not look at the screen at all, the app also counts for you,
+using the voice your phone already has. Long numbers take a while to say and
+would spill into the next rep, so the app only speaks every tenth rep, as the
+number of tens: "one" at 10, "two" at 20. Hundreds and thousands are spoken in
+full. Every rep in between is a short metronome tick, which also stays out of
+the way of whatever else you have playing. The speaker icon in the top corner
+turns the sound off, and the app remembers your choice. On a quiet morning at
+home it's nice. In a crowded gym, you'll probably want it off.
 
 One small detail I'm fond of: speech engines take a moment to start talking, so
 the app begins each number a fraction of a second early. The voice and the
