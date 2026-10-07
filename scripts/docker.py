@@ -56,7 +56,8 @@ def run() -> None:
         "notes.raz at http://notes.raz:8000, "
         "qr.raz at http://qr.raz:8000, "
         "simplecounter.raz at http://simplecounter.raz:8000, "
-        "and cadencereps.raz at http://cadencereps.raz:8000"
+        "cadencereps.raz at http://cadencereps.raz:8000, "
+        "and formulas.raz at http://formulas.raz:8000"
     )
 
 

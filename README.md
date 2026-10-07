@@ -8,8 +8,9 @@ The portfolio is available as `portfolio.raz.sg` in deployment and as
 `http://portfolio.raz:8000` during local testing. The notes site is available as
 `notes.raz.sg` in deployment and as `http://notes.raz:8000` locally. The QR
 generator is available as `http://qr.raz:8000` during local testing, the
-simple counter as `http://simplecounter.raz:8000`, and the cadence setter as
-`http://cadencereps.raz:8000`. Configuring the local hostnames is intentionally outside this
+simple counter as `http://simplecounter.raz:8000`, the cadence setter as
+`http://cadencereps.raz:8000`, and the formula builder as `http://formulas.raz:8000`
+(`formulas.raz.sg` in deployment). Configuring the local hostnames is intentionally outside this
 repository.
 
 ## Prerequisites
@@ -62,6 +63,10 @@ sites/
   qr/                    Browser-only QR code generator, same layout
   simplecounter/         Browser-only click counter, same layout
   cadencereps/           Browser-only rep cadence setter (PWA), same layout
+  formulas/              Browser-only block-based formula builder with a stash and
+                         a graph view, same layout; everything entered is kept in
+                         localStorage. static/vendor/ holds Blockly (Apache-2.0,
+                         see its license file)
 tests/                   Automation tests (Selenium tests can be added here)
 tmp/                     Disposable build staging; ignored by Git
 ```
@@ -119,8 +124,8 @@ URL, serve the portfolio site.
 
 `poe run` publishes host port 8000 to container port 8080. Once the container is
 running, browse to `http://portfolio.raz:8000`, `http://notes.raz:8000`,
-`http://qr.raz:8000`, `http://simplecounter.raz:8000`, or
-`http://cadencereps.raz:8000`.
+`http://qr.raz:8000`, `http://simplecounter.raz:8000`,
+`http://cadencereps.raz:8000`, or `http://formulas.raz:8000`.
 
 ## Shared backend and visit tracking
 
