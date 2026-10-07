@@ -63,10 +63,12 @@ sites/
   qr/                    Browser-only QR code generator, same layout
   simplecounter/         Browser-only click counter, same layout
   cadencereps/           Browser-only rep cadence setter (PWA), same layout
-  formulas/              Browser-only block-based formula builder with a stash and
-                         a graph view, same layout; everything entered is kept in
-                         localStorage. static/vendor/ holds Blockly (Apache-2.0,
-                         see its license file)
+  formulas/              Browser-only block-based formula builder with a stash,
+                         a graph view and a JavaScript import, same layout;
+                         everything entered is kept in localStorage.
+                         static/vendor/ holds Blockly (Apache-2.0, see its
+                         license file); static/jsformula.js is the importer's
+                         parser, tested by tests/js/ (run through pytest)
 tests/                   Automation tests (Selenium tests can be added here)
 tmp/                     Disposable build staging; ignored by Git
 ```

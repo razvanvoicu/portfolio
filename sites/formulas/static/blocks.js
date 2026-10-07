@@ -159,11 +159,17 @@ const FormulaBlocks = (() => {
     },
   ];
 
+  // The JavaScript each constant prints as is also what the importer
+  // (jsformula.js) recognizes, so keep the two in step.
   const CONSTANTS = {
     PI: { label: "π", js: "Math.PI", order: O.MEMBER },
+    PI2: { label: "π/2", js: "Math.PI / 2", order: O.DIVISION },
+    PI4: { label: "π/4", js: "Math.PI / 4", order: O.DIVISION },
     E: { label: "e", js: "Math.E", order: O.MEMBER },
     TAU: { label: "τ", js: "2 * Math.PI", order: O.MULTIPLICATION },
     SQRT2: { label: "√2", js: "Math.SQRT2", order: O.MEMBER },
+    SQRT3: { label: "√3", js: "Math.sqrt(3)", order: O.FUNCTION_CALL },
+    SQRT5: { label: "√5", js: "Math.sqrt(5)", order: O.FUNCTION_CALL },
     INF: { label: "∞", js: "Infinity", order: O.ATOMIC },
   };
 
@@ -298,7 +304,7 @@ const FormulaBlocks = (() => {
       id: "num", label: "Num",
       items: [
         { label: "123", title: "Number", type: "f_num" },
-        ...["PI", "E", "TAU", "SQRT2", "INF"].map((key) => ({
+        ...["PI", "PI2", "PI4", "E", "TAU", "SQRT2", "SQRT3", "SQRT5", "INF"].map((key) => ({
           label: CONSTANTS[key].label, title: "Constant", type: "f_const", fields: { C: key },
         })),
       ],

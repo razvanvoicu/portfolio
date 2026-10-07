@@ -13,8 +13,12 @@ Add your own variables, give each one a name and a value, and change those value
 like. The result follows instantly. Build pieces of a formula separately, drop the ones you want
 to keep in the stash, and drag them back out later. Drop a block on the trash to delete it.
 
+Already have a formula as JavaScript? Paste it into the import view and it turns into blocks.
+Share copies your formula as JavaScript to the clipboard.
+
 Press the graph button to plot the formula. Pick which variable to vary and over what range, and
 the app draws the curve, ignoring that variable's own value while the other variables keep theirs.
+Its Share button copies the range and the formula as JSON.
 
 Everything you enter is saved in your browser, so you can close the app and come back to the same
 place. Everything happens on your device. No data leaves your phone or computer, and you don't

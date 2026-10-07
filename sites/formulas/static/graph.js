@@ -11,6 +11,7 @@
   const fromInput = $("#graph-from");
   const toInput = $("#graph-to");
   const closeButton = $("#graph-close");
+  const shareButton = $("#graph-share");
   const opener = $("#graph-open");
   const page = $("main.app");
 
@@ -257,14 +258,14 @@
   function describeCursor() {
     if (!plot) return;
     if (cursorX === null) {
-      status.className = "graph-status";
+      status.className = "overlay-status";
       status.textContent = `f(${plot.name}) = ${plot.code}`;
       return;
     }
     const { margin, pw } = layout();
     const x = plot.a + ((cursorX - margin.left) / pw) * (plot.b - plot.a);
     const y = plot.f(x);
-    status.className = "graph-status is-reading";
+    status.className = "overlay-status is-reading";
     status.textContent = `${plot.name} = ${format(x)}    f = ${Number.isFinite(y) ? format(y) : "undefined"}`;
   }
 
@@ -273,13 +274,29 @@
     const result = buildPlot();
     if (result.error) {
       plot = null;
-      status.className = "graph-status is-error";
+      status.className = "overlay-status is-error";
       status.textContent = result.error;
     } else {
       plot = result;
       describeCursor();
     }
     draw();
+  }
+
+  // Copies the plotted range and formula as JSON: {"start", "end", "formula"}.
+  // The formula is the expression as shown, so it still names the variable.
+  async function share() {
+    if (!plot) {
+      showToast(status.textContent || "There is no graph to share yet.", true);
+      return;
+    }
+    const json = JSON.stringify({ start: plot.a, end: plot.b, formula: plot.code });
+    try {
+      await copyText(json);
+      showToast("Graph range and formula copied to the clipboard");
+    } catch {
+      showToast("Could not copy the graph", true);
+    }
   }
 
   // ------------------------------------------------------------------ events
@@ -321,6 +338,7 @@
 
   opener.addEventListener("click", open);
   closeButton.addEventListener("click", close);
+  shareButton.addEventListener("click", share);
   document.addEventListener("keydown", (event) => {
     if (event.key === "Escape" && !view.hidden) close();
   });

@@ -26,6 +26,8 @@ let activeTab = "num";
 // What the user last chose in the graph view: the variable's id and the range,
 // kept as typed so a half-edited value is not rewritten under the cursor.
 let graphSettings = { varId: null, from: "-10", to: "10" };
+// Text typed into the import view and not yet converted.
+let importDraft = "";
 let noteTimer = 0;
 let updateQueued = false;
 let saveTimer = 0;
@@ -218,7 +220,8 @@ function getRoot() {
 
 // Checks that the editor holds exactly one complete, valid formula and returns
 // its JavaScript expression. `ignoreValueOf` is a variable id whose value is not
-// needed (the graph substitutes its own), so a bad value there is not an error.
+// needed (the graph substitutes its own), so a bad value there is not an error;
+// `true` ignores every variable's value (the expression alone is wanted).
 function analyze(ignoreValueOf = null) {
   const root = getRoot();
   const body = root.getInputTargetBlock("EXPR");
@@ -243,7 +246,7 @@ function analyze(ignoreValueOf = null) {
     used.add(variable.id);
     if (nameProblem(variable)) {
       problems.push(`Fix the name of variable "${variable.name}"`);
-    } else if (variable.id !== ignoreValueOf && !parseValue(variable.text).ok) {
+    } else if (ignoreValueOf !== true && variable.id !== ignoreValueOf && !parseValue(variable.text).ok) {
       problems.push(`Variable ${variable.name} needs a number, true or false`);
     }
   }
@@ -267,6 +270,13 @@ function evaluate() {
   } catch (error) {
     return { state: "error", message: String(error.message || error) };
   }
+}
+
+// The main formula as JavaScript text, without evaluating it. Returns
+// { code } or, when there is nothing usable, { message } saying what to fix.
+function formulaCode(goal) {
+  const analysis = analyze(true);
+  return analysis.state === "ok" ? { code: analysis.code } : { message: messageFor(analysis, goal) };
 }
 
 // What to tell the user when the editor does not hold a usable formula.
@@ -298,6 +308,60 @@ function renderResult(result) {
   }
   resultLine.classList.add(result.state === "error" ? "is-error" : "is-muted");
   resultLine.textContent = messageFor(result, "see the result");
+}
+
+let toastTimers = [];
+
+// A pop-up that stays for 3 seconds and then fades out.
+function showToast(text, isError = false) {
+  const toast = $("#toast");
+  for (const timer of toastTimers) clearTimeout(timer);
+  toast.textContent = text;
+  toast.className = isError ? "toast is-error" : "toast";
+  toast.hidden = false;
+  toastTimers = [
+    setTimeout(() => toast.classList.add("is-fading"), 3000),
+    setTimeout(() => {
+      toast.hidden = true;
+      toast.classList.remove("is-fading");
+    }, 3600),
+  ];
+}
+
+async function copyText(text) {
+  if (navigator.clipboard && window.isSecureContext) {
+    try {
+      await navigator.clipboard.writeText(text);
+      return;
+    } catch {
+      // Refused (for example, the page lost focus): try the older way below.
+    }
+  }
+  // Older browsers and plain-http pages have no async clipboard.
+  const field = document.createElement("textarea");
+  field.value = text;
+  field.setAttribute("readonly", "");
+  field.style.position = "fixed";
+  field.style.opacity = "0";
+  document.body.append(field);
+  field.select();
+  const copied = document.execCommand("copy");
+  field.remove();
+  if (!copied) throw new Error("copy failed");
+}
+
+async function shareFormula() {
+  const result = formulaCode("share it");
+  if (!result.code) {
+    showToast(result.message, true);
+    return;
+  }
+  try {
+    await copyText(result.code);
+    showToast("Formula copied to the clipboard");
+  } catch {
+    showToast("Could not copy the formula", true);
+  }
 }
 
 function flashNote(text) {
@@ -342,6 +406,7 @@ function saveState() {
       nextStashId,
       activeTab,
       graphSettings,
+      importDraft,
       workspace: Blockly.serialization.workspaces.save(workspace),
     }));
   } catch {
@@ -823,14 +888,13 @@ function init() {
       nextStashId = Number.isInteger(saved.nextStashId) ? saved.nextStashId : stash.length + 1;
     }
     if (typeof saved.activeTab === "string") activeTab = saved.activeTab;
+    if (typeof saved.importDraft === "string") importDraft = saved.importDraft;
     const g = saved.graphSettings;
     if (g && typeof g.from === "string" && typeof g.to === "string") {
       graphSettings = { varId: typeof g.varId === "string" ? g.varId : null, from: g.from, to: g.to };
     }
-  } else {
-    addVariable("x", "3");
-    addVariable("y", "4");
   }
+  // A first visit starts with no variables at all.
 
   createWorkspace(saved);
   renderVariables();
@@ -863,8 +927,9 @@ function init() {
   $("#redo").addEventListener("click", () => workspace.undo(true));
   $("#delete").addEventListener("click", deleteSelected);
   $("#clear").addEventListener("click", clearEditor);
+  $("#share").addEventListener("click", shareFormula);
   // Keep the editor's selection when one of these buttons is pressed.
-  for (const id of ["#undo", "#redo", "#delete", "#clear", "#add-var"]) {
+  for (const id of ["#undo", "#redo", "#delete", "#clear", "#share", "#add-var"]) {
     $(id).addEventListener("pointerdown", (event) => event.preventDefault());
   }
   $("#trash").addEventListener("click", () => flashNote("Drag a block onto the trash to delete it."));

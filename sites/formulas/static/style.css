@@ -80,7 +80,7 @@ h1, h2, p { margin: 0; }
 
 .bar {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) auto;
+  grid-template-columns: minmax(0, 1fr) auto auto;
   grid-template-rows: calc(var(--u) * 9);
   column-gap: calc(var(--u) * 1.4);
   align-items: center;
@@ -366,12 +366,12 @@ h1, h2, p { margin: 0; }
 
 .result-row {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) calc(var(--u) * 13);
+  grid-template-columns: minmax(0, 1fr) calc(var(--u) * 13) calc(var(--u) * 13);
   grid-template-rows: minmax(calc(var(--u) * 13), auto);
   column-gap: calc(var(--u) * 1.2);
 }
 
-.graph-open {
+.side-button {
   display: grid;
   place-items: center;
   color: var(--accent);
@@ -380,9 +380,9 @@ h1, h2, p { margin: 0; }
   background: var(--panel);
   transition: border-color 160ms ease, transform 160ms ease;
 }
-.graph-open:hover { border-color: rgba(116, 225, 193, 0.45); }
-.graph-open:active { transform: scale(0.95); }
-.graph-open svg { width: calc(var(--u) * 7); height: calc(var(--u) * 7); }
+.side-button:hover { border-color: rgba(116, 225, 193, 0.45); }
+.side-button:active { transform: scale(0.95); }
+.side-button svg { width: calc(var(--u) * 7); height: calc(var(--u) * 7); }
 
 .result {
   display: grid;
@@ -409,10 +409,10 @@ h1, h2, p { margin: 0; }
 .result-note { color: var(--muted); font-size: calc(var(--u) * 3.6); }
 .result-note:empty { display: none; }
 
-/* ------------------------------------------------------------------- graph
-   A full-screen view that covers the page while it is open. */
+/* ---------------------------------------------------------------- overlays
+   Full-screen views (import, graph) that cover the page while they are open. */
 
-.graph {
+.overlay {
   position: fixed;
   inset: 0;
   z-index: 20;
@@ -423,23 +423,26 @@ h1, h2, p { margin: 0; }
   padding: calc(var(--u) * 2) calc(var(--u) * 3);
   background: var(--bg);
 }
-.graph[hidden] { display: none; }
+.overlay[hidden] { display: none; }
 
-.graph-bar {
+.overlay-bar {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) calc(var(--u) * 10);
+  grid-template-columns: minmax(0, 1fr) auto calc(var(--u) * 10);
   grid-template-rows: calc(var(--u) * 10) auto;
   row-gap: calc(var(--u) * 1.4);
   column-gap: calc(var(--u) * 1.4);
 }
+.overlay-title { grid-row: 1; grid-column: 1; }
+.overlay-bar > .tool { grid-row: 1; grid-column: 2; }
+.overlay-close { grid-row: 1; grid-column: 3; }
 
-.graph-title {
+.overlay-title {
   align-self: center;
   font: 600 calc(var(--u) * 6.4)/1.1 "Space Grotesk", sans-serif;
   letter-spacing: -0.03em;
 }
 
-.graph-close {
+.overlay-close {
   display: grid;
   place-items: center;
   border: calc(var(--u) * 0.2) solid var(--line);
@@ -448,9 +451,37 @@ h1, h2, p { margin: 0; }
   font-size: calc(var(--u) * 4.4);
   line-height: 1;
 }
-.graph-close:hover { color: var(--bad); border-color: var(--bad); }
+.overlay-close:hover { color: var(--bad); border-color: var(--bad); }
+
+/* The import view: a text box, what is wrong with it, and the button to apply it. */
+.import-view { grid-template-rows: auto minmax(0, 1fr) auto auto; }
+
+.import-text {
+  min-width: 0;
+  min-height: 0;
+  padding: calc(var(--u) * 2.5);
+  border: calc(var(--u) * 0.2) solid var(--line);
+  border-radius: calc(var(--u) * 2);
+  background: var(--panel);
+  font: 500 calc(var(--u) * 4.8)/1.4 ui-monospace, "Cascadia Mono", Consolas, monospace;
+  resize: none;
+}
+.import-text:focus { outline: none; border-color: var(--accent); }
+.import-text::placeholder { color: var(--muted); }
+
+.primary-button {
+  height: calc(var(--u) * 12);
+  border: 0;
+  border-radius: calc(var(--u) * 2);
+  background: var(--accent);
+  color: var(--bg);
+  font-size: calc(var(--u) * 4.8);
+  font-weight: 700;
+}
+.primary-button:disabled { background: var(--raised); color: var(--muted); cursor: default; }
 
 .graph-controls {
+  grid-row: 2;
   grid-column: 1 / -1;
   max-width: calc(var(--u) * 150);
   display: grid;
@@ -499,7 +530,7 @@ h1, h2, p { margin: 0; }
   touch-action: none;
 }
 
-.graph-status {
+.overlay-status {
   padding: calc(var(--u) * 1.6) calc(var(--u) * 2.5);
   border: calc(var(--u) * 0.2) solid var(--line);
   border-radius: calc(var(--u) * 2);
@@ -508,8 +539,34 @@ h1, h2, p { margin: 0; }
   overflow-wrap: anywhere;
   white-space: pre-wrap;
 }
-.graph-status.is-error { color: var(--bad); font-family: "DM Sans", system-ui, sans-serif; }
-.graph-status.is-reading { color: var(--accent); }
+.overlay-status.is-error { color: var(--bad); font-family: "DM Sans", system-ui, sans-serif; }
+.overlay-status.is-reading { color: var(--accent); }
+.overlay-status.is-ready { color: var(--accent); font-family: "DM Sans", system-ui, sans-serif; }
+
+/* A short confirmation that appears over the page and fades away by itself. */
+.toast {
+  position: fixed;
+  left: 50%;
+  bottom: calc(var(--u) * 8);
+  z-index: 30;
+  max-width: calc(var(--u) * 88);
+  padding: calc(var(--u) * 2.4) calc(var(--u) * 4);
+  border: calc(var(--u) * 0.3) solid var(--accent);
+  border-radius: calc(var(--u) * 3);
+  background: var(--raised);
+  color: var(--text);
+  font-size: calc(var(--u) * 4.2);
+  font-weight: 600;
+  text-align: center;
+  transform: translateX(-50%);
+  opacity: 1;
+  transition: opacity 600ms ease;
+  box-shadow: 0 calc(var(--u) * 1.5) calc(var(--u) * 5) rgba(0, 0, 0, 0.55);
+  pointer-events: none;
+}
+.toast[hidden] { display: none; }
+.toast.is-fading { opacity: 0; }
+.toast.is-error { border-color: var(--bad); }
 
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { transition-duration: 0.01ms !important; animation-duration: 0.01ms !important; }
