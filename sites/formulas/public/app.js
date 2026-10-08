@@ -16,6 +16,10 @@ const resultNote = $("#result-note");
 const paletteTabs = $("#palette-tabs");
 const paletteItems = $("#palette-items");
 const stashChips = $("#stash-chips");
+const stashMenu = $("#stash-menu");
+const varsSection = $(".vars");
+const varsSheet = $("#vars-sheet");
+const varsSheetList = $("#vars-sheet-list");
 
 let variables = [];
 let nextVarId = 1;
@@ -28,6 +32,8 @@ let activeTab = "num";
 let graphSettings = { varId: null, from: "-10", to: "10" };
 // Text typed into the import view and not yet converted.
 let importDraft = "";
+// The same for the graph import pop-up.
+let graphImportDraft = "";
 let noteTimer = 0;
 let updateQueued = false;
 let saveTimer = 0;
@@ -95,8 +101,10 @@ function makeInput(className, value, label, mode) {
   return input;
 }
 
-function renderVariables() {
-  const rows = variables.map((variable) => {
+// One row per variable. The same rows are built for the strip on the page and
+// for the pop-up sheet that opens when the strip is too small to show them all.
+function buildVariableRows() {
+  return variables.map((variable) => {
     const row = document.createElement("div");
     row.className = "var-row";
 
@@ -138,12 +146,17 @@ function renderVariables() {
     row.dataset.id = variable.id;
     return row;
   });
-  varsList.replaceChildren(...rows);
+}
+
+function renderVariables() {
+  varsList.replaceChildren(...buildVariableRows());
+  if (!varsSheet.hidden) varsSheetList.replaceChildren(...buildVariableRows());
   refreshValidity();
+  updateCrowded();
 }
 
 function refreshValidity() {
-  for (const row of varsList.children) {
+  for (const row of [...varsList.children, ...varsSheetList.children]) {
     const variable = variableById(row.dataset.id);
     if (!variable) continue;
     const problem = nameProblem(variable);
@@ -156,6 +169,81 @@ function refreshValidity() {
     valueInput.setAttribute("aria-invalid", value.ok ? "false" : "true");
     valueInput.title = value.ok ? "" : "Enter a number, true or false";
   }
+}
+
+// The variables strip keeps room for at least one variable. When it cannot
+// show them all, pressing it opens a sheet where they are all in full view.
+function isCrowded() {
+  return varsList.scrollHeight > varsList.clientHeight + 1;
+}
+
+function updateCrowded() {
+  varsSection.classList.toggle("is-crowded", isCrowded());
+}
+
+function openVarsSheet(focusId) {
+  varsSheetList.replaceChildren(...buildVariableRows());
+  refreshValidity();
+  varsSheet.hidden = false;
+  $("main.app").inert = true;
+  const row = [...varsSheetList.children].find((candidate) => candidate.dataset.id === focusId);
+  const target = row ? row.querySelector(".var-name") : $("#vars-sheet-close");
+  target.focus();
+  if (row) {
+    row.scrollIntoView({ block: "nearest" });
+    target.select();
+  }
+}
+
+function closeVarsSheet() {
+  if (varsSheet.hidden) return;
+  varsSheet.hidden = true;
+  $("main.app").inert = false;
+  renderVariables(); // the strip catches up with what was edited in the sheet
+  $("#add-var").focus();
+}
+
+// Adds a variable and puts the cursor in its name, wherever it is shown.
+function addVariableFromUser() {
+  const variable = addVariable();
+  renderVariables();
+  variablesChanged();
+  if (!varsSheet.hidden) {
+    const row = [...varsSheetList.children].find((candidate) => candidate.dataset.id === variable.id);
+    row.scrollIntoView({ block: "nearest" });
+    row.querySelector(".var-name").select();
+  } else if (isCrowded()) {
+    openVarsSheet(variable.id);
+  } else {
+    const row = varsList.lastElementChild;
+    row.scrollIntoView({ block: "nearest" });
+    row.querySelector(".var-name").select();
+  }
+}
+
+function bindVarsSheet() {
+  // While the strip is crowded its inputs ignore the pointer (see the style
+  // sheet), so a press lands on the strip itself and opens the sheet.
+  varsSection.addEventListener("click", (event) => {
+    if (!varsSection.classList.contains("is-crowded") || event.target.closest("#add-var")) return;
+    openVarsSheet(null);
+  });
+  // Tabbing into a hidden-away variable opens the sheet too.
+  varsList.addEventListener("focusin", (event) => {
+    if (!varsSection.classList.contains("is-crowded")) return;
+    const row = event.target.closest(".var-row");
+    event.target.blur();
+    openVarsSheet(row && row.dataset.id);
+  });
+  $("#vars-sheet-add").addEventListener("click", addVariableFromUser);
+  $("#vars-sheet-close").addEventListener("click", closeVarsSheet);
+  varsSheet.addEventListener("click", (event) => {
+    if (event.target === varsSheet) closeVarsSheet(); // a press on the dimmed page behind
+  });
+  document.addEventListener("keydown", (event) => {
+    if (event.key === "Escape" && !varsSheet.hidden) closeVarsSheet();
+  });
+  new ResizeObserver(updateCrowded).observe(varsList);
 }
 
 function variablesChanged() {
@@ -294,16 +382,14 @@ function messageFor(result, goal) {
 function renderResult(result) {
   resultLine.className = "result-line";
   if (result.state === "ok") {
-    const expression = document.createElement("span");
-    expression.className = "result-expression";
-    expression.textContent = result.code;
     const equals = document.createElement("span");
     equals.className = "result-equals";
-    equals.textContent = " = ";
+    equals.textContent = "= ";
     const value = document.createElement("span");
     value.className = "result-value";
     value.textContent = formatValue(result.value);
-    resultLine.replaceChildren(expression, equals, value);
+    resultLine.classList.add("is-value");
+    resultLine.replaceChildren(equals, value);
     return;
   }
   resultLine.classList.add(result.state === "error" ? "is-error" : "is-muted");
@@ -407,6 +493,7 @@ function saveState() {
       activeTab,
       graphSettings,
       importDraft,
+      graphImportDraft,
       workspace: Blockly.serialization.workspaces.save(workspace),
     }));
   } catch {
@@ -432,13 +519,62 @@ function selectedBlock() {
   return block instanceof Blockly.BlockSvg && block.type !== "f_root" ? block : null;
 }
 
-function deleteSelected() {
-  const block = selectedBlock();
-  if (!block) {
-    flashNote("Select a block to delete.");
-    return;
+// Whether two block trees are the same formula: same blocks, fields and
+// variables, however they were produced.
+function sameFormula(a, b) {
+  if (a.type !== b.type || a.data !== b.data) return false;
+  if (JSON.stringify(a.fields || {}) !== JSON.stringify(b.fields || {})) return false;
+  const left = a.inputs || {};
+  const right = b.inputs || {};
+  const names = Object.keys(left);
+  if (names.length !== Object.keys(right).length) return false;
+  return names.every((name) => right[name] && sameFormula(left[name].block, right[name].block));
+}
+
+// Replaces the main formula with a formula read from JavaScript (see
+// jsformula.js), adding any variable it uses that does not exist yet, with the
+// value 1. With `stashPrevious`, the formula being replaced is kept in the
+// stash instead of being thrown away. Returns the block that now holds the
+// formula, the names added, and whether the previous formula was stashed.
+function installFormula(compiled, { stashPrevious = false } = {}) {
+  const added = [];
+  for (const name of compiled.names) {
+    if (!variables.some((variable) => variable.name === name)) {
+      addVariable(name, "1");
+      added.push(name);
+    }
   }
-  block.checkAndDelete();
+  const idByName = new Map(variables.map((variable) => [variable.name, variable.id]));
+  const bind = (state) => {
+    const copy = { ...state };
+    if (state.type === "f_var") copy.data = idByName.get(state.fields.NAME);
+    if (state.inputs) {
+      copy.inputs = Object.fromEntries(
+        Object.entries(state.inputs).map(([name, input]) => [name, { block: bind(input.block) }])
+      );
+    }
+    return copy;
+  };
+
+  renderVariables();
+  variablesChanged();
+
+  const root = getRoot();
+  const old = root.getInputTargetBlock("EXPR");
+  const incoming = bind(compiled.state);
+  // A formula identical to the one coming in is not worth keeping a copy of.
+  const unchanged = old && sameFormula(Blockly.serialization.blocks.save(old), incoming);
+  const stashed = Boolean(old && stashPrevious && !unchanged && stashBlock(old));
+  let block = null;
+  Blockly.Events.setGroup(true);
+  try {
+    if (old) old.dispose(false);
+    block = Blockly.serialization.blocks.append(incoming, workspace, { recordUndo: true });
+    root.getInput("EXPR").connection.connect(block.outputConnection);
+  } finally {
+    Blockly.Events.setGroup(false);
+  }
+  return { block, added, stashed, hadPrevious: Boolean(old) };
 }
 
 function clearEditor() {
@@ -531,12 +667,18 @@ function stashLabel(entry) {
   });
 }
 
+// Keeps a copy of a block, and everything attached to it, in the stash. Any
+// formula can be stashed, complete or not. A formula that is already in the
+// stash is not added a second time. Returns whether something was added.
 function stashBlock(block) {
-  const state = Blockly.serialization.blocks.save(block, { addCoordinates: false, addNextBlocks: false });
-  stash.push({ id: `s${nextStashId}`, state: stripIds(state) });
+  const state = stripIds(Blockly.serialization.blocks.save(block, { addCoordinates: false, addNextBlocks: false }));
+  const text = JSON.stringify(state);
+  if (stash.some((entry) => JSON.stringify(entry.state) === text)) return false;
+  stash.push({ id: `s${nextStashId}`, state });
   nextStashId += 1;
   renderStash();
   scheduleSave();
+  return true;
 }
 
 function renderStash() {
@@ -566,7 +708,91 @@ function renderStash() {
 function removeFromStash(id) {
   stash = stash.filter((entry) => entry.id !== id);
   renderStash();
+  if (!stashMenu.hidden) renderStashMenu();
   scheduleSave();
+}
+
+// The strip shows only as many chips as fit. When some are cut off, pressing
+// the stash lists every stashed formula, one per row, in a pop-up menu.
+function stashOverflows() {
+  return stashChips.scrollWidth > stashChips.clientWidth + 1;
+}
+
+function renderStashMenu() {
+  if (!stash.length) {
+    const empty = document.createElement("p");
+    empty.className = "menu-empty";
+    empty.textContent = "Nothing is stashed yet.";
+    stashMenu.replaceChildren(empty);
+    return;
+  }
+  stashMenu.replaceChildren(...stash.map((entry) => {
+    const label = stashLabel(entry);
+    const row = document.createElement("div");
+    row.className = "menu-row";
+    row.setAttribute("role", "none");
+
+    const item = document.createElement("button");
+    item.type = "button";
+    item.className = "menu-item";
+    item.setAttribute("role", "menuitem");
+    item.textContent = label;
+    item.title = label;
+    item.addEventListener("click", () => recallFromStash(entry.id));
+
+    const remove = document.createElement("button");
+    remove.type = "button";
+    remove.className = "menu-remove";
+    remove.textContent = "✕";
+    remove.setAttribute("aria-label", `Remove ${label} from the stash`);
+    remove.addEventListener("click", () => removeFromStash(entry.id));
+
+    row.append(item, remove);
+    return row;
+  }));
+}
+
+function openStashMenu() {
+  renderStashMenu();
+  const anchor = $("#stash").getBoundingClientRect();
+  stashMenu.hidden = false;
+  // Opens upward from the stash, which sits near the bottom of the screen.
+  stashMenu.style.left = `${anchor.left}px`;
+  stashMenu.style.width = `${anchor.width}px`;
+  stashMenu.style.bottom = `${window.innerHeight - anchor.top + unitPixels()}px`;
+  stashMenu.style.maxHeight = `${Math.max(anchor.top - unitPixels() * 4, unitPixels() * 20)}px`;
+  const first = stashMenu.querySelector(".menu-item");
+  if (first) first.focus();
+}
+
+function closeStashMenu() {
+  stashMenu.hidden = true;
+}
+
+function bindStashMenu() {
+  const stashArea = $("#stash");
+  // Capture phase: with cut-off chips, a press anywhere on the stash opens the
+  // list instead of acting on the chip underneath.
+  stashArea.addEventListener("click", (event) => {
+    if (event.target.closest(".chip-remove")) return;
+    if (!stashOverflows()) return;
+    event.stopPropagation();
+    if (stashMenu.hidden) openStashMenu();
+    else closeStashMenu();
+  }, true);
+  stashArea.addEventListener("keydown", (event) => {
+    if (event.target !== stashArea || (event.key !== "Enter" && event.key !== " ")) return;
+    event.preventDefault();
+    if (stashMenu.hidden) openStashMenu();
+    else closeStashMenu();
+  });
+  document.addEventListener("pointerdown", (event) => {
+    if (!stashMenu.hidden && !stashMenu.contains(event.target) && !stashArea.contains(event.target)) closeStashMenu();
+  });
+  document.addEventListener("keydown", (event) => {
+    if (event.key === "Escape" && !stashMenu.hidden) closeStashMenu();
+  });
+  window.addEventListener("resize", closeStashMenu);
 }
 
 // ------------------------------------------------------- dragging into editor
@@ -607,10 +833,14 @@ function bindDragSource(element, getState, label, source = {}) {
       ghost: null,
     };
   });
-  // Typing Enter or Space on a focused item adds the block loose in the editor.
   element.addEventListener("click", (event) => {
-    if (event.detail === 0) spawnLoose(getState());
-    else flashNote("Drag it into the editor, onto the spot you want.");
+    if (source.stashId) {
+      recallFromStash(source.stashId); // a stash chip: a tap brings the formula back
+    } else if (event.detail === 0) {
+      addSecondary(getState()); // Enter or Space on a focused palette item
+    } else {
+      flashNote("Drag it into the editor, onto the spot you want.");
+    }
   });
 }
 
@@ -657,20 +887,26 @@ function endPaletteDrag(event) {
   setTimeout(fitView, 150);
 }
 
-function createBlock(state, clientX, clientY) {
-  const at = clientToWorkspace(clientX, clientY);
+function createBlockAt(state, x, y) {
   Blockly.Events.setGroup(true);
   try {
-    const block = Blockly.serialization.blocks.append({ ...state, x: at.x, y: at.y }, workspace, { recordUndo: true });
+    const block = Blockly.serialization.blocks.append({ ...state, x, y }, workspace, { recordUndo: true });
     Blockly.renderManagement.triggerQueuedRenders(workspace);
-    const size = block.getHeightWidth();
-    const grip = Math.min(size.width / 2, 14 / workspace.getScale());
-    block.moveTo(new Blockly.utils.Coordinate(at.x - grip, at.y - size.height / 2));
-    spawnedIds.add(block.id);
     return block;
   } finally {
     Blockly.Events.setGroup(false);
   }
+}
+
+// A new block with the pointer resting on its left part.
+function createBlock(state, clientX, clientY) {
+  const at = clientToWorkspace(clientX, clientY);
+  const block = createBlockAt(state, at.x, at.y);
+  const size = block.getHeightWidth();
+  const grip = Math.min(size.width / 2, 14 / workspace.getScale());
+  block.moveTo(new Blockly.utils.Coordinate(at.x - grip, at.y - size.height / 2));
+  spawnedIds.add(block.id);
+  return block;
 }
 
 function spawnUnderPointer(drag, event) {
@@ -695,11 +931,21 @@ function spawnUnderPointer(drag, event) {
   }));
 }
 
-// Keyboard route: the block appears loose in the middle of the editor view.
-function spawnLoose(state) {
-  const rect = editorRect();
-  const block = createBlock(state, rect.left + rect.width / 2, rect.top + rect.height / 2);
+// Adds a block or formula to the editor as a secondary formula: loose, just
+// below everything already there, with nothing to drag.
+function addSecondary(state) {
+  const box = workspace.getBlocksBoundingBox();
+  const gap = (unitPixels() * 3) / workspace.getScale();
+  const block = createBlockAt(state, box.left, box.bottom + gap);
   Blockly.common.setSelected(block);
+  return block;
+}
+
+function recallFromStash(id) {
+  const entry = stash.find((candidate) => candidate.id === id);
+  if (!entry) return;
+  addSecondary(structuredClone(entry.state));
+  closeStashMenu();
 }
 
 // A block released outside the editor, and not on the trash, stash or palette,
@@ -781,9 +1027,13 @@ function baseScale() {
   return Math.max(0.5, unitPixels() / 4);
 }
 
-// Shrinks the view, down to a legible floor, so everything in the editor is
-// visible. Only runs after a change, so it never fights the user's panning, and
-// never while something is being dragged.
+const MIN_EDITOR_UNITS = 40; // the editor is never shorter than this, in layout units
+let editorUnits = 0;
+
+// Frames everything in the editor. The scale is chosen so the width fits (down
+// to a legible floor; anything wider is panned), and the editor itself grows to
+// hold the full height plus a little room for panning. Only runs after a
+// change, so it never fights the user's panning, and never during a drag.
 function fitView() {
   if (!workspace || paletteDrag || workspace.isDragging() || Blockly.WidgetDiv.isVisible()) return;
   const box = workspace.getBlocksBoundingBox();
@@ -791,16 +1041,21 @@ function fitView() {
   const height = box.bottom - box.top;
   if (width <= 0 || height <= 0) return;
 
-  const metrics = workspace.getMetrics();
-  const pad = unitPixels() * 2;
-  const available = Math.min(
-    (metrics.viewWidth - 2 * pad) / width,
-    (metrics.viewHeight - 2 * pad) / height
-  );
-  // Never shrink below a legible size; anything wider is panned.
-  const scale = Math.max(baseScale() * 0.55, Math.min(baseScale(), available));
+  const unit = unitPixels();
+  const pad = unit * 2;
+  const room = unit * 8;
+  let metrics = workspace.getMetrics();
+  const scale = Math.max(baseScale() * 0.55, Math.min(baseScale(), (metrics.viewWidth - 2 * pad) / width));
   if (Math.abs(scale - workspace.getScale()) > 0.005) workspace.setScale(scale);
-  const top = Math.max(pad, (metrics.viewHeight - height * scale) / 2);
+
+  const units = Math.max(MIN_EDITOR_UNITS, Math.ceil((height * scale + 2 * room) / unit));
+  if (units !== editorUnits) {
+    editorUnits = units;
+    $("#editor").style.setProperty("--editor-need", `calc(var(--u) * ${units})`);
+    Blockly.svgResize(workspace);
+    metrics = workspace.getMetrics();
+  }
+  const top = Math.max(room, (metrics.viewHeight - height * scale) / 2);
   workspace.scroll(pad - box.left * scale, top - box.top * scale);
 
   // Content wider than the view: keep the block being edited in sight.
@@ -889,6 +1144,7 @@ function init() {
     }
     if (typeof saved.activeTab === "string") activeTab = saved.activeTab;
     if (typeof saved.importDraft === "string") importDraft = saved.importDraft;
+    if (typeof saved.graphImportDraft === "string") graphImportDraft = saved.graphImportDraft;
     const g = saved.graphSettings;
     if (g && typeof g.from === "string" && typeof g.to === "string") {
       graphSettings = { varId: typeof g.varId === "string" ? g.varId : null, from: g.from, to: g.to };
@@ -900,6 +1156,7 @@ function init() {
   renderVariables();
   renderPalette();
   renderStash();
+  bindStashMenu();
 
   window.addEventListener("pointermove", (event) => {
     lastPointer = { x: event.clientX, y: event.clientY };
@@ -914,22 +1171,14 @@ function init() {
     if (document.visibilityState === "hidden") flushSave();
   });
 
-  $("#add-var").addEventListener("click", () => {
-    addVariable();
-    renderVariables();
-    variablesChanged();
-    const rows = varsList.children;
-    const last = rows[rows.length - 1];
-    last.scrollIntoView({ block: "nearest" });
-    last.querySelector(".var-name").select();
-  });
+  $("#add-var").addEventListener("click", addVariableFromUser);
+  bindVarsSheet();
   $("#undo").addEventListener("click", () => workspace.undo(false));
   $("#redo").addEventListener("click", () => workspace.undo(true));
-  $("#delete").addEventListener("click", deleteSelected);
   $("#clear").addEventListener("click", clearEditor);
   $("#share").addEventListener("click", shareFormula);
   // Keep the editor's selection when one of these buttons is pressed.
-  for (const id of ["#undo", "#redo", "#delete", "#clear", "#share", "#add-var"]) {
+  for (const id of ["#undo", "#redo", "#clear", "#share", "#add-var", "#vars-sheet-add"]) {
     $(id).addEventListener("pointerdown", (event) => event.preventDefault());
   }
   $("#trash").addEventListener("click", () => flashNote("Drag a block onto the trash to delete it."));

@@ -12,7 +12,12 @@
   const toInput = $("#graph-to");
   const closeButton = $("#graph-close");
   const shareButton = $("#graph-share");
+  const importSheet = $("#graph-import-sheet");
+  const importText = $("#graph-import-text");
+  const importStatus = $("#graph-import-status");
+  const importApply = $("#graph-import-apply");
   const opener = $("#graph-open");
+  const importOpener = $("#graph-import-open");
   const page = $("main.app");
 
   const MIN_SAMPLES = 200;
@@ -259,7 +264,7 @@
     if (!plot) return;
     if (cursorX === null) {
       status.className = "overlay-status";
-      status.textContent = `f(${plot.name}) = ${plot.code}`;
+      status.textContent = `${plot.name} from ${format(plot.a)} to ${format(plot.b)}`;
       return;
     }
     const { margin, pw } = layout();
@@ -283,20 +288,141 @@
     draw();
   }
 
-  // Copies the plotted range and formula as JSON: {"start", "end", "formula"}.
-  // The formula is the expression as shown, so it still names the variable.
+  // Copies the graph as JSON: the range, the formula, the variable on the X
+  // axis, and the value of every defined variable (null when the text typed
+  // for it is not a number or true/false).
   async function share() {
     if (!plot) {
       showToast(status.textContent || "There is no graph to share yet.", true);
       return;
     }
-    const json = JSON.stringify({ start: plot.a, end: plot.b, formula: plot.code });
+    const json = JSON.stringify({
+      start: plot.a,
+      end: plot.b,
+      formula: plot.code,
+      variable_symbol: plot.name,
+      variables: variables
+        .filter((variable) => !nameProblem(variable))
+        .map((variable) => {
+          const parsed = parseValue(variable.text);
+          return { key: variable.name, value: parsed.ok ? parsed.value : null };
+        }),
+    });
     try {
       await copyText(json);
-      showToast("Graph range and formula copied to the clipboard");
+      showToast("Graph copied to the clipboard");
     } catch {
       showToast("Could not copy the graph", true);
     }
+  }
+
+  // ------------------------------------------------------------ graph import
+
+  let parsedGraph = null; // the typed JSON, once it has passed every check
+
+  function setImportStatus(kind, message) {
+    importStatus.className = kind ? `overlay-status is-${kind}` : "overlay-status";
+    importStatus.textContent = message;
+  }
+
+  // Checks what is typed and says whether, and how, it can be imported.
+  function checkGraphImport() {
+    parsedGraph = null;
+    importApply.disabled = true;
+    graphImportDraft = importText.value;
+    scheduleSave();
+    if (!importText.value.trim()) {
+      setImportStatus("", "Paste the JSON that a graph's Share button copied.");
+      return;
+    }
+    try {
+      const graph = GraphJson.parse(importText.value);
+      const known = new Set(variables.map((variable) => variable.name));
+      const wanted = [
+        ...graph.variables.filter((variable) => variable.value !== null).map((variable) => variable.name),
+        graph.symbol,
+        ...graph.compiled.names,
+      ];
+      const fresh = [...new Set(wanted)].filter((name) => !known.has(name));
+      const hasFormula = Boolean(getRoot().getInputTargetBlock("EXPR"));
+      const parts = [
+        `Ready: ${graph.symbol} from ${graph.start} to ${graph.end}.`,
+        hasFormula ? "The current formula goes to the stash." : "",
+        "Variables are merged, none are removed.",
+        fresh.length ? `New: ${fresh.join(", ")}.` : "",
+      ];
+      parsedGraph = graph;
+      importApply.disabled = false;
+      setImportStatus("ready", parts.filter(Boolean).join(" "));
+    } catch (error) {
+      if (!(error instanceof GraphJson.GraphError)) throw error;
+      setImportStatus("error", error.message);
+    }
+  }
+
+  function openGraphImport() {
+    importText.value = graphImportDraft;
+    importSheet.hidden = false;
+    view.inert = true;
+    checkGraphImport();
+    importText.focus();
+    importText.setSelectionRange(importText.value.length, importText.value.length);
+  }
+
+  function closeGraphImport() {
+    importSheet.hidden = true;
+    view.inert = false;
+    importOpener.focus();
+  }
+
+  // Sets the editor and the graph to what the JSON describes. The formula it
+  // replaces goes to the stash, variables are merged (the imported value wins
+  // for a name that already exists), and no variable is removed.
+  function applyGraphImport() {
+    const graph = parsedGraph;
+    if (!graph) return;
+
+    const added = [];
+    for (const { name, value } of graph.variables) {
+      const existing = variables.find((variable) => variable.name === name);
+      if (existing) {
+        if (value !== null) existing.text = String(value);
+      } else if (value !== null) {
+        addVariable(name, String(value));
+        added.push(name);
+      }
+    }
+
+    const installed = installFormula(graph.compiled, { stashPrevious: true });
+    added.push(...installed.added);
+
+    let symbol = variables.find((variable) => variable.name === graph.symbol);
+    if (!symbol) {
+      symbol = addVariable(graph.symbol, "1");
+      added.push(graph.symbol);
+      renderVariables();
+      variablesChanged();
+    }
+
+    graphSettings.varId = symbol.id;
+    graphSettings.from = String(graph.start);
+    graphSettings.to = String(graph.end);
+    graphImportDraft = "";
+    importText.value = "";
+    closeGraphImport();
+    Blockly.common.setSelected(installed.block);
+
+    fillVariableSelect();
+    fromInput.value = graphSettings.from;
+    toInput.value = graphSettings.to;
+    scheduleSave();
+    redraw();
+
+    const notes = [
+      installed.stashed ? "The previous formula is in the stash." : "",
+      added.length ? `Added ${added.join(", ")}.` : "",
+    ].filter(Boolean);
+    showToast(["Graph imported.", ...notes].join(" "));
   }
 
   // ------------------------------------------------------------------ events
@@ -339,6 +465,25 @@
   opener.addEventListener("click", open);
   closeButton.addEventListener("click", close);
   shareButton.addEventListener("click", share);
+  importOpener.addEventListener("click", openGraphImport);
+  $("#graph-import-close").addEventListener("click", closeGraphImport);
+  importApply.addEventListener("click", applyGraphImport);
+  importText.addEventListener("input", checkGraphImport);
+  importText.addEventListener("keydown", (event) => {
+    if (event.key === "Enter" && (event.ctrlKey || event.metaKey)) {
+      event.preventDefault();
+      applyGraphImport();
+    }
+  });
+  importSheet.addEventListener("click", (event) => {
+    if (event.target === importSheet) closeGraphImport(); // the dimmed area around the sheet
+  });
+  // Escape closes the sheet first, without also closing the graph behind it.
+  document.addEventListener("keydown", (event) => {
+    if (event.key !== "Escape" || importSheet.hidden) return;
+    event.stopPropagation();
+    closeGraphImport();
+  }, true);
   document.addEventListener("keydown", (event) => {
     if (event.key === "Escape" && !view.hidden) close();
   });

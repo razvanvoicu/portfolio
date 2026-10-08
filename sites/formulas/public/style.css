@@ -22,11 +22,13 @@
 }
 
 * { box-sizing: border-box; }
-html, body { height: 100%; }
+html { height: 100%; scrollbar-width: none; }
+html::-webkit-scrollbar { display: none; }
+body { min-height: 100%; }
 
 body {
   margin: 0;
-  overflow: hidden;
+  overflow-x: hidden;
   overscroll-behavior: none;
   color: var(--text);
   background: radial-gradient(circle at 75% -20%, rgba(53, 124, 110, 0.18), transparent 38rem), var(--bg);
@@ -53,13 +55,11 @@ h1, h2, p { margin: 0; }
    One column, top to bottom: title, blocks, variables, editor, result. */
 
 .app {
-  height: 100vh;
-  height: 100dvh;
-  max-width: calc(var(--u) * 190);
-  margin: 0 auto;
+  min-height: 100vh;
+  min-height: 100dvh;
   display: grid;
   grid-template-columns: minmax(0, 1fr);
-  grid-template-rows: auto auto auto minmax(0, 1fr) auto;
+  grid-template-rows: auto auto auto 1fr auto;
   grid-template-areas:
     "bar"
     "palette"
@@ -197,9 +197,9 @@ h1, h2, p { margin: 0; }
 .vars {
   display: grid;
   grid-template-columns: minmax(0, 1fr);
-  grid-template-rows: auto minmax(0, 1fr);
+  grid-template-rows: auto minmax(calc(var(--u) * 10), 1fr);
   row-gap: calc(var(--u) * 1.2);
-  max-height: 22vh;
+  max-height: max(22vh, calc(var(--u) * 20));
 }
 
 .vars-head {
@@ -228,9 +228,26 @@ h1, h2, p { margin: 0; }
   grid-template-columns: repeat(auto-fill, minmax(calc(var(--u) * 78), 1fr));
   grid-auto-rows: calc(var(--u) * 10);
   gap: calc(var(--u) * 1.2) calc(var(--u) * 3);
-  overflow-y: auto;
+  overflow: hidden;
   align-content: start;
 }
+.vars-list:empty::before {
+  content: attr(data-empty);
+  grid-column: 1 / -1;
+  align-self: center;
+  color: var(--muted);
+  font-size: calc(var(--u) * 4);
+}
+
+/* Too many variables to show: the strip fades out, ignores its inputs and,
+   when pressed, opens the sheet that shows them all. */
+.vars.is-crowded { cursor: pointer; }
+.vars.is-crowded .vars-list {
+  mask-image: linear-gradient(to bottom, #000 62%, transparent);
+  -webkit-mask-image: linear-gradient(to bottom, #000 62%, transparent);
+}
+.vars.is-crowded .var-input,
+.vars.is-crowded .var-delete { pointer-events: none; }
 
 .var-row {
   display: grid;
@@ -265,16 +282,15 @@ h1, h2, p { margin: 0; }
 
 .workbench {
   min-width: 0;
-  min-height: 0;
   display: grid;
   grid-template-columns: minmax(0, 1fr);
-  grid-template-rows: minmax(0, 1fr) calc(var(--u) * 11);
+  grid-template-rows: 1fr calc(var(--u) * 11);
   row-gap: calc(var(--u) * 1.2);
 }
 
 .editor {
   min-width: 0;
-  min-height: 0;
+  min-height: var(--editor-need, calc(var(--u) * 40));
   display: grid;
   border: calc(var(--u) * 0.2) solid var(--line);
   border-radius: calc(var(--u) * 2);
@@ -284,9 +300,13 @@ h1, h2, p { margin: 0; }
 
 #blockly { min-width: 0; min-height: 0; }
 
+/* Panning by dragging is enough; the scroll bars are not shown. */
+#blockly .blocklyScrollbarHorizontal,
+#blockly .blocklyScrollbarVertical { display: none; }
+
 .dock {
   display: grid;
-  grid-template-columns: repeat(3, calc(var(--u) * 10)) minmax(0, 1fr) calc(var(--u) * 11);
+  grid-template-columns: repeat(2, calc(var(--u) * 10)) minmax(0, 1fr) calc(var(--u) * 11);
   grid-template-rows: minmax(0, 1fr);
   column-gap: calc(var(--u) * 1.2);
 }
@@ -401,6 +421,7 @@ h1, h2, p { margin: 0; }
   font: 500 calc(var(--u) * 5)/1.35 ui-monospace, "Cascadia Mono", Consolas, monospace;
   overflow-wrap: anywhere;
 }
+.result-line.is-value { font-size: calc(var(--u) * 7); font-weight: 700; }
 .result-line.is-muted { color: var(--muted); font-family: "DM Sans", system-ui, sans-serif; }
 .result-line.is-error { color: var(--bad); font-family: "DM Sans", system-ui, sans-serif; }
 .result-equals { color: var(--muted); }
@@ -427,14 +448,15 @@ h1, h2, p { margin: 0; }
 
 .overlay-bar {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) auto calc(var(--u) * 10);
+  grid-template-columns: minmax(0, 1fr) auto auto calc(var(--u) * 10);
   grid-template-rows: calc(var(--u) * 10) auto;
   row-gap: calc(var(--u) * 1.4);
   column-gap: calc(var(--u) * 1.4);
 }
+/* Title first, close last; any buttons in between take the free cells of row 1. */
 .overlay-title { grid-row: 1; grid-column: 1; }
-.overlay-bar > .tool { grid-row: 1; grid-column: 2; }
-.overlay-close { grid-row: 1; grid-column: 3; }
+.overlay-bar > .tool { grid-row: 1; }
+.overlay-close { grid-row: 1; grid-column: 4; }
 
 .overlay-title {
   align-self: center;
@@ -542,6 +564,86 @@ h1, h2, p { margin: 0; }
 .overlay-status.is-error { color: var(--bad); font-family: "DM Sans", system-ui, sans-serif; }
 .overlay-status.is-reading { color: var(--accent); }
 .overlay-status.is-ready { color: var(--accent); font-family: "DM Sans", system-ui, sans-serif; }
+
+/* The stash list: every stashed formula on its own row. */
+.menu {
+  position: fixed;
+  z-index: 25;
+  display: grid;
+  grid-auto-rows: calc(var(--u) * 10);
+  row-gap: calc(var(--u) * 1);
+  padding: calc(var(--u) * 1.4);
+  overflow-y: auto;
+  border: calc(var(--u) * 0.3) solid var(--line);
+  border-radius: calc(var(--u) * 2.4);
+  background: var(--raised);
+  box-shadow: 0 calc(var(--u) * 1.5) calc(var(--u) * 5) rgba(0, 0, 0, 0.55);
+}
+.menu[hidden] { display: none; }
+.menu-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) calc(var(--u) * 10);
+  column-gap: calc(var(--u) * 1);
+}
+.menu-item {
+  min-width: 0;
+  padding: 0 calc(var(--u) * 3);
+  overflow: hidden;
+  border: calc(var(--u) * 0.2) solid var(--line);
+  border-radius: calc(var(--u) * 1.6);
+  background: var(--panel);
+  font: 500 calc(var(--u) * 4.4)/1 ui-monospace, "Cascadia Mono", Consolas, monospace;
+  text-align: left;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.menu-item:hover { border-color: var(--accent); color: var(--accent); }
+.menu-remove {
+  border: calc(var(--u) * 0.2) solid var(--line);
+  border-radius: calc(var(--u) * 1.6);
+  background: var(--panel);
+  color: var(--muted);
+  font-size: calc(var(--u) * 3.6);
+}
+.menu-remove:hover { color: var(--bad); border-color: var(--bad); }
+.menu-empty { align-self: center; padding: 0 calc(var(--u) * 2); color: var(--muted); font-size: calc(var(--u) * 4); }
+
+/* The variables sheet: all variables in full view, over a dimmed page. */
+.sheet-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 22;
+  display: grid;
+  place-items: center;
+  padding: calc(var(--u) * 3);
+  background: rgba(0, 0, 0, 0.62);
+}
+.sheet-backdrop[hidden] { display: none; }
+.sheet {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  grid-template-rows: auto minmax(0, 1fr);
+  row-gap: calc(var(--u) * 2);
+  width: min(100%, calc(var(--u) * 150));
+  max-height: 100%;
+  padding: calc(var(--u) * 2.5);
+  border: calc(var(--u) * 0.3) solid var(--line);
+  border-radius: calc(var(--u) * 2.4);
+  background: var(--bg);
+}
+.sheet-bar {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto auto calc(var(--u) * 10);
+  grid-template-rows: calc(var(--u) * 10);
+  column-gap: calc(var(--u) * 1.4);
+  align-items: stretch;
+}
+.sheet-bar .section-title { align-self: center; }
+.sheet-bar .overlay-close { grid-column: 4; }
+
+/* The graph import sheet: a text box, what is wrong with it, and the button. */
+.sheet-import { grid-template-rows: auto minmax(calc(var(--u) * 40), 1fr) auto auto; height: min(100%, calc(var(--u) * 130)); }
+.vars-sheet-list { overflow-y: auto; grid-template-columns: minmax(0, 1fr); }
 
 /* A short confirmation that appears over the page and fades away by itself. */
 .toast {

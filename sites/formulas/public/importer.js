@@ -49,49 +49,15 @@
     }
   }
 
-  // Replaces the main formula with the converted blocks, adding the variables
-  // the formula mentions that do not exist yet.
+  // Replaces the main formula with the converted blocks.
   function apply() {
     if (!compiled) return;
-    const added = [];
-    for (const name of compiled.names) {
-      if (!variables.some((variable) => variable.name === name)) {
-        addVariable(name, "1");
-        added.push(name);
-      }
-    }
-    const idByName = new Map(variables.map((variable) => [variable.name, variable.id]));
-    const bind = (state) => {
-      const copy = { ...state };
-      if (state.type === "f_var") copy.data = idByName.get(state.fields.NAME);
-      if (state.inputs) {
-        copy.inputs = Object.fromEntries(
-          Object.entries(state.inputs).map(([name, input]) => [name, { block: bind(input.block) }])
-        );
-      }
-      return copy;
-    };
-
-    renderVariables();
-    variablesChanged();
-
-    const root = getRoot();
-    let created = null;
-    Blockly.Events.setGroup(true);
-    try {
-      const old = root.getInputTargetBlock("EXPR");
-      if (old) old.dispose(false);
-      created = Blockly.serialization.blocks.append(bind(compiled.state), workspace, { recordUndo: true });
-      root.getInput("EXPR").connection.connect(created.outputConnection);
-    } finally {
-      Blockly.Events.setGroup(false);
-    }
-
+    const { block, added } = installFormula(compiled);
     const count = compiled.blocks;
     importDraft = "";
     text.value = "";
     close();
-    Blockly.common.setSelected(created);
+    Blockly.common.setSelected(block);
     const note = added.length ? ` Added variable${added.length === 1 ? "" : "s"} ${added.join(", ")}.` : "";
     showToast(`Formula imported: ${count} block${count === 1 ? "" : "s"}.${note}`);
   }
