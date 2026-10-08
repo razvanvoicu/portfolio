@@ -475,6 +475,22 @@ h1, h2, p { margin: 0; }
 }
 .overlay-close:hover { color: var(--bad); border-color: var(--bad); }
 
+/* The graph view: header, the plot, the formula that produced it, a reading line. */
+.graph-view { grid-template-rows: auto minmax(0, 1fr) auto auto; }
+
+.graph-formula {
+  max-height: 16vh;
+  overflow-y: auto;
+  padding: calc(var(--u) * 1.6) calc(var(--u) * 2.5);
+  border: calc(var(--u) * 0.2) solid var(--line);
+  border-radius: calc(var(--u) * 2);
+  background: var(--raised);
+  font: 500 calc(var(--u) * 4.4)/1.35 ui-monospace, "Cascadia Mono", Consolas, monospace;
+  overflow-wrap: anywhere;
+}
+.graph-formula:empty { display: none; }
+.graph-formula-values { color: var(--muted); }
+
 /* The import view: a text box, what is wrong with it, and the button to apply it. */
 .import-view { grid-template-rows: auto minmax(0, 1fr) auto auto; }
 
@@ -562,7 +578,7 @@ h1, h2, p { margin: 0; }
   white-space: pre-wrap;
 }
 .overlay-status.is-error { color: var(--bad); font-family: "DM Sans", system-ui, sans-serif; }
-.overlay-status.is-reading { color: var(--accent); }
+.overlay-status:empty { display: none; }
 .overlay-status.is-ready { color: var(--accent); font-family: "DM Sans", system-ui, sans-serif; }
 
 /* The stash list: every stashed formula on its own row. */

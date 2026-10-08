@@ -7,6 +7,7 @@
   const stage = $("#graph-stage");
   const canvas = $("#graph-canvas");
   const status = $("#graph-status");
+  const formulaLine = $("#graph-formula");
   const varSelect = $("#graph-var");
   const fromInput = $("#graph-from");
   const toInput = $("#graph-to");
@@ -94,6 +95,8 @@
       (other) => other !== variable && !nameProblem(other) && parseValue(other.text).ok
     );
     const fixed = others.map((other) => parseValue(other.text).value);
+    // The other variables the formula uses, so the graph can be read on its own.
+    const held = others.filter((other) => analysis.used.has(other.id));
     const compute = new Function(variable.name, ...others.map((other) => other.name),
       `"use strict"; return (${analysis.code});`);
     const f = (x) => {
@@ -130,7 +133,11 @@
       hi += 1;
     }
     const pad = (hi - lo) * 0.08;
-    return { a: from, b: to, lo: lo - pad, hi: hi + pad, xs, ys, f, name: variable.name, code: analysis.code };
+    return {
+      a: from, b: to, lo: lo - pad, hi: hi + pad, xs, ys, f,
+      name: variable.name, code: analysis.code,
+      held: held.map((other) => `${other.name} = ${formatValue(parseValue(other.text).value)}`),
+    };
   }
 
   // ----------------------------------------------------------------- drawing
@@ -257,21 +264,42 @@
         ctx.arc(cursorX, yOf(y), u * 1.2, 0, Math.PI * 2);
         ctx.fill();
       }
+
+      // A label with the values, kept inside the plot and out of the pointer's way.
+      const label = `${plot.name} = ${format(x)}    f = ${Number.isFinite(y) ? format(y) : "undefined"}`;
+      ctx.font = `600 ${u * 3.8}px ui-monospace, "Cascadia Mono", Consolas, monospace`;
+      const padding = u * 1.6;
+      const boxWidth = ctx.measureText(label).width + 2 * padding;
+      const boxHeight = u * 3.8 + 2 * padding;
+      const left = cursorX + u * 2 + boxWidth <= margin.left + pw ? cursorX + u * 2 : cursorX - u * 2 - boxWidth;
+      const top = margin.top + u * 1.5;
+      ctx.fillStyle = "rgba(21, 28, 40, 0.94)";
+      ctx.strokeStyle = color("--accent");
+      ctx.lineWidth = Math.max(1, u * 0.3);
+      ctx.beginPath();
+      ctx.roundRect(Math.max(margin.left, left), top, boxWidth, boxHeight, u * 1.4);
+      ctx.fill();
+      ctx.stroke();
+      ctx.fillStyle = color("--accent");
+      ctx.textAlign = "left";
+      ctx.textBaseline = "middle";
+      ctx.fillText(label, Math.max(margin.left, left) + padding, top + boxHeight / 2);
     }
   }
 
-  function describeCursor() {
-    if (!plot) return;
-    if (cursorX === null) {
-      status.className = "overlay-status";
-      status.textContent = `${plot.name} from ${format(plot.a)} to ${format(plot.b)}`;
-      return;
+  // The formula behind the graph, always on screen, followed by the fixed
+  // values it was drawn with. (The reading under the pointer is drawn on the plot.)
+  function showFormula() {
+    const formula = document.createElement("span");
+    formula.textContent = `f(${plot.name}) = ${plot.code}`;
+    const parts = [formula];
+    if (plot.held.length) {
+      const values = document.createElement("span");
+      values.className = "graph-formula-values";
+      values.textContent = `   with ${plot.held.join(", ")}`;
+      parts.push(values);
     }
-    const { margin, pw } = layout();
-    const x = plot.a + ((cursorX - margin.left) / pw) * (plot.b - plot.a);
-    const y = plot.f(x);
-    status.className = "overlay-status is-reading";
-    status.textContent = `${plot.name} = ${format(x)}    f = ${Number.isFinite(y) ? format(y) : "undefined"}`;
+    formulaLine.replaceChildren(...parts);
   }
 
   function redraw() {
@@ -279,11 +307,14 @@
     const result = buildPlot();
     if (result.error) {
       plot = null;
+      formulaLine.replaceChildren();
       status.className = "overlay-status is-error";
       status.textContent = result.error;
     } else {
       plot = result;
-      describeCursor();
+      showFormula();
+      status.className = "overlay-status";
+      status.textContent = "";
     }
     draw();
   }
@@ -433,7 +464,6 @@
     const { margin, pw } = layout();
     const x = event.clientX - box.left;
     cursorX = x >= margin.left && x <= margin.left + pw ? x : null;
-    describeCursor();
     draw();
   }
 
@@ -442,7 +472,6 @@
   canvas.addEventListener("pointerleave", (event) => {
     if (event.pointerType !== "mouse") return; // a finger keeps its reading when lifted
     cursorX = null;
-    describeCursor();
     draw();
   });
 

@@ -101,7 +101,7 @@
       <button class="primary-button" id="import-convert" type="button">Convert to blocks</button>
     </div>
 
-    <div class="overlay" id="graph" role="dialog" aria-modal="true" aria-labelledby="graph-title" hidden>
+    <div class="overlay graph-view" id="graph" role="dialog" aria-modal="true" aria-labelledby="graph-title" hidden>
       <header class="overlay-bar">
         <h2 class="overlay-title" id="graph-title">Graph</h2>
         <button class="tool tool-text" id="graph-import-open" type="button" aria-label="Import a graph from JSON">Import</button>
@@ -125,6 +125,7 @@
       <div class="graph-stage" id="graph-stage">
         <canvas class="graph-canvas" id="graph-canvas"></canvas>
       </div>
+      <p class="graph-formula" id="graph-formula"></p>
       <p class="overlay-status" id="graph-status" aria-live="polite"></p>
     </div>
 
