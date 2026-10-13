@@ -1,0 +1,46 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#080d12">
+  <meta name="description" content="An offline Singapore speed monitor with audible speed alerts.">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <title>speedlimit · Singapore</title>
+  <link rel="manifest" href="./manifest.json">
+  <link rel="icon" href="./icon.svg" type="image/svg+xml">
+  <link rel="apple-touch-icon" href="./icons/icon-192.png">
+  <link rel="stylesheet" href="./style.css">
+  <script type="module" src="./app.js"></script>
+</head>
+<body>
+  <div class="dashboard">
+    <header><a class="wordmark" href="./">speed<span>limit</span><small>SG</small></a><button id="menu" class="icon-button" aria-label="Open settings" aria-haspopup="dialog"><span></span><span></span><span></span></button></header>
+    <main>
+      <div class="status-line"><span class="dot" id="dot"></span><span id="status" role="status">READY WHEN YOU ARE</span></div>
+      <section class="speed-panel" aria-label="Current speed">
+        <h1>YOUR SPEED <span>KM/H</span></h1>
+        <div id="speed" class="reading neutral" aria-label="Speed unavailable">—</div>
+        <div id="alert" class="alert">SINGAPORE SPEED MONITOR</div>
+      </section>
+      <section class="limit-panel" aria-label="Estimated speed limit">
+        <div class="limit-heading"><h2>NEARBY SIGN LIMIT</h2><span>KM/H</span></div>
+        <div class="limit-row"><div id="limit" class="limit-reading">—</div><div class="limit-detail"><span id="limit-description">Waiting for location</span><span id="threshold">Alert above — km/h</span></div></div>
+      </section>
+      <p id="location-note" class="location-note">Sign-based estimates. Follow posted road signs.</p>
+    </main>
+    <footer><button id="start" class="primary">Start drive <span aria-hidden="true">↗</span></button><div class="device-status"><span id="audio-status">Sound off</span><span id="wake-status">Screen wake off</span></div></footer>
+  </div>
+  <dialog id="settings" aria-labelledby="settings-title">
+    <div class="dialog-header"><h2 id="settings-title">Drive settings</h2><button id="close-settings" class="icon-button close" aria-label="Close settings">✕</button></div>
+    <label for="tolerance">Tolerance <span>km/h</span></label>
+    <div class="stepper"><button id="minus" aria-label="Decrease tolerance">−</button><input id="tolerance" type="number" inputmode="decimal" step="any" min="-100" max="100" value="0"><button id="plus" aria-label="Increase tolerance">+</button></div>
+    <p id="example">For a 70 km/h limit: green up to 70; red above 70.</p>
+    <p class="hint">Alert threshold = limit − tolerance. Positive values warn earlier; negative values warn later. Saved on this phone.</p>
+    <button id="test-sound" class="secondary">Test warning sound · 1 second</button>
+    <details><summary>Coverage &amp; phone setup</summary><p>Limits are estimates from nearby LTA speed-limit signs, not verified road matches. Parallel roads, junctions, temporary limits and time-dependent zones may differ. No nearby sign means no limit or alarm; a green number is not confirmation that driving is legal.</p><p>Keep this app visible with location enabled and media volume audible. Install from your browser menu (iPhone: Share → Add to Home Screen). Browser restrictions can pause GPS or sound in the background. Screen wake requires browser support.</p><p>Your location stays on your phone. No location is uploaded.</p><p><a href="https://data.gov.sg/datasets/d_bbf0132c7290d6838f82003972d933d5/view" target="_blank" rel="noopener">LTA traffic-sign data ↗</a><br><a href="https://data.gov.sg/datasets/d_4765db0e87b9c86336792efe8a1f7a66/view" target="_blank" rel="noopener">URA Singapore boundary data ↗</a></p><p id="data-info"></p></details>
+    <p class="version">speedlimit · v1.9.1 · Singapore only</p>
+  </dialog>
+</body>
+</html>

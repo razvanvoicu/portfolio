@@ -106,6 +106,22 @@ contain a path.
 
 ## Adding a site
 
+### speedlimit
+
+The Singapore-only speed monitor is available at
+`https://portfolio.raz.sg/speedlimit/` (also on the Cloud Run URL at
+`/speedlimit/`). A host route for `speedlimit.raz.sg` is included; that hostname
+requires a Cloud Run domain mapping and DNS before use.
+
+The installable offline PWA provides GPS speed, signed tolerance settings,
+audible warnings and a screen wake lock where supported. Its compiled LTA
+traffic-sign snapshot provides **nearby-sign estimates, not complete road
+speed-limit coverage**. Unknown/ambiguous limits disable alerts and display a
+neutral speed. See `sites/speedlimit/DATA.md` for sources and matching limits.
+Refresh the constants with `python scripts/speedlimit_data.py --download`.
+
+## Adding another site
+
 1. Create `sites/<site-name>/content`, `templates`, `static`, and `public`.
 2. Put any RST sources in `sites/<site-name>/content/`.
 3. Add insertion markers to HTML files under `templates/`; `poe build` creates
