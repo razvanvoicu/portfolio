@@ -1,23 +1,48 @@
 AI in the Browser
 =================
 
-A browser-first approach
-------------------------
+Modern browsers—yes, even those running on mobile phones—are
+capable of far more than displaying pages and submitting forms.
 
-Lorem ipsum dolor sit amet, consectetur adipiscing elit. Integer blandit, sem at varius posuere, justo massa pulvinar lacus, sed dictum lectus nulla vitae est. Praesent tristique feugiat augue, sit amet pharetra nisi dictum ut. Vivamus euismod, lectus in suscipit tincidunt, quam arcu lacinia sapien, vitae vulputate nibh magna vel erat.
+.. container:: shots
 
-Sed ut perspiciatis unde omnis iste natus error sit voluptatem accusantium doloremque laudantium. Nemo enim ipsam voluptatem quia voluptas sit aspernatur aut odit aut fugit. Ut enim ad minima veniam, quis nostrum exercitationem ullam corporis suscipit laboriosam, nisi ut aliquid ex ea commodi consequatur. Curabitur in augue sed nibh tempor facilisis; donec placerat porta justo, vitae aliquam metus.
+   .. raw:: html
 
-Making room for inference
--------------------------
+      <iframe
+        width="284"
+        height="633"
+        src="https://www.youtube.com/embed/cc91dQHCDUM?autoplay=1&mute=1"
+        title="CadenceCam Screen Recording"
+        frameborder="0"
+        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+        referrerpolicy="strict-origin-when-cross-origin"
+        allowfullscreen>
+      </iframe>
 
-Sed ut perspiciatis unde omnis iste natus error sit voluptatem accusantium doloremque laudantium. Nemo enim ipsam voluptatem quia voluptas sit aspernatur aut odit aut fugit. Ut enim ad minima veniam, quis nostrum exercitationem ullam corporis suscipit laboriosam, nisi ut aliquid ex ea commodi consequatur. Curabitur in augue sed nibh tempor facilisis; donec placerat porta justo, vitae aliquam metus.
+I built `CadenceCam <https://cadencecam.raz.sg>`_
+as a small demonstration of that idea.
+An old phone runs a web app that uses the camera to detect
+repetitive movement, counts repetitions, and sends the reps
+signal over WebRTC (wifi only) to a dashboard. The dashboard,
+running on a separate device, displays the reps and calculates
+calories. The substantial computation (a model trained through
+probabilistic learning) happens inside the browser, on the
+device that captures the movement.
 
-Lorem ipsum dolor sit amet, consectetur adipiscing elit. Aenean euismod sapien sed neque luctus, in dignissim purus tincidunt. Pellentesque habitant morbi tristique senectus et netus et malesuada fames ac turpis egestas. Suspendisse potenti. Donec aliquet, sapien quis pulvinar commodo, enim risus egestas libero, nec finibus velit orci et nunc.
+This approach has benefits beyond reducing latency.
+Camera data can stay on the phone, communication between
+devices can happen directly over the local network,
+and the backend can be limited to the jobs that genuinely
+require it, such as initial pairing and storing workout history.
+**Less data travels to a server, privacy improves, and
+infrastructure costs remain low.**
 
-What the user sees
-------------------
+Not every workload belongs in the frontend.
+But modern JavaScript engines, and increasingly
+powerful mobile hardware have moved the boundary considerably.
+Before adding another backend service, it may be worth asking:
+could the user’s browser do this work instead?
 
-Lorem ipsum dolor sit amet, consectetur adipiscing elit. Aenean euismod sapien sed neque luctus, in dignissim purus tincidunt. Pellentesque habitant morbi tristique senectus et netus et malesuada fames ac turpis egestas. Suspendisse potenti. Donec aliquet, sapien quis pulvinar commodo, enim risus egestas libero, nec finibus velit orci et nunc.
-
-Lorem ipsum dolor sit amet, consectetur adipiscing elit. Integer blandit, sem at varius posuere, justo massa pulvinar lacus, sed dictum lectus nulla vitae est. Praesent tristique feugiat augue, sit amet pharetra nisi dictum ut. Vivamus euismod, lectus in suscipit tincidunt, quam arcu lacinia sapien, vitae vulputate nibh magna vel erat.
+`CadenceCam <https://cadencecam.raz.sg>`_
+is my answer to that question—along with a practical
+way to stop losing count halfway through a workout.
