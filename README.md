@@ -109,9 +109,10 @@ contain a path.
 ### speedlimit
 
 The Singapore-only speed monitor is available at
-`https://portfolio.raz.sg/speedlimit/` (also on the Cloud Run URL at
-`/speedlimit/`). A host route for `speedlimit.raz.sg` is included; that hostname
-requires a Cloud Run domain mapping and DNS before use.
+`https://speedlimit.raz.sg/`, with local testing at
+`http://speedlimit.raz:8000`. Nginx routes both hostnames to the speedlimit site,
+following the same pattern as the other apps. Domain mapping and DNS are
+managed separately by the site owner.
 
 The installable offline PWA provides GPS speed, signed tolerance settings,
 audible warnings and a screen wake lock where supported. Its compiled LTA
