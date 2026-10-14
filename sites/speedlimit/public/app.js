@@ -1,6 +1,9 @@
 import { DATA_INFO, SPEED_SIGNS, SG_POLYGONS } from './road-data.js';
-import { threshold, isOver, inSingapore, nearbyLimit, speedKph } from './core.mjs';
+import { threshold, isOver, inSingapore, DriveTracker, shouldSound, speedKph } from './core.mjs';
 
+import { CONFIG } from './config.mjs';
+
+const tracker = new DriveTracker(SPEED_SIGNS, CONFIG);
 const $ = id => document.getElementById(id);
 let tolerance = 0;
 try { const saved = localStorage.getItem('speedlimit.tolerance'); if (saved !== null && Number.isFinite(Number(saved))) tolerance = Math.max(-100, Math.min(100, Number(saved))); } catch {}
@@ -87,13 +90,14 @@ async function acquireWake() {
 function stop() {
   running = false; attempt++;
   if (watch !== null) navigator.geolocation.clearWatch(watch);
-  watch = null; fix = null; testUntil = 0;
+  watch = null; fix = null; testUntil = 0; tracker.reset();
   if (wake) { wake.release().catch(() => {}); wake = null; }
   alarm(false); message = 'DRIVE STOPPED'; locationError = ''; render();
 }
 $('start').onclick = async () => {
   if (running) { stop(); return; }
   if (!window.isSecureContext || !navigator.geolocation) { message = 'SECURE LOCATION ACCESS REQUIRED'; render(); return; }
+  tracker.reset();
   running = true; fix = null; locationError = ''; message = 'ACQUIRING GPS';
   const token = ++attempt;
   render();
@@ -104,8 +108,11 @@ $('start').onclick = async () => {
   watch = navigator.geolocation.watchPosition(position => {
     if (!running || token !== attempt) return;
     if (document.visibilityState !== 'visible') return;
-    if (Date.now() - position.timestamp > 8000 || position.timestamp > Date.now() + 1000) return;
-    fix = position; locationError = ''; render();
+    if (Date.now() - position.timestamp > CONFIG.maxFixAgeMs || position.timestamp > Date.now() + CONFIG.futureFixToleranceMs) return;
+    fix = position; locationError = '';
+    const point = [position.coords.longitude, position.coords.latitude];
+    if (inSingapore(point, SG_POLYGONS)) tracker.update(point);
+    render();
   }, error => {
     if (!running || token !== attempt) return;
     fix = null;
@@ -114,26 +121,24 @@ $('start').onclick = async () => {
   }, { enableHighAccuracy: true, maximumAge: 0, timeout: 10000 });
 };
 function render() {
-  let speed = null, match = null, info = 'Waiting for location', note = 'Sign-based estimates. Follow posted road signs.';
+  let speed = null, info = tracker.sign ? 'Detected sign · retained' : 'Singapore default', note = 'Follow posted road signs. Sound alerts apply at limits of 60 km/h or above.';
   let status = message;
   if (running) {
     status = locationError || 'ACQUIRING GPS';
-    if (fix && Date.now() - fix.timestamp <= 8000) {
+    if (fix && Date.now() - fix.timestamp <= CONFIG.maxFixAgeMs) {
       const coords = fix.coords, point = [coords.longitude, coords.latitude];
       if (!inSingapore(point, SG_POLYGONS)) {
         status = 'OUTSIDE SINGAPORE'; info = 'Singapore only'; note = 'Monitoring is unavailable outside the Singapore coverage boundary.';
-      } else if (!Number.isFinite(coords.accuracy) || coords.accuracy > 30) {
-        status = 'WEAK GPS · WAITING FOR ACCURACY'; info = 'Limit unavailable'; note = 'A GPS fix accurate to 30 m or better is required.';
       } else {
         speed = speedKph(coords);
-        match = nearbyLimit(point, SPEED_SIGNS, coords.accuracy);
-        status = speed === null ? 'GPS SPEED UNAVAILABLE' : match ? 'LIVE · SIGN-BASED ESTIMATE' : 'LIVE · LIMIT UNKNOWN';
-        info = match ? `Sign ${match.meters} m away · estimate` : 'No unambiguous nearby sign';
-        note = match ? `GPS ±${Math.round(coords.accuracy)} m · Current road is not verified. Follow posted signs.` : 'No reliable limit here. Speed alerts are unavailable.';
+        status = speed === null ? 'GPS SPEED UNAVAILABLE' : 'LIVE · SINGAPORE';
+        info = tracker.sign ? 'Detected sign · retained' : 'Singapore default';
+        const heading = tracker.heading === null ? 'Heading pending movement' : `Heading ${Math.round(tracker.heading)}°`;
+        note = `${heading} · ${tracker.sign ? 'Sign limit retained until a turn or new sign.' : 'Default 50 km/h until a qualifying sign.'}`;
       }
     } else if (fix) { status = 'GPS SIGNAL LOST'; info = 'Waiting for fresh GPS'; note = 'Speed and alerts paused until a fresh location arrives.'; }
   }
-  const limit = match?.limit ?? null;
+  const limit = tracker.limit;
   const over = isOver(speed, limit, tolerance);
   // Display enough precision to make threshold behaviour intelligible. Never
   // round before comparing, so 68.1 is red for a 68 km/h threshold.
@@ -144,9 +149,9 @@ function render() {
   $('limit').textContent = limit ?? '—';
   $('status').textContent = status;
   $('dot').className = running && speed !== null ? 'dot active' : 'dot';
-  $('alert').textContent = over ? 'SLOW DOWN · ABOVE ALERT THRESHOLD' : limit === null ? (running ? 'LIMIT UNKNOWN · ALERTS UNAVAILABLE' : 'SINGAPORE SPEED MONITOR') : 'WITHIN ALERT THRESHOLD';
+  $('alert').textContent = over ? 'SLOW DOWN · ABOVE ALERT THRESHOLD' : speed === null ? 'SINGAPORE SPEED MONITOR' : 'WITHIN ALERT THRESHOLD';
   $('alert').className = `alert${over ? ' over' : ''}`;
-  $('threshold').textContent = `Alert above ${limit === null ? '—' : threshold(limit, tolerance)} km/h`;
+  $('threshold').textContent = `${limit < CONFIG.minimumAudibleLimitKph ? 'Colour' : 'Alert'} above ${threshold(limit, tolerance)} km/h${limit < CONFIG.minimumAudibleLimitKph ? ' · silent' : ''}`;
   $('limit-description').textContent = info;
   $('location-note').textContent = note;
   $('start').innerHTML = running ? 'Stop drive <span aria-hidden="true">■</span>' : 'Start drive <span aria-hidden="true">↗</span>';
@@ -156,7 +161,7 @@ function render() {
   $('audio-status').className = running && !soundReady ? 'warning' : '';
   $('wake-status').textContent = running ? wake ? 'Screen staying on' : wakeError || 'Screen wake paused' : 'Screen wake off';
   $('wake-status').className = running && !wake ? 'warning' : '';
-  alarm(over || Date.now() < testUntil);
+  alarm(shouldSound(speed, limit, tolerance, CONFIG) || Date.now() < testUntil);
 }
 document.addEventListener('visibilitychange', () => {
   if (document.visibilityState === 'visible') { acquireWake(); render(); }

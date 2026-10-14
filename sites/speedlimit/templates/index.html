@@ -25,10 +25,10 @@
         <div id="alert" class="alert">SINGAPORE SPEED MONITOR</div>
       </section>
       <section class="limit-panel" aria-label="Estimated speed limit">
-        <div class="limit-heading"><h2>NEARBY SIGN LIMIT</h2><span>KM/H</span></div>
-        <div class="limit-row"><div id="limit" class="limit-reading">—</div><div class="limit-detail"><span id="limit-description">Waiting for location</span><span id="threshold">Alert above — km/h</span></div></div>
+        <div class="limit-heading"><h2>SPEED LIMIT</h2><span>KM/H</span></div>
+        <div class="limit-row"><div id="limit" class="limit-reading">50</div><div class="limit-detail"><span id="limit-description">Singapore default</span><span id="threshold">Colour above 50 km/h · silent</span></div></div>
       </section>
-      <p id="location-note" class="location-note">Sign-based estimates. Follow posted road signs.</p>
+      <p id="location-note" class="location-note">Default 50 km/h. Follow posted road signs.</p>
     </main>
     <footer><button id="start" class="primary">Start drive <span aria-hidden="true">↗</span></button><div class="device-status"><span id="audio-status">Sound off</span><span id="wake-status">Screen wake off</span></div></footer>
   </div>
@@ -39,8 +39,8 @@
     <p id="example">For a 70 km/h limit: green up to 70; red above 70.</p>
     <p class="hint">Alert threshold = limit − tolerance. Positive values warn earlier; negative values warn later. Saved on this phone.</p>
     <button id="test-sound" class="secondary">Test warning sound · 1 second</button>
-    <details><summary>Coverage &amp; phone setup</summary><p>Limits are estimates from nearby LTA speed-limit signs, not verified road matches. Parallel roads, junctions, temporary limits and time-dependent zones may differ. No nearby sign means no limit or alarm; a green number is not confirmation that driving is legal.</p><p>Keep this app visible with location enabled and media volume audible. Install from your browser menu (iPhone: Share → Add to Home Screen). Browser restrictions can pause GPS or sound in the background. Screen wake requires browser support.</p><p>Your location stays on your phone. No location is uploaded.</p><p><a href="https://data.gov.sg/datasets/d_bbf0132c7290d6838f82003972d933d5/view" target="_blank" rel="noopener">LTA traffic-sign data ↗</a><br><a href="https://data.gov.sg/datasets/d_4765db0e87b9c86336792efe8a1f7a66/view" target="_blank" rel="noopener">URA Singapore boundary data ↗</a></p><p id="data-info"></p></details>
-    <p class="version">speedlimit · v1.9.2 · Singapore only</p>
+    <details><summary>Coverage &amp; phone setup</summary><p>Limits are estimates from nearby LTA speed-limit signs, not verified road matches. Parallel roads, junctions, temporary limits and time-dependent zones may differ. The default is 50 km/h. A sign within 30 m and ±45° of your computed heading applies until a new sign or a turn of at least 60° resets it. Sound is disabled below a 60 km/h limit; a green number is not confirmation that driving is legal.</p><p>Keep this app visible with location enabled and media volume audible. Install from your browser menu (iPhone: Share → Add to Home Screen). Browser restrictions can pause GPS or sound in the background. Screen wake requires browser support.</p><p>Your location stays on your phone. No location is uploaded.</p><p><a href="https://data.gov.sg/datasets/d_bbf0132c7290d6838f82003972d933d5/view" target="_blank" rel="noopener">LTA traffic-sign data ↗</a><br><a href="https://data.gov.sg/datasets/d_4765db0e87b9c86336792efe8a1f7a66/view" target="_blank" rel="noopener">URA Singapore boundary data ↗</a></p><p id="data-info"></p></details>
+    <p class="version">speedlimit · v1.9.3 · Singapore only</p>
   </dialog>
 </body>
 </html>

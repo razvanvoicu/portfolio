@@ -18,16 +18,6 @@ test('unknown device speed is never coerced to stopped', async () => {
   assert.equal(speedKph({speed:0}), 0);
   assert.equal(speedKph({speed:20}), 72);
 });
-test('nearby signs: locality, uncertainty and conflicting limits', async () => {
-  const {nearbyLimit} = await core;
-  const point = [103.85, 1.3];
-  const sign = [...point, 70, 0, 1];
-  assert.equal(nearbyLimit(point, [sign], 5).limit, 70);
-  assert.equal(nearbyLimit(point, [sign], 31), null);
-  assert.equal(nearbyLimit(point, [sign], null), null);
-  assert.equal(nearbyLimit([103.86, 1.3], [sign], 5), null);
-  assert.equal(nearbyLimit(point, [sign, [103.8502, 1.3, 50, 0, 2]], 5), null);
-});
 test('Singapore boundary excludes Malaysia, Indonesia and polygon holes', async () => {
   const fs = require('node:fs');
   const raw = fs.readFileSync('sites/speedlimit/static/road-data.js', 'utf8');

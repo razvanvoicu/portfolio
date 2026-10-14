@@ -3,8 +3,9 @@ const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const vm = require('node:vm');
 
-async function setup() {
+async function setup(signLimit = 70) {
   const core = await import('../../sites/speedlimit/static/core.mjs');
+  const { CONFIG } = await import('../../sites/speedlimit/static/config.mjs');
   const elements = {};
   const get = id => elements[id] ||= {textContent:'', className:'', style:{}, value:'0', validity:{valid:true}, handlers:{},
     setAttribute(){}, addEventListener(name, fn){this.handlers[name]=fn;}, showModal(){}, close(){}};
@@ -12,7 +13,7 @@ async function setup() {
   const timers = new Map(); let timerId = 0;
   const docHandlers = {};
   const context = {
-    ...core, DATA_INFO:{signCount:1,retrieved:new Date(now).toISOString()}, SPEED_SIGNS:[[103.85,1.3,70,0,1]],
+    ...core, CONFIG, DATA_INFO:{signCount:1,retrieved:new Date(now).toISOString()}, SPEED_SIGNS:[[103.85,1.3,signLimit,0,1]],
     SG_POLYGONS:[[[[103.6,1.2],[104.1,1.2],[104.1,1.5],[103.6,1.5]]]],
     document:{getElementById:get,visibilityState:'visible',addEventListener:(name, fn)=>docHandlers[name]=fn},
     window:{isSecureContext:true, addEventListener(){}},
@@ -31,7 +32,7 @@ async function setup() {
   const code = fs.readFileSync('sites/speedlimit/static/app.js','utf8').replace(/^import .*;\r?\n/gm,'');
   vm.runInNewContext(code, context);
   return {get, context, saved, docHandlers, timers, gainValues,
-    start:()=>get('start').onclick(), stop:()=>get('start').onclick(),
+    start:async()=>{await get('start').onclick(); gps({timestamp:now, coords:{latitude:1.2999,longitude:103.85,accuracy:5,speed:0}}); gps({timestamp:now,coords:{latitude:1.3,longitude:103.85,accuracy:5,speed:0}});}, stop:()=>get('start').onclick(),
     position:(speed, extras={})=>gps({timestamp:now, coords:{latitude:1.3,longitude:103.85,accuracy:5,speed,...extras}}),
     error:code=>gpsError({code}), advance:ms=>{now+=ms; for(const fn of [...timers.values()])fn();},
     isCleared:()=>cleared,
@@ -71,18 +72,27 @@ test('stale GPS, denied permissions, unknown speed and outside Singapore suppres
   app.position(null); assert.equal(app.get('speed').textContent,'—');
   app.position(30,{latitude:1.7});
   assert.equal(app.get('status').textContent,'OUTSIDE SINGAPORE');
-  assert.equal(app.get('limit').textContent,'—');
-  app.position(30,{accuracy:80}); assert.equal(app.get('speed').textContent,'—');
+  assert.equal(app.get('limit').textContent,70);
+  app.position(30,{accuracy:80}); assert.equal(app.get('speed').textContent,'108.0');
   app.error(1); assert.match(app.get('status').textContent,/LOCATION DENIED/);
 });
-test('unknown limit stays neutral and hiding the page clears a live alarm', async () => {
+test('sign limit persists away from the sign and hiding clears a live alarm', async () => {
   const app = await setup(); await app.start();
   app.position(30,{longitude:103.9});
-  assert.equal(app.get('speed').className,'reading neutral');
-  assert.match(app.get('alert').textContent,/ALERTS UNAVAILABLE/);
+  assert.equal(app.get('speed').className,'reading over');
+  assert.equal(app.get('limit').textContent,70);
   app.position(30); assert.equal(app.get('speed').className,'reading over');
   app.context.document.visibilityState='hidden'; app.docHandlers.visibilitychange();
   assert.equal(app.gainValues.at(-1),0);
   app.context.document.visibilityState='visible'; app.docHandlers.visibilitychange();
   assert.equal(app.get('speed').textContent,'—');
+});
+
+test('default 50 appears before starting and sub-60 limits never sound', async () => {
+  const app = await setup(50);
+  assert.equal(app.get('limit').textContent,50);
+  await app.start(); app.position(30);
+  assert.equal(app.get('speed').className,'reading over');
+  assert.equal(app.gainValues.includes(0.16),false);
+  assert.match(app.get('threshold').textContent,/silent/);
 });

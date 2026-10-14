@@ -116,9 +116,10 @@ managed separately by the site owner.
 
 The installable offline PWA provides GPS speed, signed tolerance settings,
 audible warnings and a screen wake lock where supported. Its compiled LTA
-traffic-sign snapshot provides **nearby-sign estimates, not complete road
-speed-limit coverage**. Unknown/ambiguous limits disable alerts and display a
-neutral speed. See `sites/speedlimit/DATA.md` for sources and matching limits.
+traffic-sign snapshot provides **sign-derived limits, not complete road
+speed-limit coverage**. The default is 50 km/h; qualifying signs set a retained
+limit, and a sharp turn resets it. Sound is disabled at limits below 60 km/h.
+Driving thresholds and heading-history settings live in `static/config.mjs`. See `sites/speedlimit/DATA.md` for sources and matching limits.
 Refresh the constants with `python scripts/speedlimit_data.py --download`.
 
 ## Adding another site
