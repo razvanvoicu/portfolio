@@ -1,5 +1,5 @@
-const CACHE = 'speedlimit-1.9.4';
-const SHELL = ['./', './index.html', './style.css', './app.js', './core.mjs', './config.mjs', './road-data.js', './manifest.json', './icon.svg', './icons/icon-192.png', './icons/icon-512.png'];
+const CACHE = 'speedlimit-1.9.5';
+const SHELL = ['./', './index.html', './style.css', './app.js', './core.mjs', './config.mjs', './road-data.js', './roads.mjs', './network.mjs', './manifest.json', './icon.svg', './icons/icon-192.png', './icons/icon-512.png'];
 self.addEventListener('install', event => {
   event.waitUntil(caches.open(CACHE).then(cache => cache.addAll(SHELL)));
   // Activate updates on next launch, not in the middle of an active drive.

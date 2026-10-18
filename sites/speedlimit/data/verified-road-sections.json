@@ -1,0 +1,27 @@
+{
+  "roadGeometrySha256": "4c6b23aca457c5f8e40bbc5cabfccc3f07185ceee3e6502511bad5f62c2ca7e0",
+  "sections": [
+    {
+      "roadCode": "HIA00U",
+      "name": "HILLVIEW AVENUE",
+      "limit": 60,
+      "featureIds": [1031, 2171, 3483, 3608, 6191, 8327, 8986, 10717, 11287],
+      "legalEntry": "Sc3-S1-ta-tr-oc70-",
+      "source": "https://sso.agc.gov.sg/SL/RTA1961-N6?ProvIds=Sc3-",
+      "boundaryJunctions": [[103.7647081, 1.3623301], [103.7599538, 1.3517914]],
+      "boundaryNames": ["HILLVIEW ROAD", "BUKIT BATOK EAST AVENUE 2"],
+      "notes": "Main-road chain only. Excludes the estate spur, side branches and the continuation north of Hillview Road. Southern junction shares a vertex with BUA04Y. Northern junction is the branch containing the official OneMap Hillview Road reference point."
+    }
+  ],
+  "nameCorrections": [
+    {
+      "featureId": 14599,
+      "sourceRoadCode": "HIA00U",
+      "roadCode": "HIL02W",
+      "name": "HILLVIEW ROAD",
+      "source": "https://www.onemap.gov.sg/api/common/elastic/search?searchVal=Hillview%20Road&returnGeom=Y&getAddrDetails=Y&pageNum=1",
+      "referencePoint": [103.7660775871987, 1.362117114502173],
+      "notes": "The LTA line carries the adjacent avenue's code, but this branch contains OneMap's Hillview Road reference point and joins the statutory Hillview Avenue boundary. Preserve the original feature ID for auditing."
+    }
+  ]
+}

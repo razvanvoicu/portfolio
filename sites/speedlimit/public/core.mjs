@@ -71,7 +71,8 @@ export class DriveTracker {
       else entry.meters = distance(point, entry.sign);
     }
   }
-  applySigns() {
+  resolveRoad() { return null; }
+  applySigns(numericAllowed = true) {
     const c = this.config;
     if (!Number.isFinite(this.heading)) return;
     const eligible = [...this.encounters.values()].filter(entry => !entry.handled &&
@@ -98,6 +99,10 @@ export class DriveTracker {
       return;
     }
     if (this.schoolZone) {
+      for (const entry of eligible) entry.handled = true;
+      return;
+    }
+    if (!numericAllowed) {
       for (const entry of eligible) entry.handled = true;
       return;
     }
@@ -136,7 +141,13 @@ export class DriveTracker {
       this.headings = [];
     }
     this.headings.push({ heading: this.heading, at: this.travelled });
-    this.applySigns();
+    const road = this.resolveRoad(point);
+    const roadLimitKnown = Number.isFinite(road?.limit);
+    if (roadLimitKnown && !this.schoolZone) {
+      this.limit = road.limit;
+      this.sign = { kind: 'road', limit: road.limit, id: road.featureId, roadCode: road.code };
+    }
+    this.applySigns(!roadLimitKnown);
   }
 }
 export function shouldSound(speed, limit, tolerance, config) {

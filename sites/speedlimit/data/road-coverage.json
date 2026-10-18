@@ -1,0 +1,52 @@
+{
+  "roadParts": 15364,
+  "vertices": 252031,
+  "namedRoadParts": 14978,
+  "roadNames": 3805,
+  "legalEntries": 1026,
+  "scopeCounts": {
+    "partial": 178,
+    "whole": 323,
+    "estate": 525
+  },
+  "wholeRoadRulesWithoutOtherExceptions": 278,
+  "partialOrEstateRoadNames": 625,
+  "hillviewRules": [
+    {
+      "id": "Sc2-S1-S2-oc4-ta-tr-oc4-",
+      "limit": 40,
+      "road": "HILLVIEW AVENUE",
+      "scope": "estate",
+      "context": "Bamboo Grove Park Housing Estate",
+      "description": "Hillview Avenue.",
+      "source": "https://sso.agc.gov.sg/SL/RTA1961-N6?ProvIds=Sc2-"
+    },
+    {
+      "id": "Sc3-S1-ta-tr-oc70-",
+      "limit": 60,
+      "road": "HILLVIEW AVENUE",
+      "scope": "partial",
+      "context": null,
+      "description": "Hillview Avenue \u2014 that part of Hillview Avenue between Hillview Road and Bukit Batok East Avenue 2.",
+      "source": "https://sso.agc.gov.sg/SL/RTA1961-N6?ProvIds=Sc3-"
+    }
+  ],
+  "sourcesSha256": {
+    "road-codes.xlsx": "7f483fd211184eff40888c6ef4f019cb61954585a018be1e9c6c4898097eaa8e",
+    "RoadSectionLine_Sep2026.zip": "4c6b23aca457c5f8e40bbc5cabfccc3f07185ceee3e6502511bad5f62c2ca7e0",
+    "speed-schedule-1.html": "2f908af16659fae0d7f16e30a211d37029fac030002996e496e11c47727098ee",
+    "speed-schedule-2.html": "400761f3ecd0454ec19904201578214857cdcdb0c7ae0806f741f174d3c89026",
+    "speed-schedule-3.html": "f759809b8cc4dd8a68d443c6537af8951ca34c4c793df13a15b107785bb01da6",
+    "speed-schedule-4.html": "4aa3a40df2c02d7b3690019fca4cc77545a02240a9a7dca04d3d616264a49921",
+    "speed-schedule-5.html": "6d771698cff66ff98906bb4024f41cdfbd123b6403ca4b774ef4d9320195bd50",
+    "speed-schedule-6.html": "08872440fa24ee5212fc897d2c6a7cfc6051c72d49bd1b5c593b1793835f53c0"
+  },
+  "status": "Unresolved stretches use labelled sign/default fallback.",
+  "verifiedRoadParts": 1924,
+  "mappedRoadNames": 306,
+  "geometryDate": "2026-09",
+  "legalEffectiveDate": "2026-01-01",
+  "geometrySource": "https://datamall.lta.gov.sg/content/dam/datamall/datasets/Geospatial/RoadSectionLine_Sep2026.zip",
+  "legalSource": "https://sso.agc.gov.sg/SL/RTA1961-N6",
+  "resolvedJunctionRanges": 33
+}

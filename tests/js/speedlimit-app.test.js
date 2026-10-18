@@ -5,6 +5,7 @@ const vm = require('node:vm');
 
 async function setup(signLimit = 70, schoolSigns = []) {
   const core = await import('../../sites/speedlimit/static/core.mjs');
+  const roads = await import('../../sites/speedlimit/static/roads.mjs');
   const { CONFIG } = await import('../../sites/speedlimit/static/config.mjs');
   const elements = {};
   const get = id => elements[id] ||= {textContent:'', className:'', style:{}, value:'0', validity:{valid:true}, handlers:{},
@@ -13,7 +14,7 @@ async function setup(signLimit = 70, schoolSigns = []) {
   const timers = new Map(); let timerId = 0;
   const docHandlers = {};
   const context = {
-    ...core, CONFIG, DATA_INFO:{signCount:1,schoolSignCount:schoolSigns.length,retrieved:new Date(now).toISOString()}, SPEED_SIGNS:[[103.85,1.3,signLimit,0,1]], SCHOOL_SIGNS:schoolSigns,
+    ...core, ...roads, CONFIG, ROAD_FEATURES:[], ROAD_IDENTITIES:[], NETWORK_INFO:{geometryDate:'test',verifiedRoadParts:0,roadParts:0}, DATA_INFO:{signCount:1,schoolSignCount:schoolSigns.length,retrieved:new Date(now).toISOString()}, SPEED_SIGNS:[[103.85,1.3,signLimit,0,1]], SCHOOL_SIGNS:schoolSigns,
     SG_POLYGONS:[[[[103.6,1.2],[104.1,1.2],[104.1,1.5],[103.6,1.5]]]],
     document:{getElementById:get,visibilityState:'visible',addEventListener:(name, fn)=>docHandlers[name]=fn},
     window:{isSecureContext:true, addEventListener(){}},

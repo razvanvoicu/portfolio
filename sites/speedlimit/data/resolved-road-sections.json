@@ -1,0 +1,882 @@
+[
+  {
+    "legalEntry": "Sc2-S1-S2-oc1-ta-tr-oc107-",
+    "road": "MARIAM WAY",
+    "limit": 40,
+    "boundaryNames": [
+      "FLORA ROAD",
+      "UPPER CHANGI ROAD NORTH"
+    ],
+    "boundaryJunctions": [
+      [
+        103.967875,
+        1.3592414
+      ],
+      [
+        103.9697748,
+        1.3589247
+      ]
+    ],
+    "featureIds": [
+      5558
+    ],
+    "source": "https://sso.agc.gov.sg/SL/RTA1961-N6?ProvIds=Sc2-"
+  },
+  {
+    "legalEntry": "Sc3-S1-ta-tr-oc11-",
+    "road": "BARTLEY ROAD",
+    "limit": 60,
+    "boundaryNames": [
+      "JALAN LABU AYER",
+      "SERANGOON AVENUE 1"
+    ],
+    "boundaryJunctions": [
+      [
+        103.874155,
+        1.3435676
+      ],
+      [
+        103.8772708,
+        1.3442692
+      ]
+    ],
+    "featureIds": [
+      6668
+    ],
+    "source": "https://sso.agc.gov.sg/SL/RTA1961-N6?ProvIds=Sc3-"
+  },
+  {
+    "legalEntry": "Sc3-S1-ta-tr-oc12-",
+    "road": "BEDOK NORTH AVENUE 1",
+    "limit": 60,
+    "boundaryNames": [
+      "BEDOK NORTH ROAD",
+      "NEW UPPER CHANGI ROAD"
+    ],
+    "boundaryJunctions": [
+      [
+        103.9265026,
+        1.3296258
+      ],
+      [
+        103.9272959,
+        1.3235189
+      ]
+    ],
+    "featureIds": [
+      2786,
+      7322
+    ],
+    "source": "https://sso.agc.gov.sg/SL/RTA1961-N6?ProvIds=Sc3-"
+  },
+  {
+    "legalEntry": "Sc3-S1-ta-tr-oc23-",
+    "road": "BUANGKOK DRIVE",
+    "limit": 60,
+    "boundaryNames": [
+      "BUANGKOK GREEN",
+      "PUNGGOL ROAD"
+    ],
+    "boundaryJunctions": [
+      [
+        103.8886806,
+        1.382104
+      ],
+      [
+        103.8969152,
+        1.3793405
+      ]
+    ],
+    "featureIds": [
+      2889,
+      7031,
+      8168,
+      8788,
+      9249
+    ],
+    "source": "https://sso.agc.gov.sg/SL/RTA1961-N6?ProvIds=Sc3-"
+  },
+  {
+    "legalEntry": "Sc3-S1-ta-tr-oc26-",
+    "road": "BUKIT BATOK EAST AVENUE 2",
+    "limit": 60,
+    "boundaryNames": [
+      "HILLVIEW AVENUE",
+      "BUKIT BATOK EAST AVENUE 6"
+    ],
+    "boundaryJunctions": [
+      [
+        103.7599538,
+        1.3517914
+      ],
+      [
+        103.7608901,
+        1.346605
+      ]
+    ],
+    "featureIds": [
+      1325,
+      4587
+    ],
+    "source": "https://sso.agc.gov.sg/SL/RTA1961-N6?ProvIds=Sc3-"
+  },
+  {
+    "legalEntry": "Sc3-S1-ta-tr-oc27-",
+    "road": "BUKIT BATOK EAST AVENUE 3",
+    "limit": 60,
+    "boundaryNames": [
+      "TOH TUCK AVENUE",
+      "BUKIT BATOK EAST AVENUE 6"
+    ],
+    "boundaryJunctions": [
+      [
+        103.7604237,
+        1.3376129
+      ],
+      [
+        103.7576241,
+        1.3454704
+      ]
+    ],
+    "featureIds": [
+      13483,
+      13545,
+      15235
+    ],
+    "source": "https://sso.agc.gov.sg/SL/RTA1961-N6?ProvIds=Sc3-"
+  },
+  {
+    "legalEntry": "Sc3-S1-ta-tr-oc44-",
+    "road": "CHOA CHU KANG DRIVE",
+    "limit": 60,
+    "boundaryNames": [
+      "CHOA CHU KANG AVENUE 1",
+      "CHOA CHU KANG CRESCENT"
+    ],
+    "boundaryJunctions": [
+      [
+        103.7501661,
+        1.3821524
+      ],
+      [
+        103.7492681,
+        1.4030068
+      ]
+    ],
+    "featureIds": [
+      4381,
+      4994,
+      5178,
+      5857,
+      6580,
+      8619,
+      9274,
+      10675,
+      10904,
+      11542,
+      11622
+    ],
+    "source": "https://sso.agc.gov.sg/SL/RTA1961-N6?ProvIds=Sc3-"
+  },
+  {
+    "legalEntry": "Sc3-S1-ta-tr-oc53-",
+    "road": "CORPORATION ROAD",
+    "limit": 60,
+    "boundaryNames": [
+      "JURONG WEST AVENUE 2",
+      "JURONG PORT ROAD"
+    ],
+    "boundaryJunctions": [
+      [
+        103.7119749,
+        1.3517147
+      ],
+      [
+        103.7195921,
+        1.3235448
+      ]
+    ],
+    "featureIds": [
+      4021,
+      6416,
+      9685,
+      10532,
+      11431,
+      13233,
+      13256,
+      13373,
+      13441,
+      14887,
+      14891,
+      15097
+    ],
+    "source": "https://sso.agc.gov.sg/SL/RTA1961-N6?ProvIds=Sc3-"
+  },
+  {
+    "legalEntry": "Sc3-S1-ta-tr-oc61-",
+    "road": "FORT ROAD",
+    "limit": 60,
+    "boundaryNames": [
+      "MOUNTBATTEN ROAD",
+      "EAST COAST PARK SERVICE ROAD"
+    ],
+    "boundaryJunctions": [
+      [
+        103.8855171,
+        1.3009054
+      ],
+      [
+        103.8853177,
+        1.2947902
+      ]
+    ],
+    "featureIds": [
+      2125,
+      2772,
+      2996,
+      6479,
+      7557
+    ],
+    "source": "https://sso.agc.gov.sg/SL/RTA1961-N6?ProvIds=Sc3-"
+  },
+  {
+    "legalEntry": "Sc3-S1-ta-tr-oc70-",
+    "road": "HILLVIEW AVENUE",
+    "limit": 60,
+    "boundaryNames": [
+      "HILLVIEW ROAD",
+      "BUKIT BATOK EAST AVENUE 2"
+    ],
+    "boundaryJunctions": [
+      [
+        103.7647081,
+        1.3623301
+      ],
+      [
+        103.7599538,
+        1.3517914
+      ]
+    ],
+    "featureIds": [
+      1031,
+      2171,
+      3483,
+      3608,
+      6191,
+      8327,
+      8986,
+      10717,
+      11287
+    ],
+    "source": "https://sso.agc.gov.sg/SL/RTA1961-N6?ProvIds=Sc3-"
+  },
+  {
+    "legalEntry": "Sc3-S1-ta-tr-oc81-",
+    "road": "JALAN BOON LAY",
+    "limit": 60,
+    "boundaryNames": [
+      "BOON LAY WAY",
+      "JURONG WEST AVENUE 4"
+    ],
+    "boundaryJunctions": [
+      [
+        103.7093987,
+        1.3404419
+      ],
+      [
+        103.7051423,
+        1.347174
+      ]
+    ],
+    "featureIds": [
+      2538,
+      4687,
+      13909
+    ],
+    "source": "https://sso.agc.gov.sg/SL/RTA1961-N6?ProvIds=Sc3-"
+  },
+  {
+    "legalEntry": "Sc3-S1-ta-tr-oc84-",
+    "road": "JURONG EAST CENTRAL",
+    "limit": 60,
+    "boundaryNames": [
+      "BUKIT BATOK AVENUE 1",
+      "BOON LAY WAY"
+    ],
+    "boundaryJunctions": [
+      [
+        103.74527,
+        1.3436122
+      ],
+      [
+        103.7403091,
+        1.3372651
+      ]
+    ],
+    "featureIds": [
+      13756,
+      13763,
+      15288
+    ],
+    "source": "https://sso.agc.gov.sg/SL/RTA1961-N6?ProvIds=Sc3-"
+  },
+  {
+    "legalEntry": "Sc3-S1-ta-tr-oc128-",
+    "road": "QUEENSWAY",
+    "limit": 60,
+    "boundaryNames": [
+      "JALAN BUKIT MERAH",
+      "PORTSDOWN AVENUE"
+    ],
+    "boundaryJunctions": [
+      [
+        103.8043546,
+        1.2875184
+      ],
+      [
+        103.799195,
+        1.2938158
+      ]
+    ],
+    "featureIds": [
+      1155,
+      1936,
+      2908,
+      12911
+    ],
+    "source": "https://sso.agc.gov.sg/SL/RTA1961-N6?ProvIds=Sc3-"
+  },
+  {
+    "legalEntry": "Sc3-S1-ta-tr-oc161-",
+    "road": "TAMPINES AVENUE 5",
+    "limit": 60,
+    "boundaryNames": [
+      "TAMPINES AVENUE 4",
+      "TAMPINES AVENUE 10"
+    ],
+    "boundaryJunctions": [
+      [
+        103.9414906,
+        1.3517224
+      ],
+      [
+        103.9302615,
+        1.3579135
+      ]
+    ],
+    "featureIds": [
+      422,
+      3193,
+      3478,
+      3787,
+      4120,
+      4825,
+      4964,
+      10220
+    ],
+    "source": "https://sso.agc.gov.sg/SL/RTA1961-N6?ProvIds=Sc3-"
+  },
+  {
+    "legalEntry": "Sc3-S1-ta-tr-oc164-",
+    "road": "TAMPINES AVENUE 9",
+    "limit": 60,
+    "boundaryNames": [
+      "TAMPINES AVENUE 10",
+      "TAMPINES STREET 41"
+    ],
+    "boundaryJunctions": [
+      [
+        103.9309161,
+        1.3603479
+      ],
+      [
+        103.9493374,
+        1.3598246
+      ]
+    ],
+    "featureIds": [
+      223,
+      3518,
+      3719,
+      4303,
+      4686,
+      5160,
+      5510
+    ],
+    "source": "https://sso.agc.gov.sg/SL/RTA1961-N6?ProvIds=Sc3-"
+  },
+  {
+    "legalEntry": "Sc3-S1-ta-tr-oc166-",
+    "road": "TAMPINES INDUSTRIAL AVENUE 2",
+    "limit": 60,
+    "boundaryNames": [
+      "TAMPINES INDUSTRIAL AVENUE 3",
+      "TAMPINES ROAD"
+    ],
+    "boundaryJunctions": [
+      [
+        103.9256918,
+        1.3604442
+      ],
+      [
+        103.9270391,
+        1.3666583
+      ]
+    ],
+    "featureIds": [
+      3886,
+      8995
+    ],
+    "source": "https://sso.agc.gov.sg/SL/RTA1961-N6?ProvIds=Sc3-"
+  },
+  {
+    "legalEntry": "Sc3-S1-ta-tr-oc167-",
+    "road": "TAMPINES INDUSTRIAL AVENUE 3",
+    "limit": 60,
+    "boundaryNames": [
+      "TAMPINES AVENUE 10",
+      "TAMPINES INDUSTRIAL AVENUE 2"
+    ],
+    "boundaryJunctions": [
+      [
+        103.9302615,
+        1.3579135
+      ],
+      [
+        103.9256918,
+        1.3604442
+      ]
+    ],
+    "featureIds": [
+      727
+    ],
+    "source": "https://sso.agc.gov.sg/SL/RTA1961-N6?ProvIds=Sc3-"
+  },
+  {
+    "legalEntry": "Sc3-S1-ta-tr-oc178-",
+    "road": "TUAS SOUTH AVENUE 6",
+    "limit": 60,
+    "boundaryNames": [
+      "TUAS SOUTH AVENUE 3",
+      "TUAS SOUTH AVENUE 9"
+    ],
+    "boundaryJunctions": [
+      [
+        103.6247657,
+        1.3035163
+      ],
+      [
+        103.6398236,
+        1.2974571
+      ]
+    ],
+    "featureIds": [
+      4927,
+      5164,
+      5536,
+      6400,
+      6759,
+      9702
+    ],
+    "source": "https://sso.agc.gov.sg/SL/RTA1961-N6?ProvIds=Sc3-"
+  },
+  {
+    "legalEntry": "Sc3-S1-ta-tr-oc180-",
+    "road": "TUAS WEST DRIVE",
+    "limit": 60,
+    "boundaryNames": [
+      "JALAN AHMAD IBRAHIM",
+      "TUAS SOUTH AVENUE 1"
+    ],
+    "boundaryJunctions": [
+      [
+        103.6394497,
+        1.3454505
+      ],
+      [
+        103.6313589,
+        1.325802
+      ]
+    ],
+    "featureIds": [
+      4207,
+      4631,
+      4855,
+      5364,
+      6098,
+      7431,
+      10076,
+      10233,
+      10984,
+      11056
+    ],
+    "source": "https://sso.agc.gov.sg/SL/RTA1961-N6?ProvIds=Sc3-"
+  },
+  {
+    "legalEntry": "Sc3-S1-ta-tr-oc188-",
+    "road": "WEST COAST FERRY ROAD",
+    "limit": 60,
+    "boundaryNames": [
+      "HARBOUR DRIVE",
+      "WEST COAST HIGHWAY"
+    ],
+    "boundaryJunctions": [
+      [
+        103.7667333,
+        1.2908283
+      ],
+      [
+        103.7673704,
+        1.2916496
+      ]
+    ],
+    "featureIds": [
+      6685
+    ],
+    "source": "https://sso.agc.gov.sg/SL/RTA1961-N6?ProvIds=Sc3-"
+  },
+  {
+    "legalEntry": "Sc3-S1-ta-tr-oc189-",
+    "road": "WEST COAST ROAD",
+    "limit": 60,
+    "boundaryNames": [
+      "JURONG TOWN HALL ROAD",
+      "PENJURU ROAD"
+    ],
+    "boundaryJunctions": [
+      [
+        103.7442009,
+        1.31883
+      ],
+      [
+        103.7363803,
+        1.3205159
+      ]
+    ],
+    "featureIds": [
+      1838,
+      5351,
+      8737
+    ],
+    "source": "https://sso.agc.gov.sg/SL/RTA1961-N6?ProvIds=Sc3-"
+  },
+  {
+    "legalEntry": "Sc3-S1-ta-tr-oc190-",
+    "road": "WOODLANDS AVENUE 2",
+    "limit": 60,
+    "boundaryNames": [
+      "WOODLANDS AVENUE 1",
+      "WOODLANDS AVENUE 9"
+    ],
+    "boundaryJunctions": [
+      [
+        103.7877683,
+        1.4321871
+      ],
+      [
+        103.7850593,
+        1.4411466
+      ]
+    ],
+    "featureIds": [
+      4412,
+      7253,
+      7491,
+      7899
+    ],
+    "source": "https://sso.agc.gov.sg/SL/RTA1961-N6?ProvIds=Sc3-"
+  },
+  {
+    "legalEntry": "Sc4-S1-ta-tr-oc2-",
+    "road": "ADMIRALTY ROAD WEST",
+    "limit": 70,
+    "boundaryNames": [
+      "CANBERRA ROAD",
+      "ADMIRALTY ROAD"
+    ],
+    "boundaryJunctions": [
+      [
+        103.8228353,
+        1.4589259
+      ],
+      [
+        103.7772955,
+        1.4467811
+      ]
+    ],
+    "featureIds": [
+      2467,
+      3316,
+      4101,
+      5572,
+      5647,
+      6438,
+      6453,
+      7067,
+      7116,
+      8543,
+      9101,
+      9621,
+      10214
+    ],
+    "source": "https://sso.agc.gov.sg/SL/RTA1961-N6?ProvIds=Sc4-"
+  },
+  {
+    "legalEntry": "Sc4-S1-ta-tr-oc6-",
+    "road": "BARTLEY ROAD",
+    "limit": 70,
+    "boundaryNames": [
+      "BRADDELL ROAD",
+      "JALAN LABU AYER"
+    ],
+    "boundaryJunctions": [
+      [
+        103.870801,
+        1.3433497
+      ],
+      [
+        103.874155,
+        1.3435676
+      ]
+    ],
+    "featureIds": [
+      1419,
+      13133
+    ],
+    "source": "https://sso.agc.gov.sg/SL/RTA1961-N6?ProvIds=Sc4-"
+  },
+  {
+    "legalEntry": "Sc4-S1-ta-tr-oc10-",
+    "road": "BUANGKOK DRIVE",
+    "limit": 70,
+    "boundaryNames": [
+      "PUNGGOL ROAD",
+      "UPPER SERANGOON ROAD"
+    ],
+    "boundaryJunctions": [
+      [
+        103.8969152,
+        1.3793405
+      ],
+      [
+        103.9035278,
+        1.3803479
+      ]
+    ],
+    "featureIds": [
+      4564,
+      8617
+    ],
+    "source": "https://sso.agc.gov.sg/SL/RTA1961-N6?ProvIds=Sc4-"
+  },
+  {
+    "legalEntry": "Sc4-S1-ta-tr-oc50-",
+    "road": "PUNGGOL EAST",
+    "limit": 70,
+    "boundaryNames": [
+      "TAMPINES EXPRESSWAY",
+      "PUNGGOL FIELD"
+    ],
+    "boundaryJunctions": [
+      [
+        103.9117324,
+        1.3886857
+      ],
+      [
+        103.9145471,
+        1.3922884
+      ]
+    ],
+    "featureIds": [
+      4596
+    ],
+    "source": "https://sso.agc.gov.sg/SL/RTA1961-N6?ProvIds=Sc4-"
+  },
+  {
+    "legalEntry": "Sc4-S1-ta-tr-oc51-",
+    "road": "QUEENSWAY",
+    "limit": 70,
+    "boundaryNames": [
+      "FARRER ROAD",
+      "PORTSDOWN AVENUE"
+    ],
+    "boundaryJunctions": [
+      [
+        103.8035233,
+        1.310826
+      ],
+      [
+        103.799195,
+        1.2938158
+      ]
+    ],
+    "featureIds": [
+      1823,
+      2335,
+      2479,
+      3143,
+      3427,
+      11411,
+      12640,
+      12654
+    ],
+    "source": "https://sso.agc.gov.sg/SL/RTA1961-N6?ProvIds=Sc4-"
+  },
+  {
+    "legalEntry": "Sc4-S1-ta-tr-oc58-",
+    "road": "TAMPINES AVENUE 5",
+    "limit": 70,
+    "boundaryNames": [
+      "SIMEI AVENUE",
+      "TAMPINES AVENUE 4"
+    ],
+    "boundaryJunctions": [
+      [
+        103.946825,
+        1.3414613
+      ],
+      [
+        103.9414906,
+        1.3517224
+      ]
+    ],
+    "featureIds": [
+      5254,
+      6270,
+      9356
+    ],
+    "source": "https://sso.agc.gov.sg/SL/RTA1961-N6?ProvIds=Sc4-"
+  },
+  {
+    "legalEntry": "Sc4-S1-ta-tr-oc68-",
+    "road": "TUAS SOUTH AVENUE 7",
+    "limit": 70,
+    "boundaryNames": [
+      "TUAS SOUTH AVENUE 4",
+      "TUAS SOUTH AVENUE 3"
+    ],
+    "boundaryJunctions": [
+      [
+        103.6373262,
+        1.3077461
+      ],
+      [
+        103.6311372,
+        1.2889419
+      ]
+    ],
+    "featureIds": [
+      789,
+      1478,
+      2419,
+      3758,
+      8510,
+      8854
+    ],
+    "source": "https://sso.agc.gov.sg/SL/RTA1961-N6?ProvIds=Sc4-"
+  },
+  {
+    "legalEntry": "Sc4-S1-ta-tr-oc69-",
+    "road": "TUAS SOUTH AVENUE 8",
+    "limit": 70,
+    "boundaryNames": [
+      "TUAS SOUTH AVENUE 3",
+      "TUAS SOUTH AVENUE 9"
+    ],
+    "boundaryJunctions": [
+      [
+        103.6232834,
+        1.29949
+      ],
+      [
+        103.6372769,
+        1.294271
+      ]
+    ],
+    "featureIds": [
+      6878,
+      7945,
+      8869,
+      10425,
+      11252,
+      11315
+    ],
+    "source": "https://sso.agc.gov.sg/SL/RTA1961-N6?ProvIds=Sc4-"
+  },
+  {
+    "legalEntry": "Sc4-S1-ta-tr-oc70-",
+    "road": "TUAS SOUTH AVENUE 9",
+    "limit": 70,
+    "boundaryNames": [
+      "TUAS SOUTH AVENUE 6",
+      "TUAS SOUTH AVENUE 3"
+    ],
+    "boundaryJunctions": [
+      [
+        103.6398236,
+        1.2974571
+      ],
+      [
+        103.6367753,
+        1.2885103
+      ]
+    ],
+    "featureIds": [
+      3391,
+      9193,
+      9234
+    ],
+    "source": "https://sso.agc.gov.sg/SL/RTA1961-N6?ProvIds=Sc4-"
+  },
+  {
+    "legalEntry": "Sc4-S1-ta-tr-oc81-",
+    "road": "WEST COAST ROAD",
+    "limit": 70,
+    "boundaryNames": [
+      "JURONG TOWN HALL ROAD",
+      "WEST COAST HIGHWAY"
+    ],
+    "boundaryJunctions": [
+      [
+        103.7442009,
+        1.31883
+      ],
+      [
+        103.7552633,
+        1.3127885
+      ]
+    ],
+    "featureIds": [
+      5716,
+      6422,
+      7041,
+      11226,
+      15033
+    ],
+    "source": "https://sso.agc.gov.sg/SL/RTA1961-N6?ProvIds=Sc4-"
+  },
+  {
+    "legalEntry": "Sc4-S1-ta-tr-oc83-",
+    "road": "WOODLANDS AVENUE 2",
+    "limit": 70,
+    "boundaryNames": [
+      "SELETAR EXPRESSWAY",
+      "WOODLANDS AVENUE 1"
+    ],
+    "boundaryJunctions": [
+      [
+        103.7863535,
+        1.4262966
+      ],
+      [
+        103.7877683,
+        1.4321871
+      ]
+    ],
+    "featureIds": [
+      7342,
+      8384
+    ],
+    "source": "https://sso.agc.gov.sg/SL/RTA1961-N6?ProvIds=Sc4-"
+  }
+]
