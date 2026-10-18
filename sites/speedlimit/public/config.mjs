@@ -2,6 +2,8 @@
 export const CONFIG = Object.freeze({
   defaultLimitKph: 50,
   signRadiusM: 30,
+  signRecheckDistanceM: 30,
+  schoolZoneLimitKph: 40,
   signBearingToleranceDeg: 45,
   turnAngleDeg: 60,
   minMovementM: 5,

@@ -39,20 +39,26 @@ def main():
         sources[name] = {"dataset": dataset, "url": f"https://data.gov.sg/datasets/{dataset}/view",
                          "sha256": hashlib.sha256(raw).hexdigest()}
     signs = []
+    school_signs = []
     for feature in documents["traffic-signs"]["features"]:
         props = feature["properties"]
         match = re.fullmatch(r"Maximum Speed Limit (\d+) \[\d+\]", props.get("TYP_CD") or "")
         if match:
             lon, lat = feature["geometry"]["coordinates"][:2]
             signs.append([round(lon, 7), round(lat, 7), int(match[1]), props.get("BEARG_NUM"), props["UNIQUE_ID"]])
+        label = props.get("TYP_CD") or ""
+        if "school zone" in label.lower():
+            kind = "school-end" if label == "End Of School Zone [3064]" else "school-start"
+            lon, lat = feature["geometry"]["coordinates"][:2]
+            school_signs.append([round(lon, 7), round(lat, 7), None, props.get("BEARG_NUM"), props["UNIQUE_ID"], kind])
     polygons = []
     for feature in documents["singapore-boundaries"]["features"]:
         geometry = feature["geometry"]
         parts = [geometry["coordinates"]] if geometry["type"] == "Polygon" else geometry["coordinates"]
         polygons.extend([[[round(x, 7), round(y, 7)] for x, y, *_ in ring] for ring in polygon] for polygon in parts)
     assert len(signs) > 4000 and len(polygons) >= 55
-    metadata = {"retrieved": datetime.now(timezone.utc).isoformat(), "sources": sources,
-                "signCount": len(signs), "coverage": "Sign points only; not road-segment speed limits.",
+    metadata = {"retrieved": datetime.fromtimestamp((ROOT / "tmp" / "traffic-signs.geojson").stat().st_mtime, timezone.utc).isoformat(), "sources": sources,
+                "signCount": len(signs), "schoolSignCount": len(school_signs), "coverage": "Sign points only; not road-segment speed limits.",
                 "license": "Singapore Open Data Licence"}
     target = ROOT / "sites" / "speedlimit" / "static"
     target.mkdir(parents=True, exist_ok=True)
@@ -62,8 +68,10 @@ def main():
         + "export const DATA_INFO = Object.freeze(" + compact(metadata) + ");\n"
         + "// Each sign: [longitude, latitude, km/h, sign bearing, source unique ID].\n"
         + "export const SPEED_SIGNS = Object.freeze(" + compact(signs) + ".map(Object.freeze));\n"
+        + "// School signs use the same fields, followed by school-start or school-end.\n"
+        + "export const SCHOOL_SIGNS = Object.freeze(" + compact(school_signs) + ".map(Object.freeze));\n"
         + "export const SG_POLYGONS = Object.freeze(" + compact(polygons) + ");\n", encoding="utf-8")
-    print(f"Compiled {len(signs)} speed-limit signs and {len(polygons)} boundary polygons.")
+    print(f"Compiled {len(signs)} speed-limit signs, {len(school_signs)} school-zone signs and {len(polygons)} boundary polygons.")
 
 
 if __name__ == "__main__":

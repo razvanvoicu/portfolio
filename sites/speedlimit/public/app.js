@@ -1,9 +1,9 @@
-import { DATA_INFO, SPEED_SIGNS, SG_POLYGONS } from './road-data.js';
+import { DATA_INFO, SPEED_SIGNS, SCHOOL_SIGNS, SG_POLYGONS } from './road-data.js';
 import { threshold, isOver, inSingapore, DriveTracker, shouldSound, speedKph } from './core.mjs';
 
 import { CONFIG } from './config.mjs';
 
-const tracker = new DriveTracker(SPEED_SIGNS, CONFIG);
+const tracker = new DriveTracker(SPEED_SIGNS, CONFIG, SCHOOL_SIGNS);
 const $ = id => document.getElementById(id);
 let tolerance = 0;
 try { const saved = localStorage.getItem('speedlimit.tolerance'); if (saved !== null && Number.isFinite(Number(saved))) tolerance = Math.max(-100, Math.min(100, Number(saved))); } catch {}
@@ -11,7 +11,7 @@ let running = false, watch = null, fix = null, wake = null, wakePending = false;
 let audio = null, tone = null, volume = null, pulse = null, testUntil = 0, attempt = 0;
 let message = 'READY WHEN YOU ARE', wakeError = '', locationError = '';
 const timeFormat = new Intl.DateTimeFormat('en-SG', { dateStyle: 'medium' });
-$('data-info').textContent = `${DATA_INFO.signCount.toLocaleString()} signs · downloaded ${timeFormat.format(new Date(DATA_INFO.retrieved))}. Singapore Open Data Licence. Complete road coverage is unavailable.`;
+$('data-info').textContent = `${DATA_INFO.signCount.toLocaleString()} speed signs + ${DATA_INFO.schoolSignCount.toLocaleString()} school-zone signs · downloaded ${timeFormat.format(new Date(DATA_INFO.retrieved))}. Singapore Open Data Licence. Complete road coverage is unavailable.`;
 
 function setTolerance(value, preserveInput = false) {
   if (!Number.isFinite(value) || value < -100 || value > 100) return;
@@ -132,9 +132,9 @@ function render() {
       } else {
         speed = speedKph(coords);
         status = speed === null ? 'GPS SPEED UNAVAILABLE' : 'LIVE · SINGAPORE';
-        info = tracker.sign ? 'Detected sign · retained' : 'Singapore default';
+        info = tracker.schoolZone ? 'School zone' : tracker.sign ? 'Detected sign · retained' : 'Singapore default';
         const heading = tracker.heading === null ? 'Heading pending movement' : `Heading ${Math.round(tracker.heading)}°`;
-        note = `${heading} · ${tracker.sign ? 'Sign limit retained until a turn or new sign.' : 'Default 50 km/h until a qualifying sign.'}`;
+        note = `${heading} · ${tracker.schoolZone ? '40 km/h until End of School Zone.' : tracker.sign ? 'Sign limit retained until a turn or new sign.' : 'Default 50 km/h until a qualifying sign.'}`;
       }
     } else if (fix) { status = 'GPS SIGNAL LOST'; info = 'Waiting for fresh GPS'; note = 'Speed and alerts paused until a fresh location arrives.'; }
   }

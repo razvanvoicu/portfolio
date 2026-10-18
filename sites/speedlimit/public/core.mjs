@@ -47,19 +47,76 @@ export function qualifyingSign(point, signs, heading, config) {
   return best;
 }
 export class DriveTracker {
-  constructor(signs, config) { this.signs = signs; this.config = config; this.reset(); }
+  constructor(signs, config, schoolSigns = []) {
+    this.signs = [...signs, ...schoolSigns]; this.config = config; this.reset();
+  }
   reset() {
     this.positions = []; this.headings = []; this.travelled = 0;
     this.heading = null; this.sign = null; this.limit = this.config.defaultLimitKph;
     this.turned = false;
+    this.schoolZone = null;
+    this.encounters = new Map();
+  }
+  rememberSigns(point) {
+    const c = this.config;
+    for (const sign of this.signs) {
+      const meters = distance(point, sign);
+      if (meters > c.signRadiusM + 1e-8) continue;
+      const existing = this.encounters.get(sign[4]);
+      if (existing) { existing.seenAt = this.travelled; existing.meters = meters; }
+      else this.encounters.set(sign[4], { sign, seenAt: this.travelled, meters, handled: false });
+    }
+    for (const [id, entry] of this.encounters) {
+      if (this.travelled - entry.seenAt > c.signRecheckDistanceM + 1e-8) this.encounters.delete(id);
+      else entry.meters = distance(point, entry.sign);
+    }
+  }
+  applySigns() {
+    const c = this.config;
+    if (!Number.isFinite(this.heading)) return;
+    const eligible = [...this.encounters.values()].filter(entry => !entry.handled &&
+      Number.isFinite(entry.sign[3]) && angleDifference(entry.sign[3], this.heading) <= c.signBearingToleranceDeg + 1e-8)
+      .sort((a, b) => a.meters - b.meters);
+    // Zone markers take precedence over colocated numeric speed signs, so an
+    // entry stores the limit BEFORE the accompanying 40 sign changes it.
+    if (this.schoolZone) for (const entry of eligible) {
+      if (entry.sign[5] === 'school-start') entry.handled = true;
+    }
+    const zone = eligible.find(entry => entry.sign[5] && !entry.handled);
+    if (zone) {
+      zone.handled = true;
+      if (zone.sign[5] === 'school-start' && !this.schoolZone) {
+        this.schoolZone = { limit: this.limit, sign: this.sign };
+        this.limit = c.schoolZoneLimitKph;
+        this.sign = { limit: this.limit, id: zone.sign[4], kind: 'school-start' };
+      } else if (zone.sign[5] === 'school-end' && this.schoolZone) {
+        this.limit = this.schoolZone.limit; this.sign = this.schoolZone.sign;
+        this.schoolZone = null;
+      }
+      // Do not let nearby numeric signs override entry or restored exit limits.
+      for (const entry of eligible) if (!entry.sign[5]) entry.handled = true;
+      return;
+    }
+    if (this.schoolZone) {
+      for (const entry of eligible) entry.handled = true;
+      return;
+    }
+    const entry = eligible[0];
+    if (entry) {
+      entry.handled = true;
+      const sign = entry.sign;
+      this.sign = { limit: sign[2], meters: entry.meters, id: sign[4] };
+      this.limit = sign[2];
+    }
   }
   update(point) {
     const c = this.config, last = this.positions.at(-1);
     this.turned = false;
-    if (!last) { this.positions.push([...point]); return; }
+    if (!last) { this.positions.push([...point]); this.rememberSigns(point); return; }
     const moved = distance(last, point);
     if (moved + 1e-8 < c.minMovementM) return;
     this.travelled += moved;
+    this.rememberSigns(point);
     this.positions.push([...point]);
     this.positions = this.positions.slice(-c.positionHistoryLength);
     const directions = this.positions.slice(1).map((p, i) => bearing(this.positions[i], p));
@@ -67,15 +124,19 @@ export class DriveTracker {
     this.headings = this.headings.filter(item => this.travelled - item.at <= c.turnHistoryDistanceM + 1e-8);
     this.turned = this.headings.some(item => angleDifference(item.heading, this.heading) + 1e-8 >= c.turnAngleDeg);
     if (this.turned) {
-      this.limit = c.defaultLimitKph; this.sign = null;
+      if (!this.schoolZone) { this.limit = c.defaultLimitKph; this.sign = null; }
+      // A corner sign may already have matched during the turn. Reapply it
+      // after the turn reset, provided it is still in the 30 m travel window.
+      if (!this.schoolZone) for (const entry of this.encounters.values()) {
+        if (!entry.sign[5]) entry.handled = false;
+      }
       // Begin a new road's smoothing/history with the latest actual movement.
       this.positions = this.positions.slice(-2);
       this.heading = directions.at(-1);
       this.headings = [];
     }
     this.headings.push({ heading: this.heading, at: this.travelled });
-    const sign = qualifyingSign(point, this.signs, this.heading, c);
-    if (sign) { this.sign = sign; this.limit = sign.limit; }
+    this.applySigns();
   }
 }
 export function shouldSound(speed, limit, tolerance, config) {

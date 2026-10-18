@@ -3,7 +3,7 @@ const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const vm = require('node:vm');
 
-async function setup(signLimit = 70) {
+async function setup(signLimit = 70, schoolSigns = []) {
   const core = await import('../../sites/speedlimit/static/core.mjs');
   const { CONFIG } = await import('../../sites/speedlimit/static/config.mjs');
   const elements = {};
@@ -13,7 +13,7 @@ async function setup(signLimit = 70) {
   const timers = new Map(); let timerId = 0;
   const docHandlers = {};
   const context = {
-    ...core, CONFIG, DATA_INFO:{signCount:1,retrieved:new Date(now).toISOString()}, SPEED_SIGNS:[[103.85,1.3,signLimit,0,1]],
+    ...core, CONFIG, DATA_INFO:{signCount:1,schoolSignCount:schoolSigns.length,retrieved:new Date(now).toISOString()}, SPEED_SIGNS:[[103.85,1.3,signLimit,0,1]], SCHOOL_SIGNS:schoolSigns,
     SG_POLYGONS:[[[[103.6,1.2],[104.1,1.2],[104.1,1.5],[103.6,1.5]]]],
     document:{getElementById:get,visibilityState:'visible',addEventListener:(name, fn)=>docHandlers[name]=fn},
     window:{isSecureContext:true, addEventListener(){}},
@@ -95,4 +95,18 @@ test('default 50 appears before starting and sub-60 limits never sound', async (
   assert.equal(app.get('speed').className,'reading over');
   assert.equal(app.gainValues.includes(0.16),false);
   assert.match(app.get('threshold').textContent,/silent/);
+});
+test('display enters silent school zone then restores the preceding limit and alarm', async () => {
+  const app = await setup(60,[[103.85,1.301,null,0,2,'school-start'],[103.85,1.302,null,0,3,'school-end']]);
+  await app.start();
+  app.position(20,{latitude:1.3008});
+  assert.equal(app.get('limit').textContent,40);
+  assert.equal(app.get('limit-description').textContent,'School zone');
+  assert.equal(app.get('speed').className,'reading over');
+  assert.equal(app.gainValues.includes(0.16),false);
+  app.position(20,{latitude:1.301});
+  app.position(20,{latitude:1.3015});
+  app.position(20,{latitude:1.3018});
+  assert.equal(app.get('limit').textContent,60);
+  assert.equal(app.gainValues.includes(0.16),true);
 });

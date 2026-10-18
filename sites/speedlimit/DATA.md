@@ -2,6 +2,8 @@
 
 The app bundles every "Maximum Speed Limit" sign in the LTA Traffic Sign
 GeoJSON snapshot from data.gov.sg, dataset d_bbf0132c7290d6838f82003972d933d5.
+It also bundles every sign whose description contains "School Zone", tagging
+End Of School Zone [3064] as an exit and the other school-zone markers as entry.
 This is a point inventory, **not a road-segment speed-limit dataset**. It has
 no road names, segment geometry, applicability ranges or time-dependent rules.
 It cannot fulfil guaranteed speed-limit coverage of all Singapore roads.
@@ -11,6 +13,19 @@ bearing differs from the computed vehicle heading by at most 45 degrees.
 The nearest qualifying sign sets the limit, which persists until a new sign
 or a turn of at least 60 degrees resets it to the default. LTA specifies sign
 bearing along traffic flow, rather than the physical face direction.
+
+Signs encountered within the radius are retained for rechecking over the next
+30 m travelled, using the updated heading and the same 45-degree bearing rule.
+This accommodates signs at corners while the averaged heading catches up.
+The recheck distance is configured by signRecheckDistanceM.
+
+Per the agreed app behavior, school-zone entry markers impose 40 km/h. The
+pre-zone limit and its source are saved once on entry. While inside the zone,
+turns and numeric speed signs cannot replace 40. An End Of School Zone marker
+restores the saved limit. Repeated entry markers do not overwrite that saved
+value. schoolZoneLimitKph is configurable. These are the user-specified app
+rules; the dataset does not distinguish enhanced zones or encode flashing-light
+conditions. School polygons are not used by the app.
 
 Heading is the circular mean of consecutive segment bearings across the last
 four accepted positions. A fix less than 5 m from the last accepted position
