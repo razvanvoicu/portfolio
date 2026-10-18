@@ -153,6 +153,10 @@ export class DriveTracker {
 export function shouldSound(speed, limit, tolerance, config) {
   return limit >= config.minimumAudibleLimitKph && isOver(speed, limit, tolerance);
 }
+export function warningLevel(speed, limit, tolerance, config) {
+  if (!isOver(speed, limit, tolerance)) return 'off';
+  return speed - threshold(limit, tolerance) <= config.gentleExcessKph ? 'gentle' : 'loud';
+}
 export function speedKph(coords) {
   if (Number.isFinite(coords.speed) && coords.speed >= 0) return coords.speed * 3.6;
   // Do not turn noisy location deltas into a driving-speed measurement.

@@ -122,3 +122,5 @@ GPS coordinates are processed locally. The app does not transmit location.
 GPS speed must be supplied by the device: null speed is not interpreted as zero.
 Location fixes older than 8 seconds are invalid. Audio and wake lock require
 an explicit start gesture. Background browser execution is not guaranteed.
+
+Two sound levels share the alert threshold (limit minus tolerance). Excess up to the saved gentle range (default 3 km/h, inclusive) uses a sine chime. Greater excess uses the existing square-wave warning and a pink background. The range is adjustable in settings; automatic sound remains suppressed below a 60 km/h limit.

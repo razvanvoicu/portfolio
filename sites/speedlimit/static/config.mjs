@@ -13,6 +13,7 @@ export const CONFIG = Object.freeze({
   positionHistoryLength: 4,
   turnHistoryDistanceM: 30,
   minimumAudibleLimitKph: 60,
+  gentleExcessKph: 3,
   maxFixAgeMs: 8000,
   futureFixToleranceMs: 1000,
 });

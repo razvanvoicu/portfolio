@@ -1,5 +1,5 @@
 import { DATA_INFO, SPEED_SIGNS, SCHOOL_SIGNS, SG_POLYGONS } from './road-data.js';
-import { threshold, isOver, inSingapore, shouldSound, speedKph } from './core.mjs';
+import { threshold, isOver, inSingapore, shouldSound, warningLevel, speedKph } from './core.mjs';
 import { RoadDriveTracker } from './roads.mjs';
 import { ROAD_FEATURES, ROAD_IDENTITIES, NETWORK_INFO } from './network.mjs';
 
@@ -8,9 +8,12 @@ import { CONFIG } from './config.mjs';
 const tracker = new RoadDriveTracker(SPEED_SIGNS, CONFIG, SCHOOL_SIGNS, ROAD_FEATURES, ROAD_IDENTITIES);
 const $ = id => document.getElementById(id);
 let tolerance = 0;
+let gentleExcess = CONFIG.gentleExcessKph;
+try { const saved = localStorage.getItem('speedlimit.gentleExcess'); if (saved !== null && Number.isFinite(Number(saved)) && Number(saved) >= 0) gentleExcess = Number(saved); } catch {}
 try { const saved = localStorage.getItem('speedlimit.tolerance'); if (saved !== null && Number.isFinite(Number(saved))) tolerance = Math.max(-100, Math.min(100, Number(saved))); } catch {}
 let running = false, watch = null, fix = null, wake = null, wakePending = false;
 let audio = null, tone = null, volume = null, pulse = null, testUntil = 0, attempt = 0;
+let activeLevel = 'off', testLevel = 'loud';
 let message = 'READY WHEN YOU ARE', wakeError = '', locationError = '';
 const timeFormat = new Intl.DateTimeFormat('en-SG', { dateStyle: 'medium' });
 $('data-info').textContent = `${DATA_INFO.signCount.toLocaleString()} speed signs + ${DATA_INFO.schoolSignCount.toLocaleString()} school-zone signs · downloaded ${timeFormat.format(new Date(DATA_INFO.retrieved))}. Singapore Open Data Licence. Complete road coverage is unavailable.`;
@@ -38,6 +41,14 @@ $('tolerance').addEventListener('input', () => {
 });
 $('minus').onclick = () => setTolerance(Math.max(-100, tolerance - 1));
 $('plus').onclick = () => setTolerance(Math.min(100, tolerance + 1));
+$('gentle-excess').value = String(gentleExcess);
+$('gentle-excess').addEventListener('change', () => {
+  const input = $('gentle-excess'), value = Number(input.value);
+  if (input.value.trim() === '' || !input.validity.valid || !Number.isFinite(value) || value < 0) { input.value = String(gentleExcess); return; }
+  gentleExcess = value;
+  try { localStorage.setItem('speedlimit.gentleExcess', String(value)); } catch {}
+  render();
+});
 
 async function enableAudio() {
   const Audio = window.AudioContext || window.webkitAudioContext;
@@ -52,21 +63,30 @@ async function enableAudio() {
   await audio.resume();
   if (audio.state !== 'running') throw new Error('Audio paused');
 }
-function alarm(on) {
+function alarm(level) {
   if (!audio || !volume) return;
-  if (on && audio.state === 'running') {
+  if (audio.state !== 'running') level = 'off';
+  if (level !== activeLevel) {
+    clearInterval(pulse); pulse = null;
+    volume.gain.cancelScheduledValues(audio.currentTime);
+    volume.gain.setValueAtTime(0, audio.currentTime);
+    activeLevel = level;
+  }
+  if (level !== 'off') {
     if (!pulse) {
+      const gentle = level === 'gentle';
+      tone.type = gentle ? 'sine' : 'square';
       const beep = () => {
         const t = audio.currentTime;
         volume.gain.cancelScheduledValues(t);
         volume.gain.setValueAtTime(0, t);
-        volume.gain.linearRampToValueAtTime(0.16, t + 0.008);
-        tone.frequency.setValueAtTime(1100, t);
-        tone.frequency.setValueAtTime(1650, t + 0.17);
-        volume.gain.setValueAtTime(0.16, t + 0.32);
-        volume.gain.linearRampToValueAtTime(0, t + 0.34);
+        volume.gain.linearRampToValueAtTime(gentle ? 0.12 : 0.16, t + (gentle ? 0.04 : 0.008));
+        tone.frequency.setValueAtTime(gentle ? 660 : 1100, t);
+        tone.frequency.setValueAtTime(gentle ? 880 : 1650, t + 0.17);
+        volume.gain.setValueAtTime(gentle ? 0.12 : 0.16, t + 0.32);
+        volume.gain.linearRampToValueAtTime(0, t + (gentle ? 0.55 : 0.34));
       };
-      beep(); pulse = setInterval(beep, 420);
+      beep(); pulse = setInterval(beep, gentle ? 1000 : 420);
     }
   } else {
     clearInterval(pulse); pulse = null;
@@ -74,10 +94,12 @@ function alarm(on) {
     volume.gain.setValueAtTime(0, audio.currentTime);
   }
 }
-$('test-sound').onclick = async () => {
-  try { await enableAudio(); testUntil = Date.now() + 1000; render(); setTimeout(render, 1000); }
+async function testSound(level) {
+  try { await enableAudio(); testLevel = level; testUntil = Date.now() + 1000; render(); setTimeout(render, 1000); }
   catch { $('audio-status').textContent = 'Sound unavailable'; }
-};
+}
+$('test-sound').onclick = () => testSound('loud');
+$('test-gentle').onclick = () => testSound('gentle');
 async function acquireWake() {
   if (!running || document.visibilityState !== 'visible' || wake || wakePending) return;
   if (!('wakeLock' in navigator)) { wakeError = 'Screen wake unsupported'; render(); return; }
@@ -95,7 +117,7 @@ function stop() {
   if (watch !== null) navigator.geolocation.clearWatch(watch);
   watch = null; fix = null; testUntil = 0; tracker.reset();
   if (wake) { wake.release().catch(() => {}); wake = null; }
-  alarm(false); message = 'DRIVE STOPPED'; locationError = ''; render();
+  alarm('off'); message = 'DRIVE STOPPED'; locationError = ''; render();
 }
 $('start').onclick = async () => {
   if (running) { stop(); return; }
@@ -147,6 +169,8 @@ function render() {
   }
   const limit = tracker.limit;
   const over = isOver(speed, limit, tolerance);
+  const level = warningLevel(speed, limit, tolerance, { gentleExcessKph: gentleExcess });
+  document.body.classList.toggle('severe', level === 'loud');
   // Display enough precision to make threshold behaviour intelligible. Never
   // round before comparing, so 68.1 is red for a 68 km/h threshold.
   $('speed').textContent = speed === null ? '—' : speed.toFixed(1);
@@ -168,11 +192,11 @@ function render() {
   $('audio-status').className = running && !soundReady ? 'warning' : '';
   $('wake-status').textContent = running ? wake ? 'Screen staying on' : wakeError || 'Screen wake paused' : 'Screen wake off';
   $('wake-status').className = running && !wake ? 'warning' : '';
-  alarm(shouldSound(speed, limit, tolerance, CONFIG) || Date.now() < testUntil);
+  alarm(Date.now() < testUntil ? testLevel : shouldSound(speed, limit, tolerance, CONFIG) ? level : 'off');
 }
 document.addEventListener('visibilitychange', () => {
   if (document.visibilityState === 'visible') { acquireWake(); render(); }
-  else { fix = null; testUntil = 0; alarm(false); }
+  else { fix = null; testUntil = 0; alarm('off'); }
 });
 window.addEventListener('pagehide', stop);
 setInterval(() => { if (running || testUntil) render(); }, 500);

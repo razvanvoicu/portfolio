@@ -12,11 +12,11 @@ async function setup(signLimit = 70, schoolSigns = []) {
     setAttribute(){}, addEventListener(name, fn){this.handlers[name]=fn;}, showModal(){}, close(){}};
   let now = Date.now(), gps, gpsError, cleared = false, saved = {}, gainValues = [];
   const timers = new Map(); let timerId = 0;
-  const docHandlers = {};
+  const docHandlers = {}, bodyClasses = new Set();
   const context = {
     ...core, ...roads, CONFIG, ROAD_FEATURES:[], ROAD_IDENTITIES:[], NETWORK_INFO:{geometryDate:'test',verifiedRoadParts:0,roadParts:0}, DATA_INFO:{signCount:1,schoolSignCount:schoolSigns.length,retrieved:new Date(now).toISOString()}, SPEED_SIGNS:[[103.85,1.3,signLimit,0,1]], SCHOOL_SIGNS:schoolSigns,
     SG_POLYGONS:[[[[103.6,1.2],[104.1,1.2],[104.1,1.5],[103.6,1.5]]]],
-    document:{getElementById:get,visibilityState:'visible',addEventListener:(name, fn)=>docHandlers[name]=fn},
+    document:{body:{classList:{toggle:(name,on)=>on?bodyClasses.add(name):bodyClasses.delete(name)}},getElementById:get,visibilityState:'visible',addEventListener:(name, fn)=>docHandlers[name]=fn},
     window:{isSecureContext:true, addEventListener(){}},
     navigator:{geolocation:{watchPosition(success, error){gps=success;gpsError=error;return 1;},clearWatch(){cleared=true;}}},
     localStorage:{getItem:key=>saved[key]??null,setItem:(key,value)=>saved[key]=value},
@@ -32,7 +32,7 @@ async function setup(signLimit = 70, schoolSigns = []) {
   };
   const code = fs.readFileSync('sites/speedlimit/static/app.js','utf8').replace(/^import .*;\r?\n/gm,'');
   vm.runInNewContext(code, context);
-  return {get, context, saved, docHandlers, timers, gainValues,
+  return {get, context, saved, docHandlers, timers, gainValues, bodyClasses,
     start:async()=>{await get('start').onclick(); gps({timestamp:now, coords:{latitude:1.2999,longitude:103.85,accuracy:5,speed:0}}); gps({timestamp:now,coords:{latitude:1.3,longitude:103.85,accuracy:5,speed:0}});}, stop:()=>get('start').onclick(),
     position:(speed, extras={})=>gps({timestamp:now, coords:{latitude:1.3,longitude:103.85,accuracy:5,speed,...extras}}),
     error:code=>gpsError({code}), advance:ms=>{now+=ms; for(const fn of [...timers.values()])fn();},
@@ -48,7 +48,7 @@ test('drive, signed tolerance, continuing alarm, recovery and stop', async () =>
   app.position(68.1/3.6);
   assert.equal(app.get('speed').className,'reading over');
   assert.equal(app.get('speed').textContent,'68.1');
-  assert.ok(app.gainValues.includes(0.16));
+  assert.ok(app.gainValues.includes(0.12));
   const pulses = app.gainValues.length; app.advance(500);
   assert.ok(app.gainValues.length > pulses);
   app.position(68/3.6);
@@ -62,6 +62,26 @@ test('drive, signed tolerance, continuing alarm, recovery and stop', async () =>
   assert.equal(app.get('speed').textContent,'—');
   assert.equal(app.gainValues.at(-1),0);
   assert.equal(app.saved['speedlimit.tolerance'],'-2');
+});
+
+test('adjustable gentle range switches sound and pink together and persists', async () => {
+  const app = await setup(); await app.start();
+  app.tolerance(2);
+  app.position(71 / 3.6);
+  assert.equal(app.bodyClasses.has('severe'), false);
+  assert.ok(app.gainValues.includes(0.12));
+  app.position(71.1 / 3.6);
+  assert.equal(app.bodyClasses.has('severe'), true);
+  assert.ok(app.gainValues.includes(0.16));
+  const input = app.get('gentle-excess'); input.value = '5'; input.handlers.change();
+  assert.equal(app.saved['speedlimit.gentleExcess'], '5');
+  assert.equal(app.bodyClasses.has('severe'), false);
+  assert.equal(app.gainValues.at(-2), 0.12);
+  input.value = '-1'; input.handlers.change(); assert.equal(input.value, '5');
+  app.position(73.1 / 3.6); assert.equal(app.bodyClasses.has('severe'), true);
+  app.position(68 / 3.6); assert.equal(app.bodyClasses.has('severe'), false);
+  assert.equal(app.gainValues.at(-1), 0);
+  app.position(74 / 3.6); await app.stop(); assert.equal(app.bodyClasses.has('severe'), false);
 });
 test('stale GPS, denied permissions, unknown speed and outside Singapore suppress alarms', async () => {
   const app = await setup(); await app.start();
