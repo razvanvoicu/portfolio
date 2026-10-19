@@ -84,7 +84,7 @@ button:focus-visible, a:focus-visible { outline: 3px solid var(--accent); outlin
 
 .reading-pane { min-width: 0; min-height: 0; overflow-y: auto; overscroll-behavior: contain; padding: clamp(2.5rem, 5vw, 5rem) clamp(1.4rem, 6vw, 7rem) 6rem; }
 .chapter { max-width: 48rem; margin: 0 auto; }
-.chapter-heading { display: flex; justify-content: space-between; align-items: baseline; gap: 1rem; color: var(--accent); font-size: .72rem; font-weight: 700; letter-spacing: .14em; text-transform: uppercase; }
+.chapter-heading { display: flex; justify-content: space-between; align-items: baseline; gap: 1rem; color: var(--accent); font-size: min(.72rem,2vw); font-weight: 700; letter-spacing: .14em; text-transform: uppercase; }
 .chapter-book-title { text-align: left; }
 .chapter-date { flex: 0 0 auto; text-align: right; }
 .chapter-content { font: clamp(0.8rem, 1.8vw, 1.2rem)/1.5 Georgia, "Times New Roman", serif; }
@@ -93,7 +93,7 @@ button:focus-visible, a:focus-visible { outline: 3px solid var(--accent); outlin
 .chapter-content p { margin: 0 0 1.35rem; }
 .chapter-content section { margin: 0; }
 .chapter-content a { color: var(--accent); }
-.chapter-content .shots { display: grid; grid-auto-flow: column; grid-auto-columns: auto; justify-content: center; gap: 1rem; margin: 1.6rem 0 2rem; }
+.chapter-content .shots { display: grid; grid-auto-flow: column; grid-auto-columns: auto !important; justify-content: center; gap: 1rem; margin: 1.6rem 0 2rem; }
 .chapter-content .shots img { display: block; width: 100%; height: auto; border: 1px solid var(--line); border-radius: .9rem; }
 
 @media (max-width: 760px) {
