@@ -2,8 +2,7 @@
 
    <style>
      img.width-200-percent {
-       width: 200% !important;
-       margin-left: -50% !important;
+       max-width: 100% !important;
      }
    </style>
    
