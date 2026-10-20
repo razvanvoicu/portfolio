@@ -70,16 +70,28 @@ This is a point inventory, **not a road-segment speed-limit dataset**. It has
 no road names, segment geometry, applicability ranges or time-dependent rules.
 It cannot fulfil guaranteed speed-limit coverage of all Singapore roads.
 
-The default displayed limit is 50 km/h. A sign applies within 30 m when its
-bearing differs from the computed vehicle heading by at most 45 degrees.
-The nearest qualifying sign sets the limit, which persists until a new sign
-or a turn of at least 60 degrees resets it to the default. LTA specifies sign
-bearing along traffic flow, rather than the physical face direction.
+The default displayed limit is 50 km/h. Signs become candidates within a 60 m
+cone. Its half-angle grows linearly from 20 degrees at 60 m to 90 degrees at
+zero distance. The same cone is mirrored behind the vehicle after passage.
+A candidate applies only after consecutive accepted GPS positions confirm
+passage: the sign's projection along that movement lies between the fixes,
+the sign is in the rear cone, and its bearing differs from the smoothed heading
+by at most 45 degrees. The rear cone can recover a sign skipped between fixes.
+Passed signs are processed in travel order. This does not determine which road
+a nearby ramp sign governs. LTA specifies sign bearing along traffic flow,
+rather than the physical face direction.
 
-Signs encountered within the radius are retained for rechecking over the next
+Signs encountered within range are retained for rechecking over the next
 30 m travelled, using the updated heading and the same 45-degree bearing rule.
 This accommodates signs at corners while the averaged heading catches up.
 The recheck distance is configured by signRecheckDistanceM.
+
+Tapping the limit within seven seconds of a displayed change restores the
+previous limit, source and school-zone state. The rejected sign remains ignored
+until another qualifying sign is passed. The restored state is retained until
+then, including against repeated road matching. A later visit can encounter the
+rejected sign again. Stopping resets this state. The window and cone constants
+are in static/config.mjs.
 
 Per the agreed app behavior, school-zone entry markers impose 40 km/h. The
 pre-zone limit and its source are saved once on entry. While inside the zone,
@@ -96,8 +108,9 @@ Smoothed headings are retained over the last 30 m travelled. A difference of
 at least 60 degrees from a heading in that history identifies a turn in either
 direction. Stops do not evict useful history. On a detected turn, smoothing
 begins again with the latest movement to avoid carrying the old road direction.
-All these values are in static/config.mjs. The previous accuracy cutoff,
-60 m radius and conflicting-sign rejection have been removed.
+All these values are in static/config.mjs. The previous accuracy cutoff and
+conflicting-sign rejection have been removed; the old 30 m proximity activation
+is superseded by the cone and passage rules above.
 
 Colour still uses speed > limit - tolerance. Automatic audio additionally
 requires a limit of at least 60 km/h. The explicit Test Sound button remains

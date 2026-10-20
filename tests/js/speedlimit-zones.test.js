@@ -52,7 +52,7 @@ test('corner sign is rechecked beyond radius after heading catches up, in either
 });
 test('corner candidates expire after configured travel, not elapsed time',async()=>{
   const [m,{CONFIG:c}] = await modules;
-  const t=new m.DriveTracker([[...point(0,0),60,90,1]],{...c,signRecheckDistanceM:10});
+  const t=new m.DriveTracker([[...point(0,0),60,90,1]],{...c,signConeRangeM:30,signRecheckDistanceM:10});
   for(const y of [-60,-45,-30,-15,0])t.update(point(0,y));
   t.update(point(25,0));t.update(point(50,0));assert.equal(t.limit,50);
 });

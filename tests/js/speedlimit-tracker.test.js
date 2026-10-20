@@ -63,7 +63,8 @@ test('configuration controls distance, angle, default and history settings',asyn
   const t=new m.DriveTracker([[...origin,80,0,1]],config);
   assert.equal(t.limit,40);
   t.update(point(0,-15));t.update(point(0,-9));assert.equal(t.heading,null);
-  t.update(point(0,-6));assert.equal(t.limit,80);
+  t.update(point(0,-6));assert.equal(t.limit,40);
+  t.update(point(0,3));assert.equal(t.limit,80);
   assert.equal(m.qualifyingSign(origin,t.signs,21,config),null);
   assert.equal(m.qualifyingSign(point(0,11),t.signs,0,config),null);
 });

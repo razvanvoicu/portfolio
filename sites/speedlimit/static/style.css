@@ -13,3 +13,4 @@ body.severe .wordmark small{color:#18532c;border-color:#55734e}
 body.severe .dot{background:#9c1434}
 body.severe .device-status .warning{color:#8c1636}
 #gentle-excess{width:100%;min-height:56px;margin-top:14px;border:1px solid #3c5263;background:#080d12;color:var(--blue);font-size:28px;padding:8px 16px;border-radius:10px}
+#limit{background:transparent;border:0;padding:0;opacity:1;min-width:80px;min-height:60px;text-align:left;touch-action:manipulation}#limit:disabled{cursor:default}#limit:not(:disabled){text-decoration:underline;text-decoration-thickness:2px;text-underline-offset:8px}#reject-hint{min-height:16px;font-size:11px;line-height:16px;color:var(--blue)}

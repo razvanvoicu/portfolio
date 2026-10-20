@@ -121,13 +121,28 @@ test('display enters silent school zone then restores the preceding limit and al
   const app = await setup(60,[[103.85,1.301,null,0,2,'school-start'],[103.85,1.302,null,0,3,'school-end']]);
   await app.start();
   app.position(20,{latitude:1.3008});
+  assert.equal(app.get('limit').textContent,60);
+  app.gainValues.length = 0;
+  app.position(20,{latitude:1.3011});
   assert.equal(app.get('limit').textContent,40);
   assert.equal(app.get('limit-description').textContent,'School zone');
   assert.equal(app.get('speed').className,'reading over');
   assert.equal(app.gainValues.includes(0.16),false);
   app.position(20,{latitude:1.301});
   app.position(20,{latitude:1.3015});
-  app.position(20,{latitude:1.3018});
+  app.position(20,{latitude:1.3021});
   assert.equal(app.get('limit').textContent,60);
   assert.equal(app.gainValues.includes(0.16),true);
+});
+
+test('limit tap restores the previous value only during the seven-second window', async () => {
+  const app = await setup(); await app.start();
+  assert.equal(app.get('limit').disabled, false);
+  assert.match(app.get('reject-hint').textContent, /Tap/);
+  app.advance(7000); app.get('limit').onclick();
+  assert.equal(app.get('limit').textContent, 50);
+  assert.equal(app.get('limit').disabled, true);
+  const expired = await setup(); await expired.start(); expired.advance(7001);
+  assert.equal(expired.get('limit').disabled, true);
+  expired.get('limit').onclick(); assert.equal(expired.get('limit').textContent, 70);
 });

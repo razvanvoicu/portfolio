@@ -41,6 +41,7 @@ $('tolerance').addEventListener('input', () => {
 });
 $('minus').onclick = () => setTolerance(Math.max(-100, tolerance - 1));
 $('plus').onclick = () => setTolerance(Math.min(100, tolerance + 1));
+$('limit').onclick = () => { if (running && tracker.rejectChange(Date.now())) render(); };
 $('gentle-excess').value = String(gentleExcess);
 $('gentle-excess').addEventListener('change', () => {
   const input = $('gentle-excess'), value = Number(input.value);
@@ -136,7 +137,7 @@ $('start').onclick = async () => {
     if (Date.now() - position.timestamp > CONFIG.maxFixAgeMs || position.timestamp > Date.now() + CONFIG.futureFixToleranceMs) return;
     fix = position; locationError = '';
     const point = [position.coords.longitude, position.coords.latitude];
-    if (inSingapore(point, SG_POLYGONS)) tracker.update(point);
+    if (inSingapore(point, SG_POLYGONS)) tracker.update(point, Date.now());
     render();
   }, error => {
     if (!running || token !== attempt) return;
@@ -178,12 +179,16 @@ function render() {
   $('speed').className = `reading ${speed === null || limit === null ? 'neutral' : over ? 'over' : 'good'}`;
   $('speed').setAttribute('aria-label', speed === null ? 'Speed unavailable' : `${speed.toFixed(1)} kilometres per hour`);
   $('limit').textContent = limit ?? '—';
+  const canReject = running && tracker.canReject(Date.now());
+  $('limit').disabled = !canReject;
+  $('limit').setAttribute('aria-label', `${limit} kilometres per hour${canReject ? '. Tap to restore previous limit' : ''}`);
+  $('reject-hint').textContent = canReject ? 'Wrong limit? Tap the number to undo' : '';
   $('status').textContent = status;
   $('dot').className = running && speed !== null ? 'dot active' : 'dot';
   $('alert').textContent = over ? 'SLOW DOWN · ABOVE ALERT THRESHOLD' : speed === null ? 'SINGAPORE SPEED MONITOR' : 'WITHIN ALERT THRESHOLD';
   $('alert').className = `alert${over ? ' over' : ''}`;
   $('threshold').textContent = `${limit < CONFIG.minimumAudibleLimitKph ? 'Colour' : 'Alert'} above ${threshold(limit, tolerance)} km/h${limit < CONFIG.minimumAudibleLimitKph ? ' · silent' : ''}`;
-  $('limit-description').textContent = info;
+  $('limit-description').textContent = tracker.manualOverride ? 'Restored previous limit' : info;
   $('location-note').textContent = note;
   $('start').innerHTML = running ? 'Stop drive <span aria-hidden="true">■</span>' : 'Start drive <span aria-hidden="true">↗</span>';
   $('start').className = `primary${running ? ' running' : ''}`;

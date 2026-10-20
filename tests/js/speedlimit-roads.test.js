@@ -31,7 +31,7 @@ test('road-based school entry saves statutory limit and end restores it',async()
   t.update(point(0,-60));t.update(point(0,-50));assert.equal(t.limit,60);
   for(let y=-40;y<=40;y+=10)t.update(point(0,y));
   assert.equal(t.limit,40);assert.equal(t.schoolZone.limit,60);
-  for(let y=50;y<=90;y+=10)t.update(point(0,y));assert.equal(t.limit,60);assert.equal(t.schoolZone,null);
+  for(let y=50;y<=110;y+=10)t.update(point(0,y));assert.equal(t.limit,60);assert.equal(t.schoolZone,null);
 });
 test('config controls road radius, bearing and ambiguity independently of sign settings',async()=>{
   const [m,{CONFIG:c}]=await modules;
