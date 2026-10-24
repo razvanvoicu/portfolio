@@ -62,6 +62,35 @@ Sources:
 
 ## Sign fallback and school zones
 
+### Manual sign corrections
+
+`data/sign-corrections.json` holds reviewed numeric speed-sign corrections.
+The compiler applies them after reading the official snapshot; raw downloads
+remain unchanged. Generated metadata records the correction file hash and count.
+Future corrections belong in this file, rather than in generated JavaScript.
+
+Each correction has an `operation`, `id`, `reason` and `evidence`:
+
+- `add`: supply a five-field `sign` array (longitude, latitude, km/h, traffic-flow
+  bearing, ID). Use a unique string ID beginning with `manual:`.
+- `update`: supply the existing numeric source ID, its complete original array
+  as `expected`, and its replacement array as `sign`, keeping the same ID.
+- `disable`: supply the source ID and its complete original array as `expected`.
+
+Updates/disables fail compilation if the source record changes or disappears,
+so a refreshed download requires review rather than silently applying a stale
+correction. Duplicate correction IDs and additions colliding with source IDs
+also fail. School-zone markers are outside this correction file's scope.
+
+The initial addition is the missing 40 km/h sign beside The Lanai on the
+Hillview Avenue spur, at the user-supplied map pin. Its approximate westbound
+travel bearing follows the spur geometry. The separate Jalan Remaja sign
+(source ID 86695) is preserved. This adds a sign; it does not assign a statutory
+limit to the entire spur or change detection thresholds.
+
+After editing corrections, run `python scripts/speedlimit_data.py` using the
+cached downloads (or add `--download` to refresh), then rebuild the repository.
+
 The app bundles every "Maximum Speed Limit" sign in the LTA Traffic Sign
 GeoJSON snapshot from data.gov.sg, dataset d_bbf0132c7290d6838f82003972d933d5.
 It also bundles every sign whose description contains "School Zone", tagging

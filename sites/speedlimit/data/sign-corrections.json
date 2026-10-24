@@ -1,0 +1,11 @@
+{
+  "corrections": [
+    {
+      "operation": "add",
+      "id": "manual:hillview-avenue-lanai-40",
+      "sign": [103.762112, 1.356569, 40, 270, "manual:hillview-avenue-lanai-40"],
+      "reason": "Missing 40 km/h sign beside The Lanai, facing traffic entering the Hillview Avenue cul-de-sac towards Hilltop Grove. Separate from Jalan Remaja sign 86695.",
+      "evidence": "User-supplied Street View image showing the 40 sign beneath the dead-end sign beside The Lanai; map pin https://maps.app.goo.gl/yFKa4NdqX8vzbSsH8 (1.356569, 103.762112), supplied 2026-10-24. Travel bearing 270 degrees follows the westbound spur geometry; approximate, not a surveyed sign bearing."
+    }
+  ]
+}

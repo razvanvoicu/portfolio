@@ -1,4 +1,4 @@
-const CACHE = 'speedlimit-1.10.2';
+const CACHE = 'speedlimit-1.10.4';
 const SHELL = ['./', './index.html', './style.css', './app.js', './core.mjs', './config.mjs', './road-data.js', './roads.mjs', './network.mjs', './manifest.json', './icon.svg', './icons/icon-192.png', './icons/icon-512.png'];
 self.addEventListener('install', event => {
   event.waitUntil(caches.open(CACHE).then(cache => cache.addAll(SHELL)));

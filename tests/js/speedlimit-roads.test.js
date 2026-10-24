@@ -4,6 +4,35 @@ const modules = Promise.all([import('../../sites/speedlimit/static/roads.mjs'),i
 const origin=[103.85,1.3];
 const point=(x,y)=>[origin[0]+x/(111194.9266*Math.cos(origin[1]*Math.PI/180)),origin[1]+y/111194.9266];
 const feature=(road,limit,id,x)=>[road,limit,id,[point(x,-100),point(x,100)]];
+
+test('Lanai manual sign activates 40 entering the real spur from either approach',async()=>{
+  const [m,{CONFIG:c},core]=await modules;
+  const data=await import('../../sites/speedlimit/static/network.mjs');
+  const signs=await import('../../sites/speedlimit/static/road-data.js');
+  const manualId='manual:hillview-avenue-lanai-40';
+  assert.equal(signs.SPEED_SIGNS.filter(s=>s[4]===manualId).length,1);
+  assert.deepEqual(signs.SPEED_SIGNS.find(s=>s[4]===86695),[103.7621193,1.3570469,40,288.60400129,86695]);
+  for(const approach of [null,8986,10717]) {
+    let route=data.ROAD_FEATURES.find(f=>f[2]===6084)[3];
+    if(approach) {
+      let points=data.ROAD_FEATURES.find(f=>f[2]===approach)[3];
+      if(core.distance(points.at(-1),route[0])>core.distance(points[0],route[0]))points=[...points].reverse();
+      route=[...points,...route];
+    }
+    const t=new m.RoadDriveTracker(signs.SPEED_SIGNS,c,signs.SCHOOL_SIGNS,data.ROAD_FEATURES,data.ROAD_IDENTITIES);
+    t.update(route[0]);
+    for(let i=1;i<route.length;i++) {
+      const a=route[i-1],b=route[i],steps=Math.ceil(core.distance(a,b)/6);
+      for(let j=1;j<=steps;j++)t.update(a.map((v,k)=>v+(b[k]-v)*j/steps));
+    }
+    assert.equal(t.limit,40,`approach ${approach}`);
+    assert.equal(t.sign.id,manualId);
+  }
+  // The added sign faces entering traffic and must not apply when leaving.
+  const t=new m.RoadDriveTracker(signs.SPEED_SIGNS.filter(s=>s[4]===manualId),c,[],[],[]);
+  for(const x of [103.7618,103.7619,103.7620,103.7621,103.7622,103.7623])t.update([x,1.35662]);
+  assert.equal(t.limit,50);
+});
 test('parallel roads: ambiguous initially, retain eligible previous road, then switch',async()=>{
   const [m,{CONFIG:c}]=await modules;
   const matcher=new m.RoadMatcher([feature(0,60,1,0),feature(1,70,2,15)],[['A','Road A'],['B','Road B']],c);
