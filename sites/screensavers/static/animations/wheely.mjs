@@ -1,8 +1,8 @@
 import { Wander } from '../wander.mjs';
 
 const TAU = Math.PI * 2;
-const PERIOD = 18;
-const TRAIL_SECONDS = 6;
+const PERIOD = 9;
+const TRAIL_SECONDS = PERIOD * 0.8;
 const SAMPLE_INTERVAL = 1 / 60;
 
 export const wheely = { name: 'Wheely', create: () => new Wheely() };
@@ -58,6 +58,16 @@ class Wheely {
     ctx.beginPath(); ctx.arc(0, 0, radius / 2, 0, TAU);
     ctx.strokeStyle = '#bacb94'; ctx.lineWidth = 2 * unit; ctx.stroke();
 
+    const angle = this.time * TAU / PERIOD;
+    const a = rodPoint(angle, 0), b = rodPoint(angle, 1);
+    line(a.x * radius, a.y * radius, b.x * radius, b.y * radius, '#c8ddd2', 5);
+    for (const p of [a, b]) {
+      disk(p.x * radius, p.y * radius, 7, '#7ed6b3');
+      disk(p.x * radius, p.y * radius, 3.5, '#edbdc9');
+    }
+    const middle = rodPoint(angle, 0.5);
+    disk(middle.x * radius, middle.y * radius, 6, '#101c29');
+    disk(middle.x * radius, middle.y * radius, 2.3, '#c8ddd2');
     for (const fraction of [0.25, 0.75]) {
       for (let i = 1; i < this.samples.length; i++) {
         const t = this.samples[i];
@@ -70,16 +80,6 @@ class Wheely {
       }
     }
     ctx.globalAlpha = 1;
-    const angle = this.time * TAU / PERIOD;
-    const a = rodPoint(angle, 0), b = rodPoint(angle, 1);
-    line(a.x * radius, a.y * radius, b.x * radius, b.y * radius, '#c8ddd2', 5);
-    for (const p of [a, b]) {
-      disk(p.x * radius, p.y * radius, 7, '#7ed6b3');
-      disk(p.x * radius, p.y * radius, 3.5, '#edbdc9');
-    }
-    const middle = rodPoint(angle, 0.5);
-    disk(middle.x * radius, middle.y * radius, 6, '#101c29');
-    disk(middle.x * radius, middle.y * radius, 2.3, '#c8ddd2');
     for (const fraction of [0.25, 0.75]) {
       const p = rodPoint(angle, fraction);
       const tangent = Math.atan2(fraction * Math.cos(angle), -(1 - fraction) * Math.sin(angle));

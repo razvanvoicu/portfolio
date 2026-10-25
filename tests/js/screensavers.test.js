@@ -108,3 +108,32 @@ test('wandering stays inside bounds through smooth steering without clamping', a
     }
   }
 });
+
+test('Wheely rotates uniformly every nine seconds with 80% trails above the rod', async () => {
+  const { wheely } = await import('../../sites/screensavers/static/animations/wheely.mjs');
+  const animation = wheely.create();
+  animation.resize(1000, 1000);
+  const operations = [];
+  const ctx = new Proxy({}, {
+    get(target, key) {
+      if (key in target) return target[key];
+      return (...args) => operations.push({ op: key, args, color: target.strokeStyle });
+    },
+  });
+  for (const elapsed of [8, 0.5, 0.5, 0.5]) {
+    animation.update(elapsed);
+    operations.length = 0;
+    animation.draw(ctx);
+    const rodIndex = operations.findIndex(o => o.op === 'stroke' && o.color === '#c8ddd2');
+    const trails = operations.map((o, i) => ({ ...o, i })).filter(o => o.op === 'stroke' && o.color.startsWith('hsl('));
+    assert.ok(trails.length > 0 && trails.every(o => o.i > rodIndex));
+    const start = operations[rodIndex - 2].args;
+    const angle = Math.atan2(operations[rodIndex - 1].args[1], start[0]);
+    const expected = animation.time * 2 * Math.PI / 9;
+    assert.ok(Math.abs(Math.sin(angle) - Math.sin(expected)) < 1e-12);
+    assert.ok(Math.abs(Math.cos(angle) - Math.cos(expected)) < 1e-12);
+    const span = animation.time - animation.samples[0];
+    assert.ok(Math.abs(span / 9 - 0.8) < 1 / 540 + 1e-10);
+    assert.equal(operations.filter(o => o.op === 'closePath').length, 2);
+  }
+});
