@@ -1,4 +1,4 @@
-const CACHE_NAME = "cadencereps-v3";
+const CACHE_NAME = "cadencereps-hourly-1";
 const APP_SHELL = [
   "/",
   "/index.html",
@@ -26,21 +26,27 @@ self.addEventListener("activate", (event) => {
   );
 });
 
-self.addEventListener("fetch", (event) => {
-  if (event.request.method !== "GET") return;
+const MAX_AGE_MS = 60 * 60 * 1000;
+self.addEventListener('fetch', event => {
+  const url = new URL(event.request.url);
+  if (event.request.method !== 'GET' || url.origin !== self.location.origin) return;
+  if (url.pathname.startsWith('/api/') || url.pathname.startsWith('/stats/')) return;
 
-  event.respondWith(
-    caches.match(event.request).then((cached) => {
-      const network = fetch(event.request)
-        .then((response) => {
-          if (response.ok) {
-            const copy = response.clone();
-            caches.open(CACHE_NAME).then((cache) => cache.put(event.request, copy));
-          }
-          return response;
-        })
-        .catch(() => cached);
-      return cached || network;
-    })
-  );
+  event.respondWith((async () => {
+    const cache = await caches.open(CACHE_NAME);
+    const cached = await cache.match(event.request);
+    if (cached) {
+      const date = Date.parse(cached.headers.get('Date'));
+      const age = Math.max(Date.now() - date, Number(cached.headers.get('Age') || 0) * 1000);
+      if (Number.isFinite(age) && age < MAX_AGE_MS) return cached;
+    }
+    try {
+      const response = await fetch(event.request);
+      if (response.ok) await cache.put(event.request, response.clone());
+      return response;
+    } catch (error) {
+      if (cached) return cached;
+      throw error;
+    }
+  })());
 });

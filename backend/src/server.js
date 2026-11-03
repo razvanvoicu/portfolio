@@ -1,6 +1,7 @@
 import { serve } from "@hono/node-server";
 import { Hono } from "hono";
 import { statsRoutes } from "./routes/stats.js";
+import { createSpeedlimitRoutes } from "./routes/speedlimit.js";
 
 // Firestore's client can reject internal (retry/auth) promises that aren't
 // reachable from our own try/catch around the write. This is a best-effort
@@ -11,6 +12,7 @@ process.on("unhandledRejection", (reason) => {
 
 const app = new Hono();
 app.route("/stats", statsRoutes);
+app.route("/api/speedlimit", createSpeedlimitRoutes());
 
 // Not PORT: Cloud Run/nginx already own that (nginx listens on 8080 as the
 // container's public port). This backend is only reachable through nginx's

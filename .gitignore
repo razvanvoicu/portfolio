@@ -5,3 +5,4 @@ __pycache__/
 .pytest_cache/
 se-metadata.json
 /backend/node_modules/
+secretlocator

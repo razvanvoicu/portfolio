@@ -4,7 +4,7 @@ let firestore;
 
 export function getFirestore() {
   if (!firestore) {
-    firestore = new Firestore();
+    firestore = new Firestore({ databaseId: "(default)" });
   }
   return firestore;
 }

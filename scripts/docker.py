@@ -39,8 +39,16 @@ def pull() -> None:
 
 
 def build() -> None:
+    directory = Path((ROOT / "secretlocator").read_text(encoding="utf-8-sig").strip()).expanduser()
+    if not directory.is_absolute():
+        directory = ROOT / directory
+    password_file = directory / "speedlimitpassword.txt"
+    if not password_file.is_file():
+        raise SystemExit("speedlimitpassword.txt was not found in the directory named by secretlocator.")
     subprocess.run([sys.executable, "scripts/build.py"], cwd=ROOT, check=True)
-    docker("build", "--pull", "--tag", IMAGE, ".")
+    # Build secrets do not invalidate Docker's cache when their contents change.
+    docker("build", "--pull", "--no-cache-filter", "runtime",
+           "--secret", f"id=speedlimit_password,src={password_file}", "--tag", IMAGE, ".")
 
 
 def stop() -> None:

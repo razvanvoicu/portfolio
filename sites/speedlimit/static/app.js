@@ -4,14 +4,63 @@ import { RoadDriveTracker } from './roads.mjs';
 import { ROAD_FEATURES, ROAD_IDENTITIES, NETWORK_INFO } from './network.mjs';
 
 import { CONFIG } from './config.mjs';
+import { TripRecorder } from './recording.mjs';
 
 const tracker = new RoadDriveTracker(SPEED_SIGNS, CONFIG, SCHOOL_SIGNS, ROAD_FEATURES, ROAD_IDENTITIES);
 const $ = id => document.getElementById(id);
-let tolerance = 0;
+let tolerance = 2;
 let gentleExcess = CONFIG.gentleExcessKph;
 try { const saved = localStorage.getItem('speedlimit.gentleExcess'); if (saved !== null && Number.isFinite(Number(saved)) && Number(saved) >= 0) gentleExcess = Number(saved); } catch {}
 try { const saved = localStorage.getItem('speedlimit.tolerance'); if (saved !== null && Number.isFinite(Number(saved))) tolerance = Math.max(-100, Math.min(100, Number(saved))); } catch {}
 let running = false, watch = null, fix = null, wake = null, wakePending = false;
+const recorder = new TripRecorder({
+  storage: { getItem: key => localStorage.getItem(key), setItem: (key, value) => localStorage.setItem(key, value) },
+  request: (url, options) => fetch(url, options),
+  onStatus(text, failed = false) {
+    $('record-status').textContent = text;
+    $('retry-recording').hidden = !failed;
+  },
+});
+$('record').checked = recorder.enabled;
+$('record-status').textContent = recorder.pending.length ? 'Unsaved recorded rides on this device. Retry the save with Record on.' : recorder.enabled ? 'Recording enabled.' : '';
+$('retry-recording').hidden = !recorder.pending.length;
+$('retry-recording').disabled = !recorder.enabled;
+$('retry-recording').onclick = () => recorder.savePending();
+function askRecordingPassword() {
+  return new Promise(resolve => {
+    const dialog = $('record-password-dialog'), input = $('record-password');
+    input.value = '';
+    const finish = value => { dialog.close(); resolve(value); };
+    $('record-password-form').onsubmit = event => {
+      event.preventDefault();
+      if (input.value) finish(input.value);
+    };
+    $('cancel-record-password').onclick = () => finish(null);
+    dialog.oncancel = event => { event.preventDefault(); finish(null); };
+    dialog.showModal();
+    input.focus();
+  });
+}
+$('record').onchange = async () => {
+  if (running) { $('record').checked = recorder.enabled; return; }
+  if (!$('record').checked) {
+    recorder.disable(); $('retry-recording').disabled = true; return;
+  }
+  $('record').checked = false;
+  $('record').disabled = true;
+  $('start').disabled = true;
+  try {
+    const reuse = recorder.password && window.confirm('Reuse the stored recording password?');
+    const password = reuse ? recorder.password : await askRecordingPassword();
+    if (password === null) return;
+    $('record-status').textContent = 'Checking password…';
+    await recorder.enable(password);
+    $('record-status').textContent = 'Recording enabled.';
+    $('record').checked = true;
+    $('retry-recording').disabled = false;
+  } catch (error) { $('record-status').textContent = error.message; }
+  finally { $('record').disabled = running; $('start').disabled = false; }
+};
 let audio = null, tone = null, volume = null, pulse = null, testUntil = 0, attempt = 0;
 let activeLevel = 'off', testLevel = 'loud';
 let message = 'READY WHEN YOU ARE', wakeError = '', locationError = '';
@@ -42,13 +91,20 @@ $('tolerance').addEventListener('input', () => {
 $('minus').onclick = () => setTolerance(Math.max(-100, tolerance - 1));
 $('plus').onclick = () => setTolerance(Math.min(100, tolerance + 1));
 $('limit').onclick = () => { if (running && tracker.rejectChange(Date.now())) render(); };
+function setGentleExcess(value) {
+  if (!Number.isFinite(value) || value < 0) return;
+  gentleExcess = value;
+  $('gentle-excess').value = String(value);
+  try { localStorage.setItem('speedlimit.gentleExcess', String(value)); } catch {}
+  render();
+}
+$('gentle-minus').onclick = () => setGentleExcess(Math.max(0, gentleExcess - 1));
+$('gentle-plus').onclick = () => setGentleExcess(gentleExcess + 1);
 $('gentle-excess').value = String(gentleExcess);
 $('gentle-excess').addEventListener('change', () => {
   const input = $('gentle-excess'), value = Number(input.value);
   if (input.value.trim() === '' || !input.validity.valid || !Number.isFinite(value) || value < 0) { input.value = String(gentleExcess); return; }
-  gentleExcess = value;
-  try { localStorage.setItem('speedlimit.gentleExcess', String(value)); } catch {}
-  render();
+  setGentleExcess(value);
 });
 
 async function enableAudio() {
@@ -113,8 +169,10 @@ async function acquireWake() {
   } catch { wakeError = 'Screen wake unavailable'; }
   finally { wakePending = false; render(); }
 }
-function stop() {
+function stop(saveRecording = true) {
   running = false; attempt++;
+  $('record').disabled = false;
+  if (saveRecording) void recorder.stop();
   if (watch !== null) navigator.geolocation.clearWatch(watch);
   watch = null; fix = null; testUntil = 0; tracker.reset();
   if (wake) { wake.release().catch(() => {}); wake = null; }
@@ -125,6 +183,8 @@ $('start').onclick = async () => {
   if (!window.isSecureContext || !navigator.geolocation) { message = 'SECURE LOCATION ACCESS REQUIRED'; render(); return; }
   tracker.reset();
   running = true; fix = null; locationError = ''; message = 'ACQUIRING GPS';
+  $('record').disabled = true;
+  recorder.start();
   const token = ++attempt;
   render();
   // Resume audio inside this tap, before waiting for location permission.
@@ -133,6 +193,7 @@ $('start').onclick = async () => {
   acquireWake();
   watch = navigator.geolocation.watchPosition(position => {
     if (!running || token !== attempt) return;
+    recorder.record(position);
     if (document.visibilityState !== 'visible') return;
     if (Date.now() - position.timestamp > CONFIG.maxFixAgeMs || position.timestamp > Date.now() + CONFIG.futureFixToleranceMs) return;
     fix = position; locationError = '';
@@ -203,7 +264,7 @@ document.addEventListener('visibilitychange', () => {
   if (document.visibilityState === 'visible') { acquireWake(); render(); }
   else { fix = null; testUntil = 0; alarm('off'); }
 });
-window.addEventListener('pagehide', stop);
+window.addEventListener('pagehide', () => stop(false));
 setInterval(() => { if (running || testUntil) render(); }, 500);
 setTolerance(tolerance);
 if ('serviceWorker' in navigator) navigator.serviceWorker.register('./sw.js').catch(() => {

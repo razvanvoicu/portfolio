@@ -125,6 +125,33 @@ limit, and a sharp turn resets it. Sound is disabled at limits below 60 km/h.
 Driving thresholds and heading-history settings live in `static/config.mjs`. See `sites/speedlimit/DATA.md` for sources and matching limits.
 Refresh the constants with `python scripts/speedlimit_data.py --download`.
 
+The temporary **Record** switch in Drive settings enables GPS ride recording
+after backend password validation. It is disabled between Start and Stop.
+Every GPS callback, including fixes excluded from the live display, records its
+timestamp (Unix milliseconds) and all available coordinate fields; speed remains
+in the browser's native metres per second. Stop uploads batches of up to 200 fixes.
+Failed uploads are retained in browser storage and can be retried from settings.
+The password and switch state are restored from browser storage on the next launch.
+
+The shared backend exposes `POST /api/speedlimit/validate` and
+`POST /api/speedlimit/trips` on the speedlimit hostname. Both accept a JSON
+`password`. Trips are stored in Firestore's `(default)` database under
+`SpeedLimit/<start-ISO-timestamp>_<UUID>`, with start/stop timestamps, fix and
+chunk counts, and a `savedChunks` map. The `fixes` subcollection holds numbered
+batch documents containing ordered fix arrays. Retrying overwrites the same
+batch IDs. A trip is fully saved when `savedChunks` contains `chunkCount` entries.
+
+For Docker builds, create the ignored root file `secretlocator`, containing the
+directory path holding `speedlimitpassword.txt`. `poe image`, `poe run` and
+`poe deploy` pass that file directly as a BuildKit secret and copy it into
+`/backend/secrets/speedlimitpassword.txt` inside the image. No staging copy is
+created. The runtime stage is rebuilt so password changes are included.
+
+All static HTTP content expires after one hour. Installed apps refresh their
+offline cache entries after one hour when online and keep cached content usable
+offline. Backend responses are not cached. To run backend tests locally, first
+install the locked Node dependencies with `npm --prefix backend ci`.
+
 ## Adding another site
 
 1. Create `sites/<site-name>/content`, `templates`, `static`, and `public`.

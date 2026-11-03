@@ -3,21 +3,23 @@ const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const vm = require('node:vm');
 
-async function setup(signLimit = 70, schoolSigns = []) {
+async function setup(signLimit = 70, schoolSigns = [], initialStorage = {}) {
   const core = await import('../../sites/speedlimit/static/core.mjs');
   const roads = await import('../../sites/speedlimit/static/roads.mjs');
   const { CONFIG } = await import('../../sites/speedlimit/static/config.mjs');
+  const { TripRecorder } = await import('../../sites/speedlimit/static/recording.mjs');
   const elements = {};
   const get = id => elements[id] ||= {textContent:'', className:'', style:{}, value:'0', validity:{valid:true}, handlers:{},
-    setAttribute(){}, addEventListener(name, fn){this.handlers[name]=fn;}, showModal(){}, close(){}};
-  let now = Date.now(), gps, gpsError, cleared = false, saved = {}, gainValues = [];
+    setAttribute(){}, addEventListener(name, fn){this.handlers[name]=fn;}, showModal(){this.open=true;}, close(){this.open=false;}, focus(){}};
+  let now = Date.now(), gps, gpsError, cleared = false, saved = {...initialStorage}, gainValues = [], requests = [];
   const timers = new Map(); let timerId = 0;
   const docHandlers = {}, bodyClasses = new Set();
   const context = {
-    ...core, ...roads, CONFIG, ROAD_FEATURES:[], ROAD_IDENTITIES:[], NETWORK_INFO:{geometryDate:'test',verifiedRoadParts:0,roadParts:0}, DATA_INFO:{signCount:1,schoolSignCount:schoolSigns.length,retrieved:new Date(now).toISOString()}, SPEED_SIGNS:[[103.85,1.3,signLimit,0,1]], SCHOOL_SIGNS:schoolSigns,
+    ...core, ...roads, TripRecorder, CONFIG, ROAD_FEATURES:[], ROAD_IDENTITIES:[], NETWORK_INFO:{geometryDate:'test',verifiedRoadParts:0,roadParts:0}, DATA_INFO:{signCount:1,schoolSignCount:schoolSigns.length,retrieved:new Date(now).toISOString()}, SPEED_SIGNS:[[103.85,1.3,signLimit,0,1]], SCHOOL_SIGNS:schoolSigns,
     SG_POLYGONS:[[[[103.6,1.2],[104.1,1.2],[104.1,1.5],[103.6,1.5]]]],
     document:{body:{classList:{toggle:(name,on)=>on?bodyClasses.add(name):bodyClasses.delete(name)}},getElementById:get,visibilityState:'visible',addEventListener:(name, fn)=>docHandlers[name]=fn},
-    window:{isSecureContext:true, addEventListener(){}},
+    window:{isSecureContext:true, addEventListener(){}, confirm:()=>true},
+    fetch:async(url,options)=>{requests.push({url,body:JSON.parse(options.body)}); return {ok:true};},
     navigator:{geolocation:{watchPosition(success, error){gps=success;gpsError=error;return 1;},clearWatch(){cleared=true;}}},
     localStorage:{getItem:key=>saved[key]??null,setItem:(key,value)=>saved[key]=value},
     setInterval:fn=>{timers.set(++timerId,fn);return timerId;}, clearInterval:id=>timers.delete(id),
@@ -32,9 +34,10 @@ async function setup(signLimit = 70, schoolSigns = []) {
   };
   const code = fs.readFileSync('sites/speedlimit/static/app.js','utf8').replace(/^import .*;\r?\n/gm,'');
   vm.runInNewContext(code, context);
-  return {get, context, saved, docHandlers, timers, gainValues, bodyClasses,
+  return {get, context, saved, docHandlers, timers, gainValues, bodyClasses, requests,
     start:async()=>{await get('start').onclick(); gps({timestamp:now, coords:{latitude:1.2999,longitude:103.85,accuracy:5,speed:0}}); gps({timestamp:now,coords:{latitude:1.3,longitude:103.85,accuracy:5,speed:0}});}, stop:()=>get('start').onclick(),
     position:(speed, extras={})=>gps({timestamp:now, coords:{latitude:1.3,longitude:103.85,accuracy:5,speed,...extras}}),
+    rawPosition:position=>gps(position),
     error:code=>gpsError({code}), advance:ms=>{now+=ms; for(const fn of [...timers.values()])fn();},
     isCleared:()=>cleared,
     tolerance:value=>{get('tolerance').value=String(value);get('tolerance').handlers.change();},
@@ -145,4 +148,52 @@ test('limit tap restores the previous value only during the seven-second window'
   const expired = await setup(); await expired.start(); expired.advance(7001);
   assert.equal(expired.get('limit').disabled, true);
   expired.get('limit').onclick(); assert.equal(expired.get('limit').textContent, 70);
+});
+
+test('default tolerance is 2 and gentle stepper buttons persist changes', async () => {
+  const app = await setup();
+  assert.equal(app.get('tolerance').value, '2');
+  app.get('gentle-plus').onclick(); assert.equal(app.get('gentle-excess').value, '4');
+  assert.equal(app.saved['speedlimit.gentleExcess'], '4');
+  for (let i = 0; i < 5; i++) app.get('gentle-minus').onclick();
+  assert.equal(app.get('gentle-excess').value, '0');
+  const restored = await setup(70, [], { 'speedlimit.tolerance': '0' });
+  assert.equal(restored.get('tolerance').value, '0');
+});
+
+test('Record restores settings, is disabled during a ride, captures hidden and stale GPS fixes and saves on Stop', async () => {
+  const app = await setup(70, [], { 'speedlimit.record.password': 'correct', 'speedlimit.record.enabled': 'true' });
+  assert.equal(app.get('record').checked, true);
+  await app.start(); assert.equal(app.get('record').disabled, true);
+  app.advance(9000);
+  app.context.document.visibilityState = 'hidden'; app.position(10);
+  app.context.document.visibilityState = 'visible'; app.position(15);
+  app.rawPosition({timestamp:1, coords:{latitude:1.3,longitude:103.85,accuracy:5,speed:15}});
+  assert.equal(app.requests.length, 0);
+  await app.stop(); await new Promise(resolve => setImmediate(resolve));
+  assert.equal(app.get('record').disabled, false);
+  assert.equal(app.requests.length, 1);
+  assert.equal(app.requests[0].body.password, 'correct');
+  assert.equal(app.requests[0].body.fixes.length, 5);
+  assert.equal(app.requests[0].body.fixes.at(-1).timestamp, 1);
+});
+
+test('Record validates before enabling, supports stored-password reuse and re-entry after No', async () => {
+  const app = await setup(70, [], { 'speedlimit.record.password': 'correct', 'speedlimit.record.enabled': 'false' });
+  app.get('record').checked = true; await app.get('record').onchange();
+  assert.equal(app.requests[0].url, '/api/speedlimit/validate');
+  assert.equal(app.get('record').checked, true);
+  app.get('record').checked = false; await app.get('record').onchange();
+  app.context.window.confirm = () => false;
+  app.get('record').checked = true;
+  const enable = app.get('record').onchange();
+  assert.equal(app.get('record-password-dialog').open, true);
+  assert.equal(app.get('record').checked, false);
+  assert.equal(app.get('start').disabled, true);
+  app.get('record-password').value = 'replacement';
+  app.get('record-password-form').onsubmit({ preventDefault() {} });
+  await enable;
+  assert.equal(app.requests.at(-1).body.password, 'replacement');
+  assert.equal(app.saved['speedlimit.record.password'], 'replacement');
+  assert.equal(app.get('start').disabled, false);
 });
