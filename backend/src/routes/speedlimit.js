@@ -10,6 +10,19 @@ const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{1
 const hash = value => createHash("sha256").update(value).digest();
 const validTime = value => Number.isFinite(value) && Number.isFinite(new Date(value).getTime());
 const optionalNumber = value => value === null || Number.isFinite(value);
+const identifier = value => value === null || Number.isSafeInteger(value) || (typeof value === "string" && value.length <= 200);
+const nullableText = value => value === null || (typeof value === "string" && value.length <= 200);
+const INFERENCE_FIELDS = ["receivedAt", "processingStatus", "source", "headingDeg", "signId", "roadMatchState", "roadCode", "roadName", "roadFeatureId", "roadLimitKph", "roadDistanceM", "schoolZone", "manualOverride", "rejectedSignId"];
+
+function validInference(value) {
+  return value && typeof value === "object" && !Array.isArray(value) && validTime(value.receivedAt) &&
+    ["processed", "background", "stale", "future", "outside-singapore"].includes(value.processingStatus) &&
+    ["default", "sign", "mapped-road", "school-zone", "manual-override"].includes(value.source) &&
+    optionalNumber(value.headingDeg) && identifier(value.signId) && identifier(value.roadFeatureId) && identifier(value.rejectedSignId) &&
+    ["heading", "matched", "unmatched", "uncertain"].includes(value.roadMatchState) &&
+    nullableText(value.roadCode) && nullableText(value.roadName) && optionalNumber(value.roadLimitKph) && optionalNumber(value.roadDistanceM) &&
+    typeof value.schoolZone === "boolean" && typeof value.manualOverride === "boolean";
+}
 
 function readPassword() {
   try {
@@ -30,7 +43,9 @@ function validTrip(body) {
   return Array.isArray(fixes) && fixes.length === expectedLength && fixes.every(fix =>
     fix && validTime(fix.timestamp) && Number.isFinite(fix.latitude) && Math.abs(fix.latitude) <= 90 &&
     Number.isFinite(fix.longitude) && Math.abs(fix.longitude) <= 180 &&
-    ["accuracy", "altitude", "altitudeAccuracy", "heading", "speed"].every(key => optionalNumber(fix[key])));
+    ["accuracy", "altitude", "altitudeAccuracy", "heading", "speed"].every(key => optionalNumber(fix[key])) &&
+    (fix.speedLimitKph === undefined || (Number.isFinite(fix.speedLimitKph) && fix.speedLimitKph >= 0)) &&
+    (fix.inference === undefined || validInference(fix.inference)));
 }
 
 export function createSpeedlimitRoutes({ password = readPassword(), getDatabase = getFirestore } = {}) {
@@ -57,9 +72,12 @@ export function createSpeedlimitRoutes({ password = readPassword(), getDatabase 
     if (!validTrip(body)) return c.json({ error: "Invalid trip data" }, 400);
     const { tripId, startedAt, stoppedAt, fixCount, chunkIndex, chunkCount } = body;
     // Whitelist fields so the submitted password can never become stored data.
-    const fixes = body.fixes.map(fix => Object.fromEntries(
-      ["timestamp", "latitude", "longitude", "accuracy", "altitude", "altitudeAccuracy", "heading", "speed"].map(key => [key, fix[key]])
-    ));
+    const fixes = body.fixes.map(fix => {
+      const stored = Object.fromEntries(["timestamp", "latitude", "longitude", "accuracy", "altitude", "altitudeAccuracy", "heading", "speed"].map(key => [key, fix[key]]));
+      if (fix.speedLimitKph !== undefined) stored.speedLimitKph = fix.speedLimitKph;
+      if (fix.inference !== undefined) stored.inference = Object.fromEntries(INFERENCE_FIELDS.map(key => [key, fix.inference[key]]));
+      return stored;
+    });
     try {
       const db = getDatabase();
       const trip = db.collection("SpeedLimit").doc(tripId);

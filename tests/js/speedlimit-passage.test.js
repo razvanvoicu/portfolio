@@ -47,7 +47,7 @@ test('reject ramp sign once, restore 90, suppress reapplication until another pa
 
 test('reject school entry restores state; reject exit restores active school zone',async()=>{
   const [m,{CONFIG:c}]=await modules;
-  const markers=[[...point(0,0),null,0,1,'school-start'],[...point(0,100),null,0,2,'school-end']];
+  const markers=[[...point(0,0),40,0,1,'school-start'],[...point(0,100),null,0,2,'school-end']];
   const t=new m.DriveTracker([],c,markers);
   t.update(point(0,-40),0);t.update(point(0,10),100);
   assert.equal(t.limit,40);t.rejectChange(200);assert.equal(t.limit,50);assert.equal(t.schoolZone,null);
@@ -57,15 +57,16 @@ test('reject school entry restores state; reject exit restores active school zon
   assert.equal(u.limit,50);u.rejectChange(300);assert.equal(u.limit,40);assert.equal(u.schoolZone.limit,50);
 });
 
-test('Clementi southbound real data: 60 sign then school entry and exit with sparse fixes',async()=>{
-  const [m,{CONFIG:c}]=await modules;
+test('Clementi southbound real data: generic school warnings do not replace the posted 60',async()=>{
+  const [,{CONFIG:c}]=await modules;
   const data=await import('../../sites/speedlimit/static/road-data.js');
-  const t=new m.DriveTracker(data.SPEED_SIGNS.filter(s=>[78850,78851,78852].includes(s[4])),c,
-    data.SCHOOL_SIGNS.filter(s=>[30634,33040,31080,31314].includes(s[4])));
+  const {RoadDriveTracker}=await import('../../sites/speedlimit/static/roads.mjs');
+  const network=await import('../../sites/speedlimit/static/network.mjs');
+  const t=new RoadDriveTracker(data.SPEED_SIGNS,c,data.SCHOOL_SIGNS,network.ROAD_FEATURES,network.ROAD_IDENTITIES);
   for(const [lon,lat] of [[103.77129,1.3051],[103.77129,1.30499],[103.77129,1.30428]])t.update([lon,lat]);
   assert.equal(t.limit,60);
   for(const p of [[103.77045,1.3014],[103.77022,1.30065]])t.update(p);
-  assert.equal(t.limit,40);assert.equal(t.schoolZone.limit,60);
+  assert.equal(t.limit,60);assert.equal(t.schoolZone,null);
   for(const p of [[103.77004,1.2995],[103.76996,1.2988]])t.update(p);
   assert.equal(t.limit,60);assert.equal(t.schoolZone,null);
 });

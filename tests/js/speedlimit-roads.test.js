@@ -55,7 +55,7 @@ test('road limits apply without passing a sign; unresolved stretch uses default 
 test('road-based school entry saves statutory limit and end restores it',async()=>{
   const [m,{CONFIG:c}]=await modules;
   const t=new m.RoadDriveTracker([],c,[
-    [...point(0,0),null,0,1,'school-start'],[...point(0,100),null,0,2,'school-end']
+    [...point(0,0),40,0,1,'school-start'],[...point(0,100),null,0,2,'school-end']
   ],[feature(0,60,3,0)],[['A','Road A']]);
   t.update(point(0,-60));t.update(point(0,-50));assert.equal(t.limit,60);
   for(let y=-40;y<=40;y+=10)t.update(point(0,y));

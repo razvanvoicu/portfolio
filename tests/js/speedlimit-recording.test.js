@@ -77,3 +77,19 @@ test('failed saves remain retryable with stable trip and chunk identities and no
   assert.deepEqual(calls.at(-1).body, failed);
   assert.equal(r.pending.length, 0);
 });
+
+test('limit and inference are captured at each fix and survive failed-save storage and retry', async () => {
+  const { recorder: r, respond, saved } = await setup();
+  await r.enable('correct'); r.start(1000);
+  const display = {speedLimitKph:70,inference:{source:'sign',signId:18019,headingDeg:302}};
+  r.record(fix(1100),display);
+  display.speedLimitKph = 40; display.inference.source = 'school-zone'; display.inference.signId = 30634;
+  r.record(fix(1200),display);
+  respond({ok:false,status:503}); await r.stop(2000);
+  const reopened = await setup(saved);
+  await reopened.recorder.savePending();
+  const fixes = reopened.calls[0].body.fixes;
+  assert.equal(fixes[0].speedLimitKph,70); assert.equal(fixes[0].inference.source,'sign');
+  assert.equal(fixes[0].inference.signId,18019);
+  assert.equal(fixes[1].speedLimitKph,40); assert.equal(fixes[1].inference.source,'school-zone');
+});

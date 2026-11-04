@@ -55,12 +55,17 @@ export class TripRecorder {
     this.trip = { tripId: `${new Date(startedAt).toISOString()}_${crypto.randomUUID()}`, startedAt, fixes: [] };
     this.onStatus('Recording ride.');
   }
-  record(position) {
+  record(position, display) {
     if (!this.enabled || !this.trip) return;
     const coords = position.coords;
     const fix = { timestamp: position.timestamp };
     for (const key of ['latitude', 'longitude', 'accuracy', 'altitude', 'altitudeAccuracy', 'heading', 'speed']) {
       fix[key] = Number.isFinite(coords[key]) ? coords[key] : null;
+    }
+    if (display) {
+      fix.speedLimitKph = display.speedLimitKph;
+      // Every diagnostic field is a primitive; copy now rather than at upload.
+      fix.inference = { ...display.inference };
     }
     this.trip.fixes.push(fix);
   }

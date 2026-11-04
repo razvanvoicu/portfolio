@@ -3,7 +3,7 @@ const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const vm = require('node:vm');
 
-async function setup(signLimit = 70, schoolSigns = [], initialStorage = {}) {
+async function setup(signLimit = 70, schoolSigns = [], initialStorage = {}, roadFeatures = [], roadIdentities = []) {
   const core = await import('../../sites/speedlimit/static/core.mjs');
   const roads = await import('../../sites/speedlimit/static/roads.mjs');
   const { CONFIG } = await import('../../sites/speedlimit/static/config.mjs');
@@ -15,7 +15,7 @@ async function setup(signLimit = 70, schoolSigns = [], initialStorage = {}) {
   const timers = new Map(); let timerId = 0;
   const docHandlers = {}, bodyClasses = new Set();
   const context = {
-    ...core, ...roads, TripRecorder, CONFIG, ROAD_FEATURES:[], ROAD_IDENTITIES:[], NETWORK_INFO:{geometryDate:'test',verifiedRoadParts:0,roadParts:0}, DATA_INFO:{signCount:1,schoolSignCount:schoolSigns.length,retrieved:new Date(now).toISOString()}, SPEED_SIGNS:[[103.85,1.3,signLimit,0,1]], SCHOOL_SIGNS:schoolSigns,
+    ...core, ...roads, TripRecorder, CONFIG, ROAD_FEATURES:roadFeatures, ROAD_IDENTITIES:roadIdentities, NETWORK_INFO:{geometryDate:'test',verifiedRoadParts:0,roadParts:0}, DATA_INFO:{signCount:1,schoolSignCount:schoolSigns.length,retrieved:new Date(now).toISOString()}, SPEED_SIGNS:[[103.85,1.3,signLimit,0,1]], SCHOOL_SIGNS:schoolSigns,
     SG_POLYGONS:[[[[103.6,1.2],[104.1,1.2],[104.1,1.5],[103.6,1.5]]]],
     document:{body:{classList:{toggle:(name,on)=>on?bodyClasses.add(name):bodyClasses.delete(name)}},getElementById:get,visibilityState:'visible',addEventListener:(name, fn)=>docHandlers[name]=fn},
     window:{isSecureContext:true, addEventListener(){}, confirm:()=>true},
@@ -121,7 +121,7 @@ test('default 50 appears before starting and sub-60 limits never sound', async (
   assert.match(app.get('threshold').textContent,/silent/);
 });
 test('display enters silent school zone then restores the preceding limit and alarm', async () => {
-  const app = await setup(60,[[103.85,1.301,null,0,2,'school-start'],[103.85,1.302,null,0,3,'school-end']]);
+  const app = await setup(60,[[103.85,1.301,40,0,2,'school-start'],[103.85,1.302,null,0,3,'school-end']]);
   await app.start();
   app.position(20,{latitude:1.3008});
   assert.equal(app.get('limit').textContent,60);
@@ -188,6 +188,13 @@ test('Record validates before enabling, supports stored-password reuse and re-en
   app.get('record').checked = true;
   const enable = app.get('record').onchange();
   assert.equal(app.get('record-password-dialog').open, true);
+  assert.equal(app.get('record-password').type, 'password');
+  app.get('show-record-password').checked = true;
+  app.get('show-record-password').onchange();
+  assert.equal(app.get('record-password').type, 'text');
+  app.get('show-record-password').checked = false;
+  app.get('show-record-password').onchange();
+  assert.equal(app.get('record-password').type, 'password');
   assert.equal(app.get('record').checked, false);
   assert.equal(app.get('start').disabled, true);
   app.get('record-password').value = 'replacement';
@@ -196,4 +203,61 @@ test('Record validates before enabling, supports stored-password reuse and re-en
   assert.equal(app.requests.at(-1).body.password, 'replacement');
   assert.equal(app.saved['speedlimit.record.password'], 'replacement');
   assert.equal(app.get('start').disabled, false);
+  app.get('record').checked = false; await app.get('record').onchange();
+  app.get('show-record-password').checked = true; app.get('show-record-password').onchange();
+  app.get('record').checked = true;
+  const reopen = app.get('record').onchange();
+  assert.equal(app.get('record-password').type, 'password');
+  assert.equal(app.get('show-record-password').checked, false);
+  app.get('cancel-record-password').onclick(); await reopen;
+});
+
+const recordingOn = { 'speedlimit.record.password': 'correct', 'speedlimit.record.enabled': 'true' };
+const savedFixes = async app => {
+  await app.stop(); await new Promise(resolve => setImmediate(resolve));
+  return app.requests.flatMap(request => request.body.fixes || []);
+};
+
+test('recorded limits match the display after processing, including skipped fixes and manual undo', async () => {
+  const app = await setup(70, [], recordingOn);
+  await app.start(); assert.equal(app.get('limit').textContent, 70);
+  app.context.document.visibilityState = 'hidden'; app.position(15);
+  app.context.document.visibilityState = 'visible';
+  const coords = {latitude:1.3,longitude:103.85,accuracy:5,speed:15};
+  app.rawPosition({timestamp:1,coords});
+  app.rawPosition({timestamp:app.context.Date.now()+2000,coords});
+  app.position(15,{latitude:1.7});
+  app.get('limit').onclick(); assert.equal(app.get('limit').textContent, 50);
+  app.position(15,{latitude:1.3001});
+  const fixes = await savedFixes(app);
+  assert.equal(fixes[0].speedLimitKph, 50); assert.equal(fixes[0].inference.source, 'default');
+  assert.equal(fixes[1].speedLimitKph, 70); assert.equal(fixes[1].inference.source, 'sign');
+  assert.equal(fixes[1].inference.signId, 1); assert.equal(fixes[1].inference.headingDeg, 0);
+  assert.deepEqual(fixes.slice(2,6).map(f => f.inference.processingStatus), ['background','stale','future','outside-singapore']);
+  assert.ok(fixes.slice(2,6).every(f => f.speedLimitKph === 70));
+  assert.equal(fixes.at(-1).speedLimitKph, 50);
+  assert.equal(fixes.at(-1).inference.source, 'manual-override');
+  assert.equal(fixes.at(-1).inference.rejectedSignId, 1);
+});
+
+test('recording snapshots preserve school-zone entry and exit limits and source IDs', async () => {
+  const app = await setup(60,[[103.85,1.301,40,0,2,'school-start'],[103.85,1.302,null,0,3,'school-end']],recordingOn);
+  await app.start(); app.position(20,{latitude:1.3008}); app.position(20,{latitude:1.3011});
+  assert.equal(app.get('limit').textContent, 40);
+  app.position(20,{latitude:1.3021}); assert.equal(app.get('limit').textContent, 60);
+  const fixes = await savedFixes(app);
+  const entry = fixes.find(f => f.latitude === 1.3011);
+  assert.equal(entry.speedLimitKph, 40); assert.equal(entry.inference.source, 'school-zone');
+  assert.equal(entry.inference.signId, 2); assert.equal(entry.inference.schoolZone, true);
+  assert.equal(fixes.at(-1).speedLimitKph, 60); assert.equal(fixes.at(-1).inference.schoolZone, false);
+});
+
+test('recorded mapped road limit and road identity explain why the nearby sign is not applied', async () => {
+  const app = await setup(70,[],recordingOn,[[0,60,37,[[103.85,1.299],[103.85,1.301]]]],[['TEST','Test Road']]);
+  await app.start(); assert.equal(app.get('limit').textContent, 60);
+  const last = (await savedFixes(app)).at(-1);
+  assert.equal(last.speedLimitKph, 60); assert.equal(last.inference.source, 'mapped-road');
+  assert.equal(last.inference.roadCode, 'TEST'); assert.equal(last.inference.roadName, 'Test Road');
+  assert.equal(last.inference.roadFeatureId, 37); assert.equal(last.inference.roadLimitKph, 60);
+  assert.equal(last.inference.roadMatchState, 'matched'); assert.equal(last.inference.signId, null);
 });

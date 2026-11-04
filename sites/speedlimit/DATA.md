@@ -93,8 +93,14 @@ cached downloads (or add `--download` to refresh), then rebuild the repository.
 
 The app bundles every "Maximum Speed Limit" sign in the LTA Traffic Sign
 GeoJSON snapshot from data.gov.sg, dataset d_bbf0132c7290d6838f82003972d933d5.
-It also bundles every sign whose description contains "School Zone", tagging
-End Of School Zone [3064] as an exit and the other school-zone markers as entry.
+It also bundles every sign whose description contains "School Zone". End Of
+School Zone [3064] is an exit. Only a category explicitly stating
+"School Zone, 40 km/h" is a speed-zone entry with a numeric limit of 40.
+All other categories, including "Drive Carefully", children-ahead logos,
+time plates and distance plates, are warnings without a numeric limit.
+The current snapshot contains 892 warnings, 786 exits and no explicit 40 km/h
+school-zone speed entries. The compiler does not associate a nearby ordinary
+40 sign with a warning marker or infer a combined regulatory sign.
 This is a point inventory, **not a road-segment speed-limit dataset**. It has
 no road names, segment geometry, applicability ranges or time-dependent rules.
 It cannot fulfil guaranteed speed-limit coverage of all Singapore roads.
@@ -122,13 +128,18 @@ then, including against repeated road matching. A later visit can encounter the
 rejected sign again. Stopping resets this state. The window and cone constants
 are in static/config.mjs.
 
-Per the agreed app behavior, school-zone entry markers impose 40 km/h. The
-pre-zone limit and its source are saved once on entry. While inside the zone,
-turns and numeric speed signs cannot replace 40. An End Of School Zone marker
-restores the saved limit. Repeated entry markers do not overwrite that saved
-value. schoolZoneLimitKph is configurable. These are the user-specified app
-rules; the dataset does not distinguish enhanced zones or encode flashing-light
-conditions. School polygons are not used by the app.
+Generic school-zone warnings do not change the speed limit, block ordinary
+numeric signs or clear a manually restored limit. Normal mapped-road and
+numeric-sign behavior continues through those warnings. A school-zone override
+requires an explicit 40 km/h entry; legacy entries with a null limit are also
+ignored. For an explicit speed zone, the pre-zone limit and source are saved
+once, 40 is retained through turns and ordinary signs, and a school-zone exit
+restores the saved value. An exit without an active speed zone has no effect.
+The legal 40 km/h rule depends on the prescribed diagram 12A sign, rather than
+the generic presence of a school-zone marker. From 1 January 2026 it applies
+throughout the day. School polygons are not used by the app.
+
+Legal basis: https://sso.agc.gov.sg/SL-Supp/S691-2025/Published/20251031?DocDate=20251031
 
 Heading is the circular mean of consecutive segment bearings across the last
 four accepted positions. A fix less than 5 m from the last accepted position
@@ -160,7 +171,9 @@ in `static/road-data.js`. Reproduce/update with
 `python scripts/speedlimit_data.py --download`, then run the repository build.
 Downloads remain in ignored tmp/; only compiled constants ship to the browser.
 
-GPS coordinates are processed locally. The app does not transmit location.
+GPS coordinates are processed locally. With Record enabled, recorded fixes and
+displayed-limit diagnostics are uploaded at Stop to the password-protected
+backend; with Record disabled, location is not uploaded.
 GPS speed must be supplied by the device: null speed is not interpreted as zero.
 Location fixes older than 8 seconds are invalid. Audio and wake lock require
 an explicit start gesture. Background browser execution is not guaranteed.

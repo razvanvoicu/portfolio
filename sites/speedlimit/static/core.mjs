@@ -57,7 +57,10 @@ export function signInCone(point, sign, heading, config, reverse = false) {
 }
 export class DriveTracker {
   constructor(signs, config, schoolSigns = []) {
-    this.signs = [...signs, ...schoolSigns]; this.config = config; this.reset();
+    // Warning-only school signs must not set a limit or suppress numeric signs.
+    const speedZones = schoolSigns.filter(sign => sign[5] === 'school-end' ||
+      (sign[5] === 'school-start' && sign[2] === config.schoolZoneLimitKph));
+    this.signs = [...signs, ...speedZones]; this.config = config; this.reset();
   }
   reset() {
     this.positions = []; this.headings = []; this.travelled = 0;
@@ -109,12 +112,14 @@ export class DriveTracker {
       .sort((a, b) => a.passedAt - b.passedAt || Number(Boolean(b.sign[5])) - Number(Boolean(a.sign[5])));
     // Zone markers take precedence over colocated numeric speed signs, so an
     // entry stores the limit BEFORE the accompanying 40 sign changes it.
+    const zonePassages = new Set();
     for (const zone of eligible) {
       if (zone.handled) continue;
+      zone.handled = true;
+      if (zone.sign[5] === 'school-end' && !this.schoolZone) continue;
       if (this.rejectedSignId !== null && zone.sign[4] !== this.rejectedSignId) {
         this.rejectedSignId = null; this.manualOverride = null;
       }
-      zone.handled = true;
       if (zone.sign[5] === 'school-start' && !this.schoolZone) {
         this.schoolZone = { limit: this.limit, sign: this.sign };
         this.limit = c.schoolZoneLimitKph;
@@ -123,10 +128,11 @@ export class DriveTracker {
         this.limit = this.schoolZone.limit; this.sign = this.schoolZone.sign;
         this.schoolZone = null;
       } else if (!zone.sign[5] && !this.schoolZone && numericAllowed &&
-          !eligible.some(entry => entry.sign[5] && Math.abs(entry.passedAt - zone.passedAt) < 1e-8)) {
+          ![...zonePassages].some(passedAt => Math.abs(passedAt - zone.passedAt) < 1e-8)) {
         this.sign = { limit: zone.sign[2], meters: zone.meters, id: zone.sign[4] };
         this.limit = zone.sign[2];
       } else continue;
+      if (zone.sign[5]) zonePassages.add(zone.passedAt);
       this.appliedSignId = zone.sign[4];
     }
   }

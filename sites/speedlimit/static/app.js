@@ -30,6 +30,8 @@ function askRecordingPassword() {
   return new Promise(resolve => {
     const dialog = $('record-password-dialog'), input = $('record-password');
     input.value = '';
+    input.type = 'password';
+    $('show-record-password').checked = false;
     const finish = value => { dialog.close(); resolve(value); };
     $('record-password-form').onsubmit = event => {
       event.preventDefault();
@@ -41,6 +43,9 @@ function askRecordingPassword() {
     input.focus();
   });
 }
+$('show-record-password').onchange = () => {
+  $('record-password').type = $('show-record-password').checked ? 'text' : 'password';
+};
 $('record').onchange = async () => {
   if (running) { $('record').checked = recorder.enabled; return; }
   if (!$('record').checked) {
@@ -178,6 +183,26 @@ function stop(saveRecording = true) {
   if (wake) { wake.release().catch(() => {}); wake = null; }
   alarm('off'); message = 'DRIVE STOPPED'; locationError = ''; render();
 }
+function recordFix(position, processingStatus) {
+  const road = tracker.roadMatch.road;
+  const mapped = tracker.sign?.kind === 'road' && road?.code === tracker.sign.roadCode && road?.limit === tracker.limit;
+  recorder.record(position, {
+    // This is the same value render() writes into the speed-limit display.
+    speedLimitKph: tracker.limit,
+    inference: {
+      receivedAt: Date.now(), processingStatus,
+      source: tracker.manualOverride ? 'manual-override' : tracker.schoolZone ? 'school-zone' : mapped ? 'mapped-road' : tracker.sign ? 'sign' : 'default',
+      headingDeg: tracker.heading,
+      signId: tracker.sign?.kind === 'road' ? null : tracker.sign?.id ?? null,
+      roadMatchState: tracker.roadMatch.state,
+      roadCode: road?.code ?? null, roadName: road?.name ?? null,
+      roadFeatureId: road?.featureId ?? null, roadLimitKph: road?.limit ?? null,
+      roadDistanceM: road?.meters ?? null,
+      schoolZone: Boolean(tracker.schoolZone), manualOverride: Boolean(tracker.manualOverride),
+      rejectedSignId: tracker.rejectedSignId,
+    },
+  });
+}
 $('start').onclick = async () => {
   if (running) { stop(); return; }
   if (!window.isSecureContext || !navigator.geolocation) { message = 'SECURE LOCATION ACCESS REQUIRED'; render(); return; }
@@ -193,13 +218,15 @@ $('start').onclick = async () => {
   acquireWake();
   watch = navigator.geolocation.watchPosition(position => {
     if (!running || token !== attempt) return;
-    recorder.record(position);
-    if (document.visibilityState !== 'visible') return;
-    if (Date.now() - position.timestamp > CONFIG.maxFixAgeMs || position.timestamp > Date.now() + CONFIG.futureFixToleranceMs) return;
+    if (document.visibilityState !== 'visible') { recordFix(position, 'background'); return; }
+    if (Date.now() - position.timestamp > CONFIG.maxFixAgeMs) { recordFix(position, 'stale'); return; }
+    if (position.timestamp > Date.now() + CONFIG.futureFixToleranceMs) { recordFix(position, 'future'); return; }
     fix = position; locationError = '';
     const point = [position.coords.longitude, position.coords.latitude];
-    if (inSingapore(point, SG_POLYGONS)) tracker.update(point, Date.now());
+    const covered = inSingapore(point, SG_POLYGONS);
+    if (covered) tracker.update(point, Date.now());
     render();
+    recordFix(position, covered ? 'processed' : 'outside-singapore');
   }, error => {
     if (!running || token !== attempt) return;
     fix = null;

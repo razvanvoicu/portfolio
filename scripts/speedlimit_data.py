@@ -19,6 +19,23 @@ DATASETS = {
 }
 
 
+def school_zone_sign(feature):
+    """Keep warnings distinct; only an explicit 40 km/h category carries a limit."""
+    props = feature["properties"]
+    label = props.get("TYP_CD") or ""
+    if "school zone" not in label.lower():
+        return None
+    limit = None
+    if label == "End Of School Zone [3064]":
+        kind = "school-end"
+    elif re.fullmatch(r"school zone, 40 km/h \[\d+\]", label.lower()):
+        kind, limit = "school-start", 40
+    else:
+        kind = "school-warning"
+    lon, lat = feature["geometry"]["coordinates"][:2]
+    return [round(lon, 7), round(lat, 7), limit, props.get("BEARG_NUM"), props["UNIQUE_ID"], kind]
+
+
 def apply_sign_corrections(signs, corrections):
     """Apply explicit additions/updates/disables; fail on stale or ambiguous IDs."""
     records = {sign[4]: list(sign) for sign in signs}
@@ -83,11 +100,9 @@ def main():
         if match:
             lon, lat = feature["geometry"]["coordinates"][:2]
             signs.append([round(lon, 7), round(lat, 7), int(match[1]), props.get("BEARG_NUM"), props["UNIQUE_ID"]])
-        label = props.get("TYP_CD") or ""
-        if "school zone" in label.lower():
-            kind = "school-end" if label == "End Of School Zone [3064]" else "school-start"
-            lon, lat = feature["geometry"]["coordinates"][:2]
-            school_signs.append([round(lon, 7), round(lat, 7), None, props.get("BEARG_NUM"), props["UNIQUE_ID"], kind])
+        school_sign = school_zone_sign(feature)
+        if school_sign is not None:
+            school_signs.append(school_sign)
     corrections_path = ROOT / "sites/speedlimit/data/sign-corrections.json"
     corrections_raw = corrections_path.read_bytes()
     corrections = json.loads(corrections_raw)["corrections"]
@@ -99,7 +114,10 @@ def main():
         polygons.extend([[[round(x, 7), round(y, 7)] for x, y, *_ in ring] for ring in polygon] for polygon in parts)
     assert len(signs) > 4000 and len(polygons) >= 55
     metadata = {"retrieved": datetime.fromtimestamp((ROOT / "tmp" / "traffic-signs.geojson").stat().st_mtime, timezone.utc).isoformat(), "sources": sources,
-                "signCount": len(signs), "schoolSignCount": len(school_signs), "coverage": "Sign points only; not road-segment speed limits.",
+                "signCount": len(signs), "schoolSignCount": len(school_signs),
+                "schoolSpeedLimitSignCount": sum(sign[5] == "school-start" for sign in school_signs),
+                "schoolWarningSignCount": sum(sign[5] == "school-warning" for sign in school_signs),
+                "coverage": "Sign points only; not road-segment speed limits.",
                 "license": "Singapore Open Data Licence",
                 "manualCorrections": {"file": "data/sign-corrections.json", "sha256": hashlib.sha256(corrections_raw).hexdigest(), "count": len(corrections)}}
     target = ROOT / "sites" / "speedlimit" / "static"
@@ -110,7 +128,7 @@ def main():
         + "export const DATA_INFO = Object.freeze(" + compact(metadata) + ");\n"
         + "// Each sign: [longitude, latitude, km/h, sign bearing, source unique ID].\n"
         + "export const SPEED_SIGNS = Object.freeze(" + compact(signs) + ".map(Object.freeze));\n"
-        + "// School signs use the same fields, followed by school-start or school-end.\n"
+        + "// School signs: school-warning (no limit), school-start (explicit 40 km/h), or school-end.\n"
         + "export const SCHOOL_SIGNS = Object.freeze(" + compact(school_signs) + ".map(Object.freeze));\n"
         + "export const SG_POLYGONS = Object.freeze(" + compact(polygons) + ");\n", encoding="utf-8")
     print(f"Compiled {len(signs)} speed-limit signs, {len(school_signs)} school-zone signs and {len(polygons)} boundary polygons.")

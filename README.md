@@ -122,6 +122,9 @@ mapped statutory limits for verified whole-road and junction-bounded stretches.
 Unresolved or ambiguous road matches visibly use the sign/default fallback.
 The default is 50 km/h; qualifying signs set a retained
 limit, and a sharp turn resets it. Sound is disabled at limits below 60 km/h.
+Generic school-zone warnings do not impose 40 km/h. A school-zone override
+requires a source entry explicitly carrying that limit; the current snapshot
+has none, so its warnings leave normal mapped-road/numeric-sign behavior active.
 Driving thresholds and heading-history settings live in `static/config.mjs`. See `sites/speedlimit/DATA.md` for sources and matching limits.
 Refresh the constants with `python scripts/speedlimit_data.py --download`.
 
@@ -129,9 +132,19 @@ The temporary **Record** switch in Drive settings enables GPS ride recording
 after backend password validation. It is disabled between Start and Stop.
 Every GPS callback, including fixes excluded from the live display, records its
 timestamp (Unix milliseconds) and all available coordinate fields; speed remains
-in the browser's native metres per second. Stop uploads batches of up to 200 fixes.
+in the browser's native metres per second. Each new fix also stores
+`speedLimitKph`, the number displayed as the speed limit at that fix, after any
+app processing. Its `inference` object records receipt time, processing status,
+limit source, inferred heading, sign ID, matched road details, school-zone and
+manual-override state, and rejected sign ID. Background, stale, future-dated and
+out-of-coverage fixes retain the displayed limit and identify why processing was
+skipped. These diagnostics do not change speed-limit detection. Older pending
+recordings without these fields can still be uploaded.
+Stop uploads batches of up to 200 fixes.
 Failed uploads are retained in browser storage and can be retried from settings.
 The password and switch state are restored from browser storage on the next launch.
+The password-entry dialog includes a Show password checkbox; each opening starts
+with the entered text hidden.
 
 The shared backend exposes `POST /api/speedlimit/validate` and
 `POST /api/speedlimit/trips` on the speedlimit hostname. Both accept a JSON

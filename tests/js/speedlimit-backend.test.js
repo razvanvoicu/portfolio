@@ -57,3 +57,22 @@ test('Firestore batches store timestamped trips and raw fixes, omit passwords an
   fail(true); assert.equal((await post('/trips', body)).status, 503);
   assert.equal(commits(), 2);
 });
+
+test('per-fix displayed limits and diagnostic fields are validated and saved without extra submitted fields', async () => {
+  const { post, writes } = await setup();
+  const body = trip();
+  body.fixes[0].speedLimitKph = 70;
+  body.fixes[0].inference = {
+    receivedAt:body.fixes[0].timestamp,processingStatus:'processed',source:'sign',headingDeg:302,
+    signId:18019,roadMatchState:'matched',roadCode:'UPT00R',roadName:'UPPER BUKIT TIMAH ROAD',
+    roadFeatureId:13316,roadLimitKph:null,roadDistanceM:5,schoolZone:false,manualOverride:false,rejectedSignId:null,
+    password:'must not be stored',
+  };
+  assert.equal((await post('/trips',body)).status,200);
+  const stored = writes.get(`SpeedLimit/${body.tripId}/fixes/000000`).fixes[0];
+  assert.equal(stored.speedLimitKph,70); assert.equal(stored.inference.signId,18019);
+  assert.equal(stored.inference.roadCode,'UPT00R'); assert.equal('password' in stored.inference,false);
+  body.fixes[0].speedLimitKph = '70'; assert.equal((await post('/trips',body)).status,400);
+  body.fixes[0].speedLimitKph = 70; body.fixes[0].inference.source='invented';
+  assert.equal((await post('/trips',body)).status,400);
+});
