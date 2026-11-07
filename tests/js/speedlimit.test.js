@@ -27,7 +27,17 @@ test('Singapore boundary excludes Malaysia, Indonesia and polygon holes', async 
   assert.equal(inSingapore([103.763,1.484], data.SG_POLYGONS), false);
   assert.equal(inSingapore([104.03,1.13], data.SG_POLYGONS), false);
   assert.equal(inSingapore([103.77,1.46], data.SG_POLYGONS), false);
-  assert.equal(data.SPEED_SIGNS.filter(sign=>typeof sign[4]==='number').length, 4338);
+  const {corrections} = JSON.parse(fs.readFileSync('sites/speedlimit/data/sign-corrections.json', 'utf8'));
+  const disabledSourceSigns = corrections.filter(entry=>entry.operation==='disable' && typeof entry.id==='number').length;
+  assert.equal(data.SPEED_SIGNS.filter(sign=>typeof sign[4]==='number').length, 4338 - disabledSourceSigns);
   assert.equal(data.SPEED_SIGNS.length, data.DATA_INFO.signCount);
+  assert.equal(data.SPEED_SIGNS.some(sign=>sign[4]===81950), false);
+  assert.equal(data.SPEED_SIGNS.some(sign=>sign[4]===83759), false);
+  assert.equal(data.SPEED_SIGNS.some(sign=>sign[4]===81945), false);
+  assert.equal(data.SPEED_SIGNS.find(sign=>sign[4]===64917)[2], 80);
+  for (const id of [83665, 83664, 34637, 81946, 81951]) {
+    assert.equal(data.SPEED_SIGNS.find(sign=>sign[4]===id)[2], 80);
+  }
+  assert.equal(data.SPEED_SIGNS.find(sign=>sign[4]===73788)[2], 90);
   assert.equal(inSingapore([2,2], [[[[0,0],[4,0],[4,4],[0,4]],[[1,1],[3,1],[3,3],[1,3]]]]), false);
 });

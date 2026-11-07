@@ -6,6 +6,67 @@
       "sign": [103.762112, 1.356569, 40, 270, "manual:hillview-avenue-lanai-40"],
       "reason": "Missing 40 km/h sign beside The Lanai, facing traffic entering the Hillview Avenue cul-de-sac towards Hilltop Grove. Separate from Jalan Remaja sign 86695.",
       "evidence": "User-supplied Street View image showing the 40 sign beneath the dead-end sign beside The Lanai; map pin https://maps.app.goo.gl/yFKa4NdqX8vzbSsH8 (1.356569, 103.762112), supplied 2026-10-24. Travel bearing 270 degrees follows the westbound spur geometry; approximate, not a surveyed sign bearing."
+    },
+    {
+      "operation": "disable",
+      "id": 81950,
+      "expected": [103.8257345, 1.3267172, 90, 311.90594194, 81950],
+      "reason": "Incorrect 90 km/h inventory record west of Mount Pleasant Flyover. The road and entrance ramp are signed 80 km/h; retain the separate 80 km/h source sign 64917.",
+      "evidence": "User checked Google Maps Street View at 1.3267172, 103.8257345 and supplied the August 2024 image on 2026-11-06. It shows 80 km/h signs on the entrance ramp and main carriageway, with no 90 km/h sign at this location."
+    },
+    {
+      "operation": "disable",
+      "id": 83759,
+      "expected": [103.8326466, 1.3255392, 90, 270, 83759],
+      "reason": "Incorrect 90 km/h inventory record near Catholic Junior College, beside Whitley/Malcolm Road. The user-verified signage is 80 km/h.",
+      "evidence": "User supplied a Google Maps Street View image near Catholic Junior College on 2026-11-06 while verifying record 83759 at 1.3255392, 103.8326466. The image shows an 80 km/h sign above the expressway and Camera Zone signs on the left of the entrance lane (codex-clipboard-bee10282-9e80-40be-ab9d-e5d5e40444e8.png)."
+    },
+    {
+      "operation": "disable",
+      "id": 81945,
+      "expected": [103.8141225, 1.3333041, 90, 295, 81945],
+      "reason": "Incorrect 90 km/h inventory record west of the Adam Road interchange. The user-verified signage after Adam Road is 80 km/h.",
+      "evidence": "User supplied a Google Maps Street View image after Adam Road on 2026-11-06 while verifying record 81945 at 1.3333041, 103.8141225. The image shows an 80 km/h sign above the expressway and Camera Zone signs on the left of the carriageway (codex-clipboard-65862f76-6a51-4534-b929-cfd2458c7823.png)."
+    },
+    {
+      "operation": "update",
+      "id": 83665,
+      "expected": [103.8573995, 1.329532, 90, 72.34987578, 83665],
+      "sign": [103.8573995, 1.329532, 80, 72.34987578, 83665],
+      "reason": "Correct the eastbound PIE inventory limit to 80 km/h on the CTE-to-Dunearn Road stretch, retaining the source position and traffic-flow bearing.",
+      "evidence": "User instruction on 2026-11-06 to correct the opposite-direction 90 km/h inventory signs on the same PIE stretch to the stated 80 km/h limit. Source record 83665 is eastbound near the CTE end; this correction is based on that instruction, not an individually supplied eastbound sign photograph."
+    },
+    {
+      "operation": "update",
+      "id": 83664,
+      "expected": [103.8474499, 1.329959, 90, 92.27265024, 83664],
+      "sign": [103.8474499, 1.329959, 80, 92.27265024, 83664],
+      "reason": "Correct the eastbound PIE inventory limit to 80 km/h on the CTE-to-Dunearn Road stretch, retaining the source position and traffic-flow bearing.",
+      "evidence": "User instruction on 2026-11-06 to correct the opposite-direction 90 km/h inventory signs on the same PIE stretch to the stated 80 km/h limit. Source record 83664 has an eastbound traffic-flow bearing; this correction is based on that instruction, not an individually supplied eastbound sign photograph."
+    },
+    {
+      "operation": "update",
+      "id": 34637,
+      "expected": [103.8421264, 1.329725, 90, 79.9770348, 34637],
+      "sign": [103.8421264, 1.329725, 80, 79.9770348, 34637],
+      "reason": "Correct the eastbound PIE inventory limit to 80 km/h on the CTE-to-Dunearn Road stretch, retaining the source position and traffic-flow bearing.",
+      "evidence": "User instruction on 2026-11-06 to correct the opposite-direction 90 km/h inventory signs on the same PIE stretch to the stated 80 km/h limit. Source record 34637 is beside eastbound PIE near Thomson Road; this correction is based on that instruction, not an individually supplied eastbound sign photograph."
+    },
+    {
+      "operation": "update",
+      "id": 81946,
+      "expected": [103.830489, 1.3268005, 90, 123, 81946],
+      "sign": [103.830489, 1.3268005, 80, 123, 81946],
+      "reason": "Correct the eastbound PIE inventory limit to 80 km/h on the CTE-to-Dunearn Road stretch, retaining the source position and traffic-flow bearing.",
+      "evidence": "User instruction on 2026-11-06 to correct the opposite-direction 90 km/h inventory signs on the same PIE stretch to the stated 80 km/h limit. Source record 81946 is eastbound beside Whitley Road; this correction is based on that instruction, not an individually supplied eastbound sign photograph."
+    },
+    {
+      "operation": "update",
+      "id": 81951,
+      "expected": [103.8187394, 1.3314478, 90, 120, 81951],
+      "sign": [103.8187394, 1.3314478, 80, 120, 81951],
+      "reason": "Correct the eastbound PIE inventory limit to 80 km/h on the CTE-to-Dunearn Road stretch, retaining the source position and traffic-flow bearing.",
+      "evidence": "User instruction on 2026-11-06 to correct the opposite-direction 90 km/h inventory signs on the same PIE stretch to the stated 80 km/h limit. Source record 81951 is eastbound near Kheam Hock Road; this correction is based on that instruction, not an individually supplied eastbound sign photograph."
     }
   ]
 }

@@ -15,7 +15,7 @@ export const CONFIG = Object.freeze({
   turnAngleDeg: 60,
   minMovementM: 5,
   positionHistoryLength: 4,
-  turnHistoryDistanceM: 30,
+  turnHistoryDistanceM: 40,
   minimumAudibleLimitKph: 60,
   gentleExcessKph: 3,
   maxFixAgeMs: 8000,

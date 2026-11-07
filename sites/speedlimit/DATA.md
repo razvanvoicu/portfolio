@@ -75,7 +75,9 @@ Each correction has an `operation`, `id`, `reason` and `evidence`:
   bearing, ID). Use a unique string ID beginning with `manual:`.
 - `update`: supply the existing numeric source ID, its complete original array
   as `expected`, and its replacement array as `sign`, keeping the same ID.
-- `disable`: supply the source ID and its complete original array as `expected`.
+- `disable`: delete a sign from the compiled app dataset by supplying its source
+  ID and complete original array as `expected`. The downloaded LTA record stays
+  unchanged; the deletion is reapplied on each rebuild.
 
 Updates/disables fail compilation if the source record changes or disappears,
 so a refreshed download requires review rather than silently applying a stale
@@ -87,6 +89,21 @@ Hillview Avenue spur, at the user-supplied map pin. Its approximate westbound
 travel bearing follows the spur geometry. The separate Jalan Remaja sign
 (source ID 86695) is preserved. This adds a sign; it does not assign a statutory
 limit to the entire spur or change detection thresholds.
+
+Source sign 81950, the 90 km/h record west of Mount Pleasant Flyover, is disabled.
+The user's August 2024 Street View image shows 80 km/h signs on the entrance
+ramp and main carriageway at that location. The separate 80 km/h record 64917
+is preserved. Source sign 83759, near Catholic Junior College beside
+Whitley/Malcolm Road, is also disabled following the user's Street View image
+showing 80 km/h signage. Source sign 81945 west of Adam Road is disabled on the
+same basis: the user's image after Adam Road shows 80 km/h signage. All three
+reviewed PIE 90 km/h records are excluded from the compiled app dataset.
+
+On the user's instruction, eastbound PIE records 83665, 83664, 34637, 81946 and
+81951 on the same CTE-to-Dunearn Road stretch are updated from 90 to 80 km/h.
+Their source coordinates and bearings are preserved. These eastbound corrections
+record the user's instruction as evidence; the three supplied photographs
+document the westbound locations. Nearby record 73788 is on BKE and is unchanged.
 
 After editing corrections, run `python scripts/speedlimit_data.py` using the
 cached downloads (or add `--download` to refresh), then rebuild the repository.
@@ -144,7 +161,7 @@ Legal basis: https://sso.agc.gov.sg/SL-Supp/S691-2025/Published/20251031?DocDate
 Heading is the circular mean of consecutive segment bearings across the last
 four accepted positions. A fix less than 5 m from the last accepted position
 is ignored for heading/sign processing; it can still update GPS speed.
-Smoothed headings are retained over the last 30 m travelled. A difference of
+Smoothed headings are retained over the last 40 m travelled. A difference of
 at least 60 degrees from a heading in that history identifies a turn in either
 direction. Stops do not evict useful history. On a detected turn, smoothing
 begins again with the latest movement to avoid carrying the old road direction.
