@@ -6,7 +6,6 @@ export const CONFIG = Object.freeze({
   signConeRangeM: 60,
   signConeFarHalfAngleDeg: 20,
   signConeNearHalfAngleDeg: 90,
-  rejectChangeWindowMs: 7000,
   schoolZoneLimitKph: 40,
   roadMatchDistanceM: 30,
   roadBearingToleranceDeg: 45,

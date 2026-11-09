@@ -144,16 +144,18 @@ Signs encountered within range are retained for rechecking over the next
 This accommodates signs at corners while the averaged heading catches up.
 The recheck distance is configured by signRecheckDistanceM.
 
-Tapping the limit within seven seconds of a displayed change restores the
-previous limit, source and school-zone state. The rejected sign remains ignored
-until another qualifying sign is passed. The restored state is retained until
-then, including against repeated road matching. A later visit can encounter the
-rejected sign again. Stopping resets this state. The window and cone constants
-are in static/config.mjs.
+An ordinary numeric sign is ignored when its limit is at least 20 km/h below
+the current limit and the vehicle's current GPS speed is strictly above the
+midpoint of those two limits. For example, an 80-to-50 change is ignored above
+65 km/h; exactly 65 km/h is allowed. Smaller reductions and increases are
+unaffected. If GPS speed is unavailable, the ignore condition cannot be met.
+The sign is marked handled when evaluated, so slowing down after passage does
+not immediately apply it. The existing corner rechecks and encounter expiry
+still apply. The limit display no longer has a tap-to-undo action.
 
-Generic school-zone warnings do not change the speed limit, block ordinary
-numeric signs or clear a manually restored limit. Normal mapped-road and
-numeric-sign behavior continues through those warnings. A school-zone override
+Generic school-zone warnings do not change the speed limit or block ordinary
+numeric signs. Normal mapped-road and numeric-sign behavior continues through
+those warnings. A school-zone override
 requires an explicit 40 km/h entry; legacy entries with a null limit are also
 ignored. For an explicit speed zone, the pre-zone limit and source are saved
 once, 40 is retained through turns and ordinary signs, and a school-zone exit

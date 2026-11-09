@@ -13,6 +13,6 @@ body.severe .wordmark small{color:#18532c;border-color:#55734e}
 body.severe .dot{background:#9c1434}
 body.severe .device-status .warning{color:#8c1636}
 .record-toggle{align-items:center;border-top:1px solid #304150;padding-top:20px;min-height:56px}.record-toggle input{width:44px;height:28px;accent-color:var(--green)}.record-toggle:has(input:disabled){opacity:.45}#record-password{width:100%;min-height:48px;margin:14px 0 24px;border:1px solid #3c5263;border-radius:10px;background:#080d12;color:#e9f1f6;padding:10px}button:disabled{cursor:default}#retry-recording[hidden]{display:none}
-#limit{background:transparent;border:0;padding:0;opacity:1;min-width:80px;min-height:60px;text-align:left;touch-action:manipulation}#limit:disabled{cursor:default}#limit:not(:disabled){text-decoration:underline;text-decoration-thickness:2px;text-underline-offset:8px}#reject-hint{min-height:16px;font-size:11px;line-height:16px;color:var(--blue)}
+#limit{min-width:80px;min-height:60px;text-align:left}
 
 .show-password{justify-content:flex-start;align-items:center;gap:10px;margin:0 0 24px}.show-password input{width:20px;height:20px;accent-color:var(--green)}

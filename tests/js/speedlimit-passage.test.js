@@ -31,32 +31,6 @@ test('candidate does not apply early; an 80m GPS gap confirms passage without a 
   for(const y of [-55,-40,40,55])side.update(point(0,y));assert.equal(side.limit,50);
 });
 
-test('reject ramp sign once, restore 90, suppress reapplication until another passed sign; later revisit can apply',async()=>{
-  const [m,{CONFIG:c}]=await modules;
-  const t=new m.DriveTracker([sign(0,-150,90,1),sign(0,0,50,2),sign(0,200,90,3)],c);
-  for(const y of [-180,-160,-140,-60,-40,10])t.update(point(0,y),1000);
-  assert.equal(t.limit,50); assert.equal(t.rejectChange(8000),true); assert.equal(t.limit,90);
-  t.update(point(0,20),8100);assert.equal(t.limit,90);
-  // Even a new encounter with the rejected ID cannot reapply it yet.
-  t.encounters.delete(2);t.update(point(0,-40),8200);t.update(point(0,10),8300);assert.equal(t.limit,90);
-  for(const y of [70,140,190,210])t.update(point(0,y),8400);
-  assert.equal(t.rejectedSignId,null);
-  t.update(point(0,300),8500);t.update(point(0,-100),8600);
-  t.update(point(0,-40),8700);t.update(point(0,10),8800); assert.equal(t.limit,50);
-});
-
-test('reject school entry restores state; reject exit restores active school zone',async()=>{
-  const [m,{CONFIG:c}]=await modules;
-  const markers=[[...point(0,0),40,0,1,'school-start'],[...point(0,100),null,0,2,'school-end']];
-  const t=new m.DriveTracker([],c,markers);
-  t.update(point(0,-40),0);t.update(point(0,10),100);
-  assert.equal(t.limit,40);t.rejectChange(200);assert.equal(t.limit,50);assert.equal(t.schoolZone,null);
-  t.update(point(0,110),300);assert.equal(t.limit,50);
-  const u=new m.DriveTracker([],c,markers);
-  u.update(point(0,-40),0);u.update(point(0,10),100);u.update(point(0,110),200);
-  assert.equal(u.limit,50);u.rejectChange(300);assert.equal(u.limit,40);assert.equal(u.schoolZone.limit,50);
-});
-
 test('Clementi southbound real data: generic school warnings do not replace the posted 60',async()=>{
   const [,{CONFIG:c}]=await modules;
   const data=await import('../../sites/speedlimit/static/road-data.js');

@@ -3,7 +3,7 @@ const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const vm = require('node:vm');
 
-async function setup(signLimit = 70, schoolSigns = [], initialStorage = {}, roadFeatures = [], roadIdentities = []) {
+async function setup(signLimit = 70, schoolSigns = [], initialStorage = {}, roadFeatures = [], roadIdentities = [], additionalSigns = []) {
   const core = await import('../../sites/speedlimit/static/core.mjs');
   const roads = await import('../../sites/speedlimit/static/roads.mjs');
   const { CONFIG } = await import('../../sites/speedlimit/static/config.mjs');
@@ -15,7 +15,7 @@ async function setup(signLimit = 70, schoolSigns = [], initialStorage = {}, road
   const timers = new Map(); let timerId = 0;
   const docHandlers = {}, bodyClasses = new Set();
   const context = {
-    ...core, ...roads, TripRecorder, CONFIG, ROAD_FEATURES:roadFeatures, ROAD_IDENTITIES:roadIdentities, NETWORK_INFO:{geometryDate:'test',verifiedRoadParts:0,roadParts:0}, DATA_INFO:{signCount:1,schoolSignCount:schoolSigns.length,retrieved:new Date(now).toISOString()}, SPEED_SIGNS:[[103.85,1.3,signLimit,0,1]], SCHOOL_SIGNS:schoolSigns,
+    ...core, ...roads, TripRecorder, CONFIG, ROAD_FEATURES:roadFeatures, ROAD_IDENTITIES:roadIdentities, NETWORK_INFO:{geometryDate:'test',verifiedRoadParts:0,roadParts:0}, DATA_INFO:{signCount:1,schoolSignCount:schoolSigns.length,retrieved:new Date(now).toISOString()}, SPEED_SIGNS:[[103.85,1.3,signLimit,0,1],...additionalSigns], SCHOOL_SIGNS:schoolSigns,
     SG_POLYGONS:[[[[103.6,1.2],[104.1,1.2],[104.1,1.5],[103.6,1.5]]]],
     document:{body:{classList:{toggle:(name,on)=>on?bodyClasses.add(name):bodyClasses.delete(name)}},getElementById:get,visibilityState:'visible',addEventListener:(name, fn)=>docHandlers[name]=fn},
     window:{isSecureContext:true, addEventListener(){}, confirm:()=>true},
@@ -138,16 +138,13 @@ test('display enters silent school zone then restores the preceding limit and al
   assert.equal(app.gainValues.includes(0.16),true);
 });
 
-test('limit tap restores the previous value only during the seven-second window', async () => {
+test('speed limit is a read-only display with no manual undo action', async () => {
   const app = await setup(); await app.start();
-  assert.equal(app.get('limit').disabled, false);
-  assert.match(app.get('reject-hint').textContent, /Tap/);
-  app.advance(7000); app.get('limit').onclick();
-  assert.equal(app.get('limit').textContent, 50);
-  assert.equal(app.get('limit').disabled, true);
-  const expired = await setup(); await expired.start(); expired.advance(7001);
-  assert.equal(expired.get('limit').disabled, true);
-  expired.get('limit').onclick(); assert.equal(expired.get('limit').textContent, 70);
+  assert.equal(app.get('limit').onclick, undefined);
+  assert.equal(app.get('limit').textContent, 70);
+  const html = fs.readFileSync('sites/speedlimit/templates/index.html', 'utf8');
+  assert.match(html, /<div id="limit"/);
+  assert.doesNotMatch(html, /reject-hint/);
 });
 
 test('default tolerance is 2 and gentle stepper buttons persist changes', async () => {
@@ -218,7 +215,7 @@ const savedFixes = async app => {
   return app.requests.flatMap(request => request.body.fixes || []);
 };
 
-test('recorded limits match the display after processing, including skipped fixes and manual undo', async () => {
+test('recorded limits match the display after processing, including skipped fixes', async () => {
   const app = await setup(70, [], recordingOn);
   await app.start(); assert.equal(app.get('limit').textContent, 70);
   app.context.document.visibilityState = 'hidden'; app.position(15);
@@ -227,7 +224,6 @@ test('recorded limits match the display after processing, including skipped fixe
   app.rawPosition({timestamp:1,coords});
   app.rawPosition({timestamp:app.context.Date.now()+2000,coords});
   app.position(15,{latitude:1.7});
-  app.get('limit').onclick(); assert.equal(app.get('limit').textContent, 50);
   app.position(15,{latitude:1.3001});
   const fixes = await savedFixes(app);
   assert.equal(fixes[0].speedLimitKph, 50); assert.equal(fixes[0].inference.source, 'default');
@@ -235,9 +231,10 @@ test('recorded limits match the display after processing, including skipped fixe
   assert.equal(fixes[1].inference.signId, 1); assert.equal(fixes[1].inference.headingDeg, 0);
   assert.deepEqual(fixes.slice(2,6).map(f => f.inference.processingStatus), ['background','stale','future','outside-singapore']);
   assert.ok(fixes.slice(2,6).every(f => f.speedLimitKph === 70));
-  assert.equal(fixes.at(-1).speedLimitKph, 50);
-  assert.equal(fixes.at(-1).inference.source, 'manual-override');
-  assert.equal(fixes.at(-1).inference.rejectedSignId, 1);
+  assert.equal(fixes.at(-1).speedLimitKph, 70);
+  assert.equal(fixes.at(-1).inference.source, 'sign');
+  assert.equal(fixes.at(-1).inference.manualOverride, false);
+  assert.equal(fixes.at(-1).inference.rejectedSignId, null);
 });
 
 test('recording snapshots preserve school-zone entry and exit limits and source IDs', async () => {
@@ -260,4 +257,19 @@ test('recorded mapped road limit and road identity explain why the nearby sign i
   assert.equal(last.inference.roadCode, 'TEST'); assert.equal(last.inference.roadName, 'Test Road');
   assert.equal(last.inference.roadFeatureId, 37); assert.equal(last.inference.roadLimitKph, 60);
   assert.equal(last.inference.roadMatchState, 'matched'); assert.equal(last.inference.signId, null);
+});
+
+
+test('current GPS speed in metres per second controls lower-sign filtering and recorded display', async () => {
+  for (const [speedKph, expectedLimit] of [[72,80],[65,50],[64,50],[null,50]]) {
+    const app = await setup(80, [], recordingOn, [], [], [[103.85,1.301,50,0,2]]);
+    await app.start();
+    app.position(10/3.6, {latitude:1.3005});
+    app.position(speedKph === null ? null : speedKph/3.6, {latitude:1.3011});
+    assert.equal(app.get('limit').textContent, expectedLimit, `GPS speed ${speedKph}`);
+    const fixes = await savedFixes(app);
+    assert.equal(fixes.at(-1).speedLimitKph, expectedLimit);
+    assert.equal(fixes.at(-1).inference.signId, expectedLimit === 80 ? 1 : 2);
+    assert.equal(fixes.at(-1).inference.manualOverride, false);
+  }
 });

@@ -25,16 +25,6 @@ test('warning and inactive end markers do not suppress colocated ordinary speed 
   assert.equal(t.limit,70);assert.equal(t.sign.id,3);assert.equal(t.schoolZone,null);
 });
 
-test('generic school signs cannot clear a manually rejected limit',async()=>{
-  const [m,{CONFIG:c}]=await modules;
-  const t=new m.DriveTracker([[...point(0,-100),60,0,1]],c,[
-    marker(0,0,0,2,'school-warning'),marker(0,150,0,3,'school-end')
-  ]);
-  for(let y=-150;y<=-90;y+=10)t.update(point(0,y),1000);
-  assert.equal(t.limit,60);assert.equal(t.rejectChange(1001),true);
-  for(let y=-80;y<=180;y+=10)t.update(point(0,y),1002);
-  assert.equal(t.limit,50);assert.equal(t.rejectedSignId,1);assert.ok(t.manualOverride);
-});
 test('school entry saves 60 once, colocated 40 cannot overwrite it, end restores 60',async()=>{
   const [m,{CONFIG:c}] = await modules;
   const t=new m.DriveTracker([[...point(0,-100),60,0,1],[...point(0,0),40,0,2]],c,

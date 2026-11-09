@@ -95,7 +95,6 @@ $('tolerance').addEventListener('input', () => {
 });
 $('minus').onclick = () => setTolerance(Math.max(-100, tolerance - 1));
 $('plus').onclick = () => setTolerance(Math.min(100, tolerance + 1));
-$('limit').onclick = () => { if (running && tracker.rejectChange(Date.now())) render(); };
 function setGentleExcess(value) {
   if (!Number.isFinite(value) || value < 0) return;
   gentleExcess = value;
@@ -191,15 +190,16 @@ function recordFix(position, processingStatus) {
     speedLimitKph: tracker.limit,
     inference: {
       receivedAt: Date.now(), processingStatus,
-      source: tracker.manualOverride ? 'manual-override' : tracker.schoolZone ? 'school-zone' : mapped ? 'mapped-road' : tracker.sign ? 'sign' : 'default',
+      source: tracker.schoolZone ? 'school-zone' : mapped ? 'mapped-road' : tracker.sign ? 'sign' : 'default',
       headingDeg: tracker.heading,
       signId: tracker.sign?.kind === 'road' ? null : tracker.sign?.id ?? null,
       roadMatchState: tracker.roadMatch.state,
       roadCode: road?.code ?? null, roadName: road?.name ?? null,
       roadFeatureId: road?.featureId ?? null, roadLimitKph: road?.limit ?? null,
       roadDistanceM: road?.meters ?? null,
-      schoolZone: Boolean(tracker.schoolZone), manualOverride: Boolean(tracker.manualOverride),
-      rejectedSignId: tracker.rejectedSignId,
+      // Retain these fields for compatibility with pending recordings and the backend.
+      schoolZone: Boolean(tracker.schoolZone), manualOverride: false,
+      rejectedSignId: null,
     },
   });
 }
@@ -224,7 +224,7 @@ $('start').onclick = async () => {
     fix = position; locationError = '';
     const point = [position.coords.longitude, position.coords.latitude];
     const covered = inSingapore(point, SG_POLYGONS);
-    if (covered) tracker.update(point, Date.now());
+    if (covered) tracker.update(point, speedKph(position.coords));
     render();
     recordFix(position, covered ? 'processed' : 'outside-singapore');
   }, error => {
@@ -267,16 +267,13 @@ function render() {
   $('speed').className = `reading ${speed === null || limit === null ? 'neutral' : over ? 'over' : 'good'}`;
   $('speed').setAttribute('aria-label', speed === null ? 'Speed unavailable' : `${speed.toFixed(1)} kilometres per hour`);
   $('limit').textContent = limit ?? '—';
-  const canReject = running && tracker.canReject(Date.now());
-  $('limit').disabled = !canReject;
-  $('limit').setAttribute('aria-label', `${limit} kilometres per hour${canReject ? '. Tap to restore previous limit' : ''}`);
-  $('reject-hint').textContent = canReject ? 'Wrong limit? Tap the number to undo' : '';
+  $('limit').setAttribute('aria-label', `${limit} kilometres per hour`);
   $('status').textContent = status;
   $('dot').className = running && speed !== null ? 'dot active' : 'dot';
   $('alert').textContent = over ? 'SLOW DOWN · ABOVE ALERT THRESHOLD' : speed === null ? 'SINGAPORE SPEED MONITOR' : 'WITHIN ALERT THRESHOLD';
   $('alert').className = `alert${over ? ' over' : ''}`;
   $('threshold').textContent = `${limit < CONFIG.minimumAudibleLimitKph ? 'Colour' : 'Alert'} above ${threshold(limit, tolerance)} km/h${limit < CONFIG.minimumAudibleLimitKph ? ' · silent' : ''}`;
-  $('limit-description').textContent = tracker.manualOverride ? 'Restored previous limit' : info;
+  $('limit-description').textContent = info;
   $('location-note').textContent = note;
   $('start').innerHTML = running ? 'Stop drive <span aria-hidden="true">■</span>' : 'Start drive <span aria-hidden="true">↗</span>';
   $('start').className = `primary${running ? ' running' : ''}`;
