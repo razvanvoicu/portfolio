@@ -105,6 +105,12 @@ Their source coordinates and bearings are preserved. These eastbound corrections
 record the user's instruction as evidence; the three supplied photographs
 document the westbound locations. Nearby record 73788 is on BKE and is unchanged.
 
+Rifle Range Underpass entrance records 142798 and 142799 are updated from 50 to
+40 km/h. The user's photograph shows the paired 40 signs; the refined map point
+(1.3431667, 103.7843611) is 3.5 m from record 142798 and 12.7 m from record
+142799. Both source positions and their 249-degree traffic-flow bearings are
+preserved.
+
 After editing corrections, run `python scripts/speedlimit_data.py` using the
 cached downloads (or add `--download` to refresh), then rebuild the repository.
 

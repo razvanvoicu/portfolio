@@ -39,5 +39,7 @@ test('Singapore boundary excludes Malaysia, Indonesia and polygon holes', async 
     assert.equal(data.SPEED_SIGNS.find(sign=>sign[4]===id)[2], 80);
   }
   assert.equal(data.SPEED_SIGNS.find(sign=>sign[4]===73788)[2], 90);
+  assert.deepEqual(data.SPEED_SIGNS.find(sign=>sign[4]===142798), [103.7843867, 1.3431491, 40, 249, 142798]);
+  assert.deepEqual(data.SPEED_SIGNS.find(sign=>sign[4]===142799), [103.7844164, 1.3430664, 40, 249, 142799]);
   assert.equal(inSingapore([2,2], [[[[0,0],[4,0],[4,4],[0,4]],[[1,1],[3,1],[3,3],[1,3]]]]), false);
 });
