@@ -472,7 +472,11 @@ function scheduleUpdate() {
 
 function scheduleSave() {
   clearTimeout(saveTimer);
-  saveTimer = setTimeout(saveState, 300);
+  if (window.location.pathname === "/editor.html" && window.parent !== window && window.parent.CurvesEditor) {
+    saveTimer = setTimeout(saveState, 0);
+  } else {
+    saveTimer = setTimeout(saveState, 300);
+  }
 }
 
 // Saves at once, for when the page is about to go away.
@@ -485,7 +489,7 @@ function flushSave() {
 function saveState() {
   saveTimer = 0;
   try {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify({
+    const state = {
       variables,
       nextVarId,
       stash,
@@ -495,7 +499,12 @@ function saveState() {
       importDraft,
       graphImportDraft,
       workspace: Blockly.serialization.workspaces.save(workspace),
-    }));
+    };
+    if (window.location.pathname === "/editor.html" && window.parent !== window && window.parent.CurvesEditor) {
+      window.parent.CurvesEditor.save(state, formulaCode("draw the curve"));
+    } else {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+    }
   } catch {
     // Storage unavailable (private browsing, quota): the app still works.
   }
@@ -503,7 +512,9 @@ function saveState() {
 
 function loadState() {
   try {
-    const saved = JSON.parse(localStorage.getItem(STORAGE_KEY));
+    const saved = window.location.pathname === "/editor.html" && window.parent !== window && window.parent.CurvesEditor
+      ? window.parent.CurvesEditor.load()
+      : JSON.parse(localStorage.getItem(STORAGE_KEY));
     if (!saved || !Array.isArray(saved.variables)) return null;
     return saved;
   } catch {

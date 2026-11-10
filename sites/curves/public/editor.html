@@ -1,0 +1,169 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="theme-color" content="#090c12" />
+    <meta
+      name="description"
+      content="Build a formula from blocks, set its variables, and watch the result update live."
+    />
+    <title>Formula Builder</title>
+    <link rel="icon" type="image/svg+xml" href="/formula/favicon.svg" />
+    <link rel="icon" type="image/png" sizes="192x192" href="/formula/icons/icon-192.png" />
+    <link rel="apple-touch-icon" href="/formula/icons/apple-touch-icon.png" />
+    <link rel="manifest" href="/formula/manifest.json" />
+    <link rel="stylesheet" href="/formula/style.css" />
+    <script src="/formula/vendor/blockly_compressed.js"></script>
+    <script src="/formula/vendor/blockly_msg_en.js"></script>
+    <script src="/formula/vendor/javascript_compressed.js"></script>
+    <script src="/formula/blocks.js" defer></script>
+    <script src="/formula/app.js" defer></script>
+    <script src="/formula/jsformula.js" defer></script>
+    <script src="/formula/importer.js" defer></script>
+    <script src="/formula/graphjson.js" defer></script>
+    <script src="/formula/graph.js" defer></script>
+  </head>
+  <body>
+    <main class="app">
+      <header class="bar">
+        <h1 class="title">Formula Builder</h1>
+        <button class="tool tool-text" id="share" type="button" aria-label="Copy the formula as JavaScript to the clipboard">Share</button>
+        <button class="tool tool-text" id="clear" type="button" aria-label="Clear the editor">Clear</button>
+      </header>
+
+      <nav class="palette" id="palette" aria-label="Blocks. Drag one into the editor.">
+        <div class="tabs" id="palette-tabs" role="tablist"></div>
+        <div class="items" id="palette-items"></div>
+      </nav>
+
+      <section class="vars" aria-labelledby="vars-title">
+        <div class="vars-head">
+          <h2 class="section-title" id="vars-title">Variables</h2>
+          <button class="add-var" id="add-var" type="button">+ Add</button>
+        </div>
+        <div class="vars-list" id="vars-list" data-empty="No variables yet. Press + Add."></div>
+      </section>
+
+      <section class="workbench" aria-label="Formula editor">
+        <div class="editor" id="editor">
+          <div id="blockly"></div>
+        </div>
+        <div class="dock">
+          <button class="tool" id="undo" type="button" aria-label="Undo">&#8630;</button>
+          <button class="tool" id="redo" type="button" aria-label="Redo">&#8631;</button>
+          <div class="stash" id="stash" role="group" tabindex="0" aria-label="Formula stash. Drop a block here to keep it. Press Enter to list what is stashed.">
+            <span class="stash-label">Stash</span>
+            <div class="chips" id="stash-chips" data-empty="Drop a block here to keep it"></div>
+          </div>
+          <button class="trash" id="trash" type="button" aria-label="Trash. Drop a block here to delete it.">
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <path fill="currentColor" d="M9 3h6l1 2h4v2H4V5h4l1-2zM6 9h12l-1 12H7L6 9z" />
+            </svg>
+          </button>
+        </div>
+      </section>
+
+      <section class="result-row">
+        <div class="result" aria-live="polite">
+          <p class="result-line" id="result-line"></p>
+          <p class="result-note" id="result-note"></p>
+        </div>
+        <button class="side-button" id="import-open" type="button" aria-label="Import a JavaScript formula">
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M8 7l-5 5 5 5M16 7l5 5-5 5M14 5l-4 14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+          </svg>
+        </button>
+        <button class="side-button" id="graph-open" type="button" aria-label="Graph the formula">
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M3 3v18h18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+            <path d="M6 16c2-9 4-9 6-3s4 6 7-5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+          </svg>
+        </button>
+      </section>
+    </main>
+
+    <div class="overlay import-view" id="import" role="dialog" aria-modal="true" aria-labelledby="import-title" hidden>
+      <header class="overlay-bar">
+        <h2 class="overlay-title" id="import-title">Import a formula</h2>
+        <button class="overlay-close" id="import-close" type="button" aria-label="Close the import">&#10005;</button>
+      </header>
+      <textarea
+        class="import-text"
+        id="import-text"
+        aria-label="JavaScript formula"
+        placeholder="Type or paste a JavaScript formula, such as  x > 0 ? Math.sqrt(x) : -x"
+        autocomplete="off"
+        autocapitalize="off"
+        spellcheck="false"
+      ></textarea>
+      <p class="overlay-status" id="import-status" aria-live="polite"></p>
+      <button class="primary-button" id="import-convert" type="button">Convert to blocks</button>
+    </div>
+
+    <div class="overlay graph-view" id="graph" role="dialog" aria-modal="true" aria-labelledby="graph-title" hidden>
+      <header class="overlay-bar">
+        <h2 class="overlay-title" id="graph-title">Graph</h2>
+        <button class="tool tool-text" id="graph-import-open" type="button" aria-label="Import a graph from JSON">Import</button>
+        <button class="tool tool-text" id="graph-share" type="button" aria-label="Copy the graph range and formula to the clipboard">Share</button>
+        <button class="overlay-close" id="graph-close" type="button" aria-label="Close the graph">&#10005;</button>
+        <div class="graph-controls">
+          <label class="field">
+            <span class="field-label">Variable</span>
+            <select class="field-control" id="graph-var"></select>
+          </label>
+          <label class="field">
+            <span class="field-label">From</span>
+            <input class="field-control" id="graph-from" type="text" inputmode="text" autocomplete="off" spellcheck="false" />
+          </label>
+          <label class="field">
+            <span class="field-label">To</span>
+            <input class="field-control" id="graph-to" type="text" inputmode="text" autocomplete="off" spellcheck="false" />
+          </label>
+        </div>
+      </header>
+      <div class="graph-stage" id="graph-stage">
+        <canvas class="graph-canvas" id="graph-canvas"></canvas>
+      </div>
+      <p class="graph-formula" id="graph-formula"></p>
+      <p class="overlay-status" id="graph-status" aria-live="polite"></p>
+    </div>
+
+    <div class="menu" id="stash-menu" role="menu" aria-label="Stashed formulas" hidden></div>
+
+    <div class="sheet-backdrop" id="vars-sheet" hidden>
+      <div class="sheet" role="dialog" aria-modal="true" aria-labelledby="vars-sheet-title">
+        <header class="sheet-bar">
+          <h2 class="section-title" id="vars-sheet-title">Variables</h2>
+          <button class="add-var" id="vars-sheet-add" type="button">+ Add</button>
+          <button class="overlay-close" id="vars-sheet-close" type="button" aria-label="Close the variables">&#10005;</button>
+        </header>
+        <div class="vars-list vars-sheet-list" id="vars-sheet-list" data-empty="No variables yet. Press + Add."></div>
+      </div>
+    </div>
+
+    <div class="sheet-backdrop" id="graph-import-sheet" hidden>
+      <div class="sheet sheet-import" role="dialog" aria-modal="true" aria-labelledby="graph-import-title">
+        <header class="sheet-bar">
+          <h2 class="section-title" id="graph-import-title">Import a graph</h2>
+          <button class="overlay-close" id="graph-import-close" type="button" aria-label="Close the graph import">&#10005;</button>
+        </header>
+        <textarea
+          class="import-text"
+          id="graph-import-text"
+          aria-label="Graph JSON"
+          placeholder='Paste the JSON from a graph&apos;s Share button, such as {"start": -10, "end": 10, "formula": "Math.sin(x)", "variable_symbol": "x", "variables": [{"key": "x", "value": 1}]}'
+          autocomplete="off"
+          autocapitalize="off"
+          spellcheck="false"
+        ></textarea>
+        <p class="overlay-status" id="graph-import-status" aria-live="polite"></p>
+        <button class="primary-button" id="graph-import-apply" type="button" disabled>Import graph</button>
+      </div>
+    </div>
+
+    <div class="toast" id="toast" role="status" aria-live="polite" hidden></div>
+
+    <div class="unit-probe" id="unit-probe" aria-hidden="true"></div>
+  </body>
+</html>
