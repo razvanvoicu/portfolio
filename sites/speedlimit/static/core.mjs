@@ -69,6 +69,7 @@ export class DriveTracker {
   reset() {
     this.positions = []; this.headings = []; this.travelled = 0;
     this.heading = null; this.sign = null; this.limit = this.config.defaultLimitKph;
+    this.fallbackSign = null;
     this.turned = false;
     this.schoolZone = null;
     this.encounters = new Map();
@@ -107,7 +108,7 @@ export class DriveTracker {
     }
   }
   resolveRoad() { return null; }
-  applySigns(numericAllowed = true, vehicleSpeedKph = null) {
+  applySigns(useSignLimit = true, vehicleSpeedKph = null) {
     const c = this.config;
     if (!Number.isFinite(this.heading)) return;
     const eligible = [...this.encounters.values()].filter(entry => !entry.handled && entry.passedAt !== null && entry.behind &&
@@ -127,11 +128,13 @@ export class DriveTracker {
       } else if (zone.sign[5] === 'school-end' && this.schoolZone) {
         this.limit = this.schoolZone.limit; this.sign = this.schoolZone.sign;
         this.schoolZone = null;
-      } else if (!zone.sign[5] && !this.schoolZone && numericAllowed &&
+      } else if (!zone.sign[5] && !this.schoolZone &&
           ![...zonePassages].some(passedAt => Math.abs(passedAt - zone.passedAt) < 1e-8)) {
         if (ignoreSpeedSign(this.limit, zone.sign[2], vehicleSpeedKph)) continue;
-        this.sign = { limit: zone.sign[2], meters: zone.meters, id: zone.sign[4] };
-        this.limit = zone.sign[2];
+        this.fallbackSign = { limit: zone.sign[2], meters: zone.meters, id: zone.sign[4] };
+        if (!useSignLimit) continue;
+        this.sign = this.fallbackSign;
+        this.limit = this.sign.limit;
       } else continue;
       if (zone.sign[5]) zonePassages.add(zone.passedAt);
       this.appliedSignId = zone.sign[4];
@@ -155,7 +158,7 @@ export class DriveTracker {
     this.headings = this.headings.filter(item => this.travelled - item.at <= c.turnHistoryDistanceM + 1e-8);
     this.turned = this.headings.some(item => angleDifference(item.heading, this.heading) + 1e-8 >= c.turnAngleDeg);
     if (this.turned) {
-      if (!this.schoolZone) { this.limit = c.defaultLimitKph; this.sign = null; }
+      if (!this.schoolZone) { this.limit = c.defaultLimitKph; this.sign = null; this.fallbackSign = null; }
       // A corner sign may already have matched during the turn. Reapply it
       // after the turn reset, provided it is still in the 30 m travel window.
       if (!this.schoolZone) for (const entry of this.encounters.values()) {

@@ -79,10 +79,11 @@ export class RoadDriveTracker extends DriveTracker {
     this.previousRoad=this.roadMatch.road?.code??null;
     const road=this.roadMatch.road;
     if (Number.isFinite(road?.limit)) return road;
-    // A statutory value must not leak from a previous mapped stretch into an
-    // unresolved stretch. Fall back to the existing sign/default rules.
+    // Mapped limits end at the edge of coverage. Use the last qualifying sign
+    // even if it was passed while a mapped limit took precedence.
     if (!this.schoolZone && this.sign?.kind==='road') {
-      this.limit=this.config.defaultLimitKph; this.sign=null;
+      this.sign=this.fallbackSign;
+      this.limit=this.sign?.limit??this.config.defaultLimitKph;
     }
     return null;
   }

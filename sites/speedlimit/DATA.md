@@ -37,8 +37,9 @@ Approved runtime rules (all driving thresholds are in static/config.mjs):
 - If different roads are within 10 m of the best distance, retain the previous
   road only if it remains eligible; otherwise label the match uncertain.
 - Use the mapped statutory limit only for that matched line part. Uncertain or
-  unresolved stretches use the existing sign/default behavior, visibly labelled
-  as fallback. A previous statutory value is not carried into an unresolved part.
+  unresolved stretches use the last qualifying sign, including a sign passed
+  while displaying a mapped limit. The usual sign filters and turn reset still
+  apply. If no qualifying sign is retained, use the 50 km/h default.
 - School-zone entry/end behavior takes precedence and retains the agreed saved
   pre-zone limit. GPS fixes below the existing movement threshold preserve the
   road/heading history while stopped.

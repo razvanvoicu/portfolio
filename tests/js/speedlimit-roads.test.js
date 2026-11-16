@@ -52,6 +52,39 @@ test('road limits apply without passing a sign; unresolved stretch uses default 
   t.update(point(200,0));t.update(point(200,10));t.update(point(200,20));t.update(point(200,30));
   assert.equal(t.limit,50);assert.equal(t.roadMatch.road.code,'B');assert.equal(t.sign,null);
 });
+test('uncovered stretches use the latest qualifying sign passed under a mapped limit',async()=>{
+  const [m,{CONFIG:c}]=await modules;
+  const sections=[[0,80,1,[point(0,-150),point(0,0)]],[0,null,2,[point(0,0),point(0,160)]]];
+  const signs=[
+    [...point(0,-110),60,0,1], [...point(0,-70),70,0,2],
+    [...point(0,-45),40,180,3], [...point(0,-25),50,0,4],
+    [...point(0,90),60,0,5],
+  ];
+  const t=new m.RoadDriveTracker(signs,c,[],sections,[['A','Road A']]);
+  for(let y=-140;y<=0;y+=10)t.update(point(0,y),y<-90?69:75);
+  assert.equal(t.limit,80);
+  assert.equal(t.sign.kind,'road');
+  t.update(point(0,10),75);
+  assert.equal(t.roadMatch.road.featureId,2);
+  assert.equal(t.limit,70);
+  assert.equal(t.sign.id,2);
+  for(let y=20;y<=100;y+=10)t.update(point(0,y),60);
+  assert.equal(t.limit,60);
+  assert.equal(t.sign.id,5);
+});
+test('a detected turn clears the remembered sign before entering an uncovered road',async()=>{
+  const [m,{CONFIG:c}]=await modules;
+  const sections=[[0,80,1,[point(0,-150),point(0,0)]],[1,null,2,[point(0,0),point(100,0)]]];
+  const t=new m.RoadDriveTracker([[...point(0,-100),70,0,1]],c,[],sections,[['A','Road A'],['B','Road B']]);
+  for(let y=-140;y<=0;y+=10)t.update(point(0,y));
+  assert.equal(t.limit,80);
+  t.update(point(10,0));t.update(point(20,0));
+  assert.equal(t.turned,true);
+  t.update(point(30,0));t.update(point(40,0));
+  assert.equal(t.roadMatch.road.code,'B');
+  assert.equal(t.limit,50);
+  assert.equal(t.sign,null);
+});
 test('road-based school entry saves statutory limit and end restores it',async()=>{
   const [m,{CONFIG:c}]=await modules;
   const t=new m.RoadDriveTracker([],c,[
