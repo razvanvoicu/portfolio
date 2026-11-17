@@ -6,3 +6,5 @@ __pycache__/
 se-metadata.json
 /backend/node_modules/
 secretlocator
+.DS_Store
+
