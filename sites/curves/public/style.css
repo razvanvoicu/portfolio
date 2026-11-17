@@ -60,7 +60,7 @@ h2 { margin: 0; font-size: calc(var(--ui-size) * 1.5); }
 .controls, .drawing { min-height: 0; overflow-y: auto; padding: var(--space); border-radius: 14px; font-size: var(--ui-size); }
 .animation-toggle { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: .65em; align-items: center; margin-bottom: 1.4em; }
 .animation-toggle input { width: 1.2em; height: 1.2em; accent-color: var(--accent); }
-.animation-speed { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 12px; align-items: center; }
+.animation-speed { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 12px; align-items: center; margin-bottom: 1.4em; }
 .animation-speed input { width: 100%; accent-color: var(--accent); }
 .animation-speed output { color: var(--text); min-width: 3em; text-align: right; }
 .morph-animation { margin-top: 1.6em; }
@@ -79,6 +79,7 @@ h2 { margin: 0; font-size: calc(var(--ui-size) * 1.5); }
 .field input[type="color"] { height: 3em; padding: .25em; cursor: pointer; }
 .section-label { padding-bottom: 1em; border-bottom: 1px solid var(--line); margin-bottom: 1.3em; }
 .field { display: grid; gap: .55em; min-width: 0; font-size: var(--ui-size); font-weight: 650; color: #bac6d4; margin: 0 0 1.4em; }
+.field.animation-label { margin-bottom: .35em; }
 .field input, .field select { width: 100%; min-width: 0; padding: .7em .8em; border: 1px solid var(--line); border-radius: 8px; color: var(--text); background: var(--raised); }
 .field input:focus, .field select:focus { border-color: var(--accent); }
 .morph-control { display: grid; grid-template-columns: minmax(0, 2fr) minmax(0, 1fr); align-items: center; gap: 12px; }

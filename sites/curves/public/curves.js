@@ -31,6 +31,37 @@ const Curves = (() => {
     if(start===1){const last=pieces[pieces.length-1];return [{a:0,b:0,point:()=>last.point(1),expression:()=>last.expression('1')},...pieces];}
     return [...mapPieces(intersect(pieces,start,1),1,-start),...mapPieces(intersect(pieces,0,start),1,1-start)];
   }
+  function successive(first,second,start,distance,epsilon){
+    const normalize=value=>value-Math.floor(value);
+    const points=new Set([0,1,normalize(start),normalize(start+distance)]);
+    for(const piece of [...first,...second]){if(piece.a>0&&piece.a<1)points.add(piece.a);if(piece.b>0&&piece.b<1)points.add(piece.b);}
+    if(epsilon>0 && distance>0){
+      if(2*epsilon<=distance){points.add(normalize(start+epsilon));points.add(normalize(start+distance-epsilon));}
+      else points.add(normalize(start+distance/2));
+    }
+    const cuts=[...points].sort((a,b)=>a-b),result=[];
+    for(let i=0;i<cuts.length-1;i++){
+      const a=cuts[i],b=cuts[i+1],center=a+(b-a)/2,mid=center===b?a:center,base=normalize(start),turn=mid<base?1:0,u=mid+turn-base;
+      // Mapping adjacent pieces can leave a gap of a few rounding units.
+      // Treat only such machine-precision gaps as the shared boundary.
+      const covering=pieces=>{
+        const exact=pieces.find(p=>p.a<=a&&p.b>=b);if(exact)return exact;
+        const before=pieces.findLast(p=>p.b<=a),after=pieces.find(p=>p.a>=b),roundoff=2*Number.EPSILON;
+        if(before&&after&&after.a-before.b<=roundoff)return after;
+        if(a===0&&after&&after.a<=roundoff)return after;
+        if(b===1&&before&&1-before.b<=roundoff)return before;
+      };
+      const left=covering(first),right=covering(second);
+      if(!left||!right)throw new Error('The source curves do not cover the full parameter interval.');
+      if(u>=distance){result.push({...left,a,b});continue;}
+      if(epsilon===0 || (u>=epsilon && distance-u>=epsilon)){result.push({...right,a,b});continue;}
+      let weight,weightExpression;
+      if(u<=distance/2){weight=t=>(t+turn-base)/epsilon;weightExpression=t=>`((${t})+(${turn})-(${base}))/(${epsilon})`;}
+      else {weight=t=>(distance-(t+turn-base))/epsilon;weightExpression=t=>`((${distance})-((${t})+(${turn})-(${base})))/(${epsilon})`;}
+      result.push({a,b,point(t){const f=weight(t),[x1,y1]=left.point(t),[x2,y2]=right.point(t);return [(1-f)*x1+f*x2,(1-f)*y1+f*y2];},expression(t){const f=weightExpression(t),[x1,y1]=left.expression(t),[x2,y2]=right.expression(t);return [`(1-(${f}))*(${x1})+(${f})*(${x2})`,`(1-(${f}))*(${y1})+(${f})*(${y2})`];}});
+    }
+    return result;
+  }
   function build(curve, lookup, seen = new Set()) {
     if (!curve) throw new Error('Choose a source curve.');
     if (seen.has(curve.id)) throw new Error('A curve cannot depend on itself.');
@@ -63,6 +94,15 @@ const Curves = (() => {
       return result;
     }
     const first=source('source1');
+    if(curve.type==='successiveMorph'){
+      const second=source('source2'),s1=constant(curve.successiveStart),s2=constant(curve.successiveEnd),epsilon=constant(curve.epsilon);
+      if(s1<0||s1>1||s2<0||s2>1)throw new Error('s1 and s2 must be between 0 and 1.');
+      if(epsilon<=0||epsilon>1)throw new Error('Transition length ε must be greater than 0 and at most 1.');
+      const start=s1===1?0:s1,end=s2===1?0:s2;
+      const distance=curve.successiveDistance??(end>=start?end-start:1-start+end);
+      if(typeof distance!=='number'||!Number.isFinite(distance)||distance<0||distance>1)throw new Error('Invalid successive morph interval.');
+      return distance===0?first:successive(first,second,start,distance,epsilon);
+    }
     if (curve.type === 'morph') {
       const factor=constant(curve.morphFactor), second=shift(source('source2'),constant(curve.morphShift ?? '0'));
       if(factor<0 || factor>1)throw new Error('Morph factor must be between 0 and 1.');

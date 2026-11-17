@@ -27,6 +27,7 @@ test('exported expressions reproduce each combination and preserve piece boundar
   {id:'c',type:'concat',source1:'a',source2:'b'},
   {id:'c',type:'iterate',source1:'a',n:'4',alpha:'Math.PI/2',dx:'0',dy:'0'},
   {id:'c',type:'morph',source1:'a',source2:'b',morphFactor:'.4',morphShift:'.2'},
+  {id:'c',type:'successiveMorph',source1:'a',source2:'b',successiveStart:'.8',successiveEnd:'.2',epsilon:'.3'},
   {id:'c',type:'splice',source1:'a',source2:'b',n:'4',epsilon:'.1',dropStart:'.05',dropEnd:'.05'},
   {id:'c',type:'splice',source1:'a',source2:'b',n:'4',epsilon:'.25',dropStart:'.1',dropEnd:'.15'}])compare(curve);
 });

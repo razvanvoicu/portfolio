@@ -1,10 +1,10 @@
 'use strict';
 const CurveWorkspace = (() => {
-  const types=new Set(['equation','analytic','translate','rotate','scale','reverse','shift','morph','slice','concat','iterate','splice']);
+  const types=new Set(['equation','analytic','translate','rotate','scale','reverse','shift','morph','successiveMorph','slice','concat','iterate','splice']);
   function references(curve) {
     if(curve.type==='equation'||curve.type==='analytic')return [];
     if(curve.type==='concat')return curve.concatCount===undefined ? [curve.source1,curve.source2] : (curve.concatSources||[]).slice(0,Number(curve.concatCount));
-    return ['splice','morph'].includes(curve.type) ? [curve.source1,curve.source2] : [curve.source1];
+    return ['splice','morph','successiveMorph'].includes(curve.type) ? [curve.source1,curve.source2] : [curve.source1];
   }
   function validate(file) {
     if (!file || file.format!=='curves-workspace' || file.version!==1 || !file.workspace || !Array.isArray(file.workspace.curves)) throw new Error('This is not a supported curves workspace file.');
@@ -18,6 +18,8 @@ const CurveWorkspace = (() => {
       const animations=state.animations, shift=animations?.shift;
       if(!animations || typeof animations!=='object' || Array.isArray(animations) || !shift || typeof shift!=='object' || typeof shift.enabled!=='boolean' || typeof shift.duration!=='string' || !Number.isFinite(Number(shift.duration)) || Number(shift.duration)<0.5 || Number(shift.duration)>20 || typeof shift.phase!=='number' || !Number.isFinite(shift.phase) || shift.phase<0 || shift.phase>=2)throw new Error('The file contains invalid animation settings.');
       if(animations.morph!==undefined){const m=animations.morph;if(!m || typeof m!=='object' || Array.isArray(m) || typeof m.enabled!=='boolean' || typeof m.duration!=='string' || !Number.isFinite(Number(m.duration)) || Number(m.duration)<0.5 || Number(m.duration)>20 || typeof m.phase!=='number' || !Number.isFinite(m.phase) || m.phase<0 || m.phase>=1 || typeof m.min!=='number' || typeof m.max!=='number' || !Number.isFinite(m.min) || !Number.isFinite(m.max) || m.min<0 || m.max>1 || m.min>m.max)throw new Error('The file contains invalid animation settings.');}
+      if(animations.successive!==undefined){const a=animations.successive,periods=['speed1','speed2','period'];if(!a || typeof a!=='object' || Array.isArray(a) || typeof a.enabled!=='boolean' || periods.some(k=>typeof a[k]!=='string'||!Number.isFinite(Number(a[k]))||Number(a[k])<.5||Number(a[k])>20) || ['position1','position2','relative','midpoint','amplitude','phase'].some(k=>typeof a[k]!=='number'||!Number.isFinite(a[k])) || a.position1<0 || a.position1>=1 || a.position2<0 || a.position2>=1 || a.relative<0 || a.relative>=2 || a.phase<0 || a.phase>=1 || a.midpoint<=0 || a.midpoint>1 || a.amplitude<0 || a.amplitude>Math.min(.95*a.midpoint,1-a.midpoint))throw new Error('The file contains invalid animation settings.');}
+      if(animations.successive!==undefined){const a=animations.successive;if((a.swapped!==undefined && typeof a.swapped!=='boolean') || (a.trigger!==undefined && (typeof a.trigger!=='number'||!Number.isFinite(a.trigger)||a.trigger<.05||a.trigger>.49)))throw new Error('The file contains invalid animation settings.');}
     }
     function curve(item) {
       if (!item || typeof item.id!=='string' || !item.id || typeof item.name!=='string' || !types.has(item.type) || !item.formulas || typeof item.formulas!=='object' || Array.isArray(item.formulas)) throw new Error('The file contains an invalid curve.');
@@ -30,7 +32,7 @@ const CurveWorkspace = (() => {
           if (parsed.names.some(name=>!formula.state.variables.some(v=>v.name===name))) throw new Error('A formula refers to an unknown variable.');
         }
       }
-      for (const key of ['source1','source2','dx','dy','alpha','factor','from','to','n','epsilon','dropStart','dropEnd','concatCount','shiftStart','morphFactor','morphShift']) {
+      for (const key of ['source1','source2','dx','dy','alpha','factor','from','to','n','epsilon','dropStart','dropEnd','concatCount','shiftStart','morphFactor','morphShift','successiveStart','successiveEnd']) {
         if (item[key]!==undefined && typeof item[key]!=='string') throw new Error('The file contains an invalid curve setting.');
       }
       for (const key of ['concatSources','concatFractions']) if(item[key]!==undefined && (!Array.isArray(item[key]) || item[key].some(value=>typeof value!=='string'))) throw new Error('The file contains invalid concatenation settings.');

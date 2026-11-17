@@ -9,6 +9,35 @@ const lookup = id => defs.get(id);
 const close = (actual,expected) => actual.forEach((x,i)=>assert.ok(Math.abs(x-expected[i])<1e-8, `${actual} != ${expected}`));
 const make = (type, more) => ({id:type,type,source1:'line',...more});
 
+test('successive morph blends along the interval, including overlap and wrap-around',()=>{
+ const a={id:'sm-a',type:'equation',mode:'cartesian',formulas:{x:formula('0'),y:formula('0')}};
+ const b={id:'sm-b',type:'equation',mode:'cartesian',formulas:{x:formula('100'),y:formula('200')}};
+ const find=id=>({[a.id]:a,[b.id]:b})[id];
+ const curve=(start,end,e)=>({id:'sm',type:'successiveMorph',source1:a.id,source2:b.id,successiveStart:String(start),successiveEnd:String(end),epsilon:String(e)});
+ const point=(pieces,t)=>{const p=pieces.find((p,i)=>p.a<=t&&(t<p.b||(t===1&&i===pieces.length-1)));return p.point(t);};
+ const spaced=Curves.build(curve(.1,.9,.2),find);
+ for(const [t,w] of [[0,0],[.1,0],[.2,.5],[.4,1],[.7,1],[.8,.5],[.9,0],[1,0]])close(point(spaced,t),[100*w,200*w]);
+ const overlap=Curves.build(curve(.2,.6,.3),find);
+ for(const [t,w] of [[.1,0],[.3,1/3],[.4,2/3],[.5,1/3],[.7,0]])close(point(overlap,t),[100*w,200*w]);
+ const wrapped=Curves.build(curve(.8,.2,.3),find);
+ for(const [t,w] of [[.7,0],[.8,0],[.9,1/3],[0,2/3],[.1,1/3],[.2,0],[.3,0]])close(point(wrapped,t),[100*w,200*w]);
+ for(const pair of [[.3,.3],[0,1],[1,0]])close(point(Curves.build(curve(...pair,.1),find),.5),[0,0]);
+ for(const [s1,s2,e] of [[0,1,0],[-.1,.5,.1],[.5,1.1,.1],[0,.5,1.1]])assert.throws(()=>Curves.build(curve(s1,s2,e),find));
+});
+test('successive morph accepts intervals at adjacent floating-point boundaries',()=>{
+ const circle=(id,r)=>({id,type:'equation',mode:'polar',formulas:{r:formula(String(r)),theta:formula('2*Math.PI*t')}});
+ const first=circle('float-a',80),second=circle('float-b',40),sources={ [first.id]:first,[second.id]:second };
+ const morph={id:'float-morph',type:'successiveMorph',source1:first.id,source2:second.id,successiveStart:'0',successiveEnd:'0.9999999999999999',epsilon:'.1'};
+ assert.doesNotThrow(()=>Curves.build(morph,id=>sources[id]));
+ const repeated={id:'float-repeat',type:'iterate',source1:first.id,n:'6',alpha:'0',dx:'0',dy:'0'};sources[repeated.id]=repeated;
+ assert.doesNotThrow(()=>Curves.build({...morph,source1:repeated.id,successiveStart:'.2',successiveEnd:'.7'},id=>sources[id]));
+ const shifted={id:'float-shift',type:'shift',source1:repeated.id,shiftStart:'.3'};sources[shifted.id]=shifted;
+ assert.doesNotThrow(()=>Curves.build({...morph,source1:shifted.id,successiveStart:'.2',successiveEnd:'.7'},id=>sources[id]));
+ const originalFormula=global.CurveFormula;
+ try{global.CurveFormula={pieces:()=>[{a:0,b:.3},{a:.31,b:1}]};sources.gap={id:'gap',type:'analytic',expression:'unused'};assert.throws(()=>Curves.build({...morph,source1:'gap'},id=>sources[id]),/do not cover/);}
+ finally{global.CurveFormula=originalFormula;}
+});
+
 test('equations, slicing, translation and rotation preserve coordinates', () => {
   close(Curves.build(line,lookup)[0].point(0.25), [50,100]);
   close(Curves.build(make('slice',{from:'0.25',to:'0.75'}),lookup)[0].point(0.5), [0,100]);

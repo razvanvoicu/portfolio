@@ -9,6 +9,14 @@ const combination={id:'c2',name:'Scaled',type:'scale',mode:'cartesian',formulas:
 const state={curves:[source,combination],draft:{...combination},editing:'c2',dialog:null};
 const file={format:'curves-workspace',version:1,workspace:state};
 const copy=()=>structuredClone(file);
+test('successive morph tracks both source dependencies during workspace merge',()=>{
+ const incoming=structuredClone(state);
+ incoming.curves.push({id:'sm',name:'Successive',type:'successiveMorph',formulas:{},source1:'c1',source2:'c2',successiveStart:'.8',successiveEnd:'.2',epsilon:'.1'});
+ assert.deepEqual(Workspace.references(incoming.curves[2]),['c1','c2']);
+ Workspace.validate({format:'curves-workspace',version:1,workspace:incoming});
+ let id=0;const merged=Workspace.merge(state,incoming,'rename','current',()=>`new${++id}`,false),item=merged.curves.find(c=>c.name==='Successive');
+ assert.equal(item.source1,merged.curves[2].id);assert.equal(item.source2,merged.curves[3].id);
+});
 test('workspace preserves scaling axis and rejects invalid choices',()=>{
  const candidate=copy();candidate.workspace.curves[1].scaleAxis='x';candidate.workspace.draft.scaleAxis='x';
  assert.equal(Workspace.validate(candidate).curves[1].scaleAxis,'x');
@@ -125,4 +133,10 @@ test('workspace preserves and validates morph animation settings',()=>{
  const candidate=copy();candidate.workspace.animations={shift:{enabled:false,duration:'5',phase:0},morph:{enabled:true,duration:'5',phase:.3,min:.2,max:.7}};
  assert.deepEqual(Workspace.validate(JSON.parse(JSON.stringify(candidate))).animations,candidate.workspace.animations);
  candidate.workspace.animations.morph.min=.8;assert.throws(()=>Workspace.validate(candidate),/animation settings/);
+});
+test('workspace preserves and validates successive morph animation settings',()=>{
+ const candidate=copy();candidate.workspace.animations={shift:{enabled:false,duration:'5',phase:0},successive:{enabled:true,speed1:'5',speed2:'6',position1:.2,position2:.3,relative:.1,swapped:true,trigger:.12,midpoint:.1,amplitude:.05,period:'5',phase:.25}};
+ assert.deepEqual(Workspace.validate(JSON.parse(JSON.stringify(candidate))).animations,candidate.workspace.animations);
+ candidate.workspace.animations.successive.trigger=.5;assert.throws(()=>Workspace.validate(candidate),/animation settings/);
+ candidate.workspace.animations.successive.trigger=.12;candidate.workspace.animations.successive.amplitude=.1;assert.throws(()=>Workspace.validate(candidate),/animation settings/);
 });
