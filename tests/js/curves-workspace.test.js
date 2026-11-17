@@ -1,6 +1,7 @@
 const {test}=require('node:test');
 const assert=require('node:assert/strict');
 global.JsFormula=require('../../sites/formulas/static/jsformula.js');
+global.CurveFormula=require('../../sites/curves/static/curve-formula.js');
 const Workspace=require('../../sites/curves/static/workspace.js');
 const formula={code:'100 * Math.cos(2 * Math.PI * t)',state:{variables:[{id:'v1',name:'t',text:'0'}],workspace:{blocks:{blocks:[]}}}};
 const source={id:'c1',name:'Circle',type:'equation',mode:'cartesian',formulas:{x:formula,y:formula}};
@@ -8,6 +9,16 @@ const combination={id:'c2',name:'Scaled',type:'scale',mode:'cartesian',formulas:
 const state={curves:[source,combination],draft:{...combination},editing:'c2',dialog:null};
 const file={format:'curves-workspace',version:1,workspace:state};
 const copy=()=>structuredClone(file);
+test('workspace preserves scaling axis and rejects invalid choices',()=>{
+ const candidate=copy();candidate.workspace.curves[1].scaleAxis='x';candidate.workspace.draft.scaleAxis='x';
+ assert.equal(Workspace.validate(candidate).curves[1].scaleAxis,'x');
+ candidate.workspace.curves[1].scaleAxis='z';assert.throws(()=>Workspace.validate(candidate),/scaling axis/);
+});
+test('workspace stores analytical curves and validates imported expressions',()=>{
+ const candidate=copy();candidate.workspace.curves.push({id:'c3',name:'Expression',type:'analytic',formulas:{},expression:'[Math.cos(t), t]'});
+ assert.equal(Workspace.validate(candidate).curves[2].expression,'[Math.cos(t), t]');
+ candidate.workspace.curves[2].expression='[alert(1), t]';assert.throws(()=>Workspace.validate(candidate));
+});
 test('workspace export preserves curves, order, editor state, and draft',()=>{const imported=Workspace.validate(JSON.parse(JSON.stringify(file)));assert.deepEqual(imported,state);});
 test('rejects malformed files, missing sources, and executable formula code',()=>{
   assert.throws(()=>Workspace.validate({}));
@@ -87,4 +98,31 @@ test('morph second-curve shift survives workspace import and merge',()=>{
  assert.equal(Workspace.validate(JSON.parse(JSON.stringify(file))).curves[2].morphShift,'1/4');
  let id=0;const result=Workspace.merge(state,incoming,'rename','current',()=>`new${++id}`,false);
  assert.equal(result.curves.find(c=>c.name==='Morph').morphShift,'1/4');
+});
+test('workspace preserves and validates drawing settings',()=>{
+ const candidate=copy();candidate.workspace.drawing={startColor:'#102030',endColor:'#abcdef',thickness:'3.5'};
+ assert.deepEqual(Workspace.validate(JSON.parse(JSON.stringify(candidate))).drawing,candidate.workspace.drawing);
+ candidate.workspace.drawing.startColor='not a color';assert.throws(()=>Workspace.validate(candidate),/drawing settings/);
+});
+test('workspace merge retains current drawing settings',()=>{
+ const current=structuredClone(state),incoming=structuredClone(state);
+ current.drawing={startColor:'#ff0000',endColor:'#00ff00',thickness:'5'};
+ incoming.drawing={startColor:'#000000',endColor:'#ffffff',thickness:'2'};
+ const merged=Workspace.merge(current,incoming,'rename','current',()=>String(Math.random()),false);
+ assert.deepEqual(merged.drawing,current.drawing);
+});
+test('workspace export preserves and validates shift animation settings',()=>{
+ const candidate=copy();candidate.workspace.animations={shift:{enabled:true,duration:'5',phase:1.25}};
+ assert.deepEqual(Workspace.validate(JSON.parse(JSON.stringify(candidate))).animations,candidate.workspace.animations);
+ candidate.workspace.animations.shift.duration='0.1';assert.throws(()=>Workspace.validate(candidate),/animation settings/);
+});
+test('workspace export preserves and validates canvas settings',()=>{
+ const candidate=copy();candidate.workspace.canvas={grid:false,startColor:'#102030',endColor:'#abcdef',type:'transversal',angle:45};
+ assert.deepEqual(Workspace.validate(JSON.parse(JSON.stringify(candidate))).canvas,candidate.workspace.canvas);
+ candidate.workspace.canvas.angle='invalid';assert.throws(()=>Workspace.validate(candidate),/canvas settings/);
+});
+test('workspace preserves and validates morph animation settings',()=>{
+ const candidate=copy();candidate.workspace.animations={shift:{enabled:false,duration:'5',phase:0},morph:{enabled:true,duration:'5',phase:.3,min:.2,max:.7}};
+ assert.deepEqual(Workspace.validate(JSON.parse(JSON.stringify(candidate))).animations,candidate.workspace.animations);
+ candidate.workspace.animations.morph.min=.8;assert.throws(()=>Workspace.validate(candidate),/animation settings/);
 });

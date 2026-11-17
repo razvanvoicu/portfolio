@@ -18,15 +18,17 @@ const Curves = (() => {
       return value;
     });
     const fn = Function(...names, '"use strict"; return (' + formula.code + ')');
-    return t => fn(...values.map((v, i) => names[i] === 't' ? t : v));
+    const result=t => fn(...values.map((v, i) => names[i] === 't' ? t : v));
+    result.expression=t=>formula.code.replace(/[A-Za-z_$][A-Za-z0-9_$]*/g,(name,offset,source)=>{const i=names.indexOf(name);return i<0 || (offset>0 && source[offset-1]==='.') ? name : '('+(name==='t'?t:String(values[i]))+')';});
+    return result;
   }
-  const mapPieces = (pieces, scale, offset) => pieces.map(p => ({a: offset + scale*p.a, b: offset + scale*p.b, point: t => p.point((t-offset)/scale)}));
-  const transform = (pieces, angle, dx, dy) => { const c=Math.cos(angle), s=Math.sin(angle); return pieces.map(p => ({...p, point(t) { const [x,y]=p.point(t); return [c*x-s*y+dx,s*x+c*y+dy]; }})); };
+  const mapPieces = (pieces, scale, offset) => pieces.map(p => ({a: offset + scale*p.a, b: offset + scale*p.b, point: t => p.point((t-offset)/scale), expression:t=>p.expression(`((${t})-(${offset}))/(${scale})`)}));
+  const transform = (pieces, angle, dx, dy) => { const c=Math.cos(angle), s=Math.sin(angle); return pieces.map(p => ({...p, point(t) { const [x,y]=p.point(t); return [c*x-s*y+dx,s*x+c*y+dy]; },expression(t){const [x,y]=p.expression(t);return [`(${c})*(${x})-(${s})*(${y})+(${dx})`,`(${s})*(${x})+(${c})*(${y})+(${dy})`];}})); };
   function intersect(pieces, a, b) { return pieces.flatMap(p => { const lo=Math.max(a,p.a), hi=Math.min(b,p.b); return hi > lo ? [{...p,a:lo,b:hi}] : []; }); }
   function shift(pieces, start) {
     if(start<0 || start>1)throw new Error('Starting point S must be between 0 and 1.');
     if(start===0)return pieces;
-    if(start===1){const last=pieces[pieces.length-1];return [{a:0,b:0,point:()=>last.point(1)},...pieces];}
+    if(start===1){const last=pieces[pieces.length-1];return [{a:0,b:0,point:()=>last.point(1),expression:()=>last.expression('1')},...pieces];}
     return [...mapPieces(intersect(pieces,start,1),1,-start),...mapPieces(intersect(pieces,0,start),1,1-start)];
   }
   function build(curve, lookup, seen = new Set()) {
@@ -37,8 +39,9 @@ const Curves = (() => {
     if (curve.type === 'equation') {
       const x=coordinate(curve.formulas[curve.mode === 'polar' ? 'r' : 'x']);
       const y=coordinate(curve.formulas[curve.mode === 'polar' ? 'theta' : 'y']);
-      return [{a:0,b:1,point:curve.mode === 'polar' ? t => {const r=x(t), angle=y(t); return [r*Math.cos(angle),r*Math.sin(angle)];} : t => [x(t),y(t)]}];
+      return [{a:0,b:1,point:curve.mode === 'polar' ? t => {const r=x(t), angle=y(t); return [r*Math.cos(angle),r*Math.sin(angle)];} : t => [x(t),y(t)],expression:curve.mode==='polar'?t=>{const r=x.expression(t),a=y.expression(t);return [`(${r})*Math.cos(${a})`,`(${r})*Math.sin(${a})`];}:t=>[x.expression(t),y.expression(t)]}];
     }
+    if(curve.type==='analytic')return CurveFormula.pieces(curve.expression,curve.morphOverride);
     if (curve.type === 'concat') {
       const count=curve.concatCount === undefined ? 2 : constant(curve.concatCount);
       if (!Number.isSafeInteger(count) || count<2) throw new Error('Number of curves N must be an integer of at least 2.');
@@ -63,25 +66,27 @@ const Curves = (() => {
     if (curve.type === 'morph') {
       const factor=constant(curve.morphFactor), second=shift(source('source2'),constant(curve.morphShift ?? '0'));
       if(factor<0 || factor>1)throw new Error('Morph factor must be between 0 and 1.');
-      if (factor===0) return first;
-      if (factor===1) return second;
+      if (factor===0 && !curve.symbolicMorph) return first;
+      if (factor===1 && !curve.symbolicMorph) return second;
       const result=[];let i=0,j=0;
       while(i<first.length && j<second.length){
         const left=first[i], right=second[j], a=Math.max(left.a,right.a), b=Math.min(left.b,right.b);
-        if(b>a || (b===a && (left.a===left.b || right.a===right.b)))result.push({a,b,point(t){const [x1,y1]=left.point(t), [x2,y2]=right.point(t);return [(1-factor)*x1+factor*x2,(1-factor)*y1+factor*y2];}});
+        if(b>a || (b===a && (left.a===left.b || right.a===right.b)))result.push({a,b,point(t){const [x1,y1]=left.point(t), [x2,y2]=right.point(t);return [(1-factor)*x1+factor*x2,(1-factor)*y1+factor*y2];},expression(t){const [x1,y1]=left.expression(t),[x2,y2]=right.expression(t),f=curve.symbolicMorph?'m':String(factor),inverse=curve.symbolicMorph?'1-m':String(1-factor);return [`(${inverse})*(${x1})+(${f})*(${x2})`,`(${inverse})*(${y1})+(${f})*(${y2})`];}});
         if(left.b<=right.b)i++;
         if(right.b<=left.b)j++;
       }
       return result;
     }
     if (curve.type === 'shift') return shift(first,constant(curve.shiftStart));
-    if (curve.type === 'reverse') return first.slice().reverse().map(p => ({...p,a:1-p.b,b:1-p.a,point:t => p.point(1-t)}));
+    if (curve.type === 'reverse') return first.slice().reverse().map(p => ({...p,a:1-p.b,b:1-p.a,point:t => p.point(1-t),expression:t=>p.expression(`1-(${t})`)}));
     if (curve.type === 'translate') return transform(first,0,constant(curve.dx),constant(curve.dy));
     if (curve.type === 'rotate') return transform(first,constant(curve.alpha),0,0);
     if (curve.type === 'scale') {
       const factor=constant(curve.factor);
       if (factor <= 0) throw new Error('Scaling factor F must be positive.');
-      return first.map(p => ({...p, point(t) { const [x,y]=p.point(t); return [factor*x,factor*y]; }}));
+      const axis=curve.scaleAxis??'both';if(!['x','y','both'].includes(axis))throw new Error('Choose a valid scaling axis.');
+      const xFactor=axis==='y'?1:factor,yFactor=axis==='x'?1:factor;
+      return first.map(p => ({...p, point(t) { const [x,y]=p.point(t); return [xFactor*x,yFactor*y]; },expression(t){const [x,y]=p.expression(t);return [`(${xFactor})*(${x})`,`(${yFactor})*(${y})`];}}));
     }
     if (curve.type === 'slice') {
       const a=constant(curve.from), b=constant(curve.to);
@@ -109,24 +114,24 @@ const Curves = (() => {
         const sourcePieces=k%2 ? second : first, start=k/n+dropStart;
         if (retained>0) return intersect(sourcePieces,start,(k+1)/n-dropEnd);
         const piece=sourcePieces.find(p=>p.a<=start && (start<p.b || (start===1 && p.b===1)));
-        return [{a:start,b:start,point:()=>piece.point(start)}];
+        return [{a:start,b:start,point:()=>piece.point(start),expression:()=>piece.expression(String(start))}];
       });
       for (let k=0;k<n;k++) {
         const pieces=segments[k], following=segments[(k+1)%n];
         const start=k*(duration+epsilon);
         if (duration > 0 && retained > 0) { const scale=duration/retained; result.push(...mapPieces(pieces,scale,start-scale*(k/n+dropStart))); }
-        else if (duration > 0) { const point=pieces[0].point(pieces[0].a); result.push({a:start,b:start+duration,point:()=>point}); }
+        else if (duration > 0) { const point=pieces[0].point(pieces[0].a),expr=pieces[0].expression(String(pieces[0].a)); result.push({a:start,b:start+duration,point:()=>point,expression:()=>expr}); }
         if (epsilon > 0) {
           const endPiece=pieces[pieces.length-1], nextPiece=following[0];
           const end=endPiece.point((k+1)/n-dropEnd), next=nextPiece.point(((k+1)%n)/n+dropStart);
           const a=start+duration, b=k===n-1 ? 1 : a+epsilon;
-          result.push({a,b,point(t) {const u=(t-a)/(b-a);return [end[0]+u*(next[0]-end[0]),end[1]+u*(next[1]-end[1])];}});
+          result.push({a,b,point(t) {const u=(t-a)/(b-a);return [end[0]+u*(next[0]-end[0]),end[1]+u*(next[1]-end[1])];},expression(t){const u=`((${t})-(${a}))/(${b-a})`;return [0,1].map(i=>`(${end[i]})+(${u})*((${next[i]})-(${end[i]}))`);}});
         }
       }
       return result;
     }
     throw new Error('Unknown curve type.');
   }
-  return { build, constant };
+  return { build, constant, shift };
 })();
 if (typeof module !== 'undefined') module.exports = Curves;

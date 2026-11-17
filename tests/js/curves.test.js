@@ -62,6 +62,10 @@ test('scaling multiplies both coordinates and preserves piece timing', () => {
   close(pieces[0].point(.125),[25,50]);
   close(pieces[1].point(1),[-50,50]);
   close(Curves.build(make('scale',{factor:'2'}),lookup)[0].point(.5),[0,200]);
+  close(Curves.build(make('scale',{factor:'2',scaleAxis:'x'}),lookup)[0].point(.25),[100,100]);
+  close(Curves.build(make('scale',{factor:'2',scaleAxis:'y'}),lookup)[0].point(.25),[50,200]);
+  close(Curves.build(make('scale',{factor:'2',scaleAxis:'both'}),lookup)[0].point(.25),[100,200]);
+  assert.throws(()=>Curves.build(make('scale',{factor:'2',scaleAxis:'z'}),lookup),/axis/);
   for (const factor of ['0','-1','1/0','']) assert.throws(()=>Curves.build(make('scale',{factor}),lookup));
 });
 

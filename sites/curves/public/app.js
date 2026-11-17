@@ -5,11 +5,14 @@ const fresh = () => ({id:Array.from(crypto.getRandomValues(new Uint8Array(16)), 
 let state;
 try { state=JSON.parse(localStorage.getItem(KEY)); } catch { /* start an empty workspace */ }
 if (!state || !Array.isArray(state.curves) || !state.draft) state={curves:[],draft:fresh(),editing:null,dialog:null};
+state.drawing=CurveDrawing.settings(state.drawing);
+state.animations=CurveAnimation.settings(state.animations);
+state.canvas=CurveCanvas.settings(state.canvas);
 let slot=null;
 let draggedCurve=null;
 const persist=()=>{ try { localStorage.setItem(KEY,JSON.stringify(state)); $('#storage').textContent='Workspace saved locally'; } catch { $('#storage').textContent='Unable to save workspace'; } };
 const lookup=id=>state.curves.find(c=>c.id===id);
-const labels={equation:'Equations',translate:'Translation',rotate:'Rotation',scale:'Scaling',reverse:'Reverse',shift:'Shift',morph:'Simple morph',slice:'Slice',concat:'Concatenation',iterate:'Iterated concatenation',splice:'Splicing'};
+const labels={equation:'Equations',analytic:'Analytical expression',translate:'Translation',rotate:'Rotation',scale:'Scaling',reverse:'Reverse',shift:'Shift',morph:'Simple morph',slice:'Slice',concat:'Concatenation',iterate:'Iterated concatenation',splice:'Splicing'};
 function library(){
   $('#count').textContent=state.curves.length;
   const list=$('#library'); list.replaceChildren();
@@ -51,6 +54,12 @@ function source(label,key){
   const select=document.createElement('select'); const empty=document.createElement('option'); empty.value='';empty.textContent='Select a curve';select.append(empty);
   for(const curve of state.curves){if(curve.id===state.draft.id)continue;const option=document.createElement('option');option.value=curve.id;option.textContent=curve.name;select.append(option);}
   select.value=state.draft[key]||'';select.addEventListener('change',()=>{state.draft[key]=select.value;persist();preview();});wrap.append(select);return wrap;
+}
+function scaleControl(curve){
+ const row=document.createElement('div');row.className='scale-control';row.append(field('Scaling factor · F','factor'));
+ const group=document.createElement('fieldset');group.className='scale-axis';const legend=document.createElement('legend');legend.textContent='Axis';group.append(legend);
+ for(const [value,title] of [['x','X'],['y','Y'],['both','Both']]){const label=document.createElement('label'),radio=document.createElement('input');radio.type='radio';radio.name='scale-axis';radio.value=value;radio.checked=(curve.scaleAxis??'both')===value;radio.addEventListener('change',()=>{curve.scaleAxis=value;persist();preview();});label.append(radio,document.createTextNode(title));group.append(label);}
+ row.append(group);return row;
 }
 function formula(key,label){
   const button=document.createElement('button');button.className='formula';button.type='button';
@@ -108,6 +117,7 @@ function morphControl(curve,key,labelText,id){
 }
 function fields(){
   const area=$('#fields');area.replaceChildren();const d=state.draft;
+  if(d.type==='analytic'){const button=document.createElement('button');button.type='button';button.className='formula';button.textContent=d.expression||'Edit curve expression';button.onclick=()=>openExchange();area.append(button);return;}
   if(d.type==='equation'){
     const toggle=document.createElement('div');toggle.className='switch';for(const mode of ['cartesian','polar']){const b=document.createElement('button');b.textContent=mode[0].toUpperCase()+mode.slice(1);b.className=d.mode===mode?'active':'';b.onclick=()=>{d.mode=mode;persist();fields();preview();};toggle.append(b);}area.append(toggle);
     if(d.mode==='polar')area.append(formula('r','R'),formula('theta','θ'));else area.append(formula('x','x'),formula('y','y'));
@@ -118,7 +128,7 @@ function fields(){
   if(['splice','morph'].includes(d.type))area.append(source('Second curve','source2'));
   if(d.type==='translate'||d.type==='iterate') area.append(field('ΔX','dx'),field('ΔY','dy'));
   if(d.type==='rotate'||d.type==='iterate') area.append(field('α · radians','alpha','Math.PI / 2'));
-  if(d.type==='scale')area.append(field('Scaling factor · F','factor'));
+  if(d.type==='scale')area.append(scaleControl(d));
   if(d.type==='shift')area.append(field('Starting point · S','shiftStart'));
   if(d.type==='morph')area.append(morphControl(d,'morphFactor','Morph factor · f','morph-factor'),morphControl(d,'morphShift','Second curve shift · S','morph-shift'));
   if(d.type==='slice')area.append(field('Start · t','from'),field('End · t','to'));
@@ -126,17 +136,44 @@ function fields(){
   if(d.type==='splice')area.append(field('Drop at start · t','dropStart'),field('Drop at end · t','dropEnd'),field('Joining time · ε (0 to 1/N)','epsilon'));
   if(d.type==='iterate'){const p=document.createElement('p');p.className='hint';p.textContent='Each copy is rotated around the origin, then translated from the previous copy. The first copy is the original.';area.append(p);}
 }
+let animationFrame=0, animationTimestamp=null;
+function animationTick(timestamp){
+ animationFrame=0;
+ const shift=state.animations.shift,morph=state.animations.morph, morphActive=morph.enabled && CurveAnimation.isMorph(state.draft);
+ if(!shift.enabled && !morphActive){animationTimestamp=null;return;}
+ if(animationTimestamp!==null){
+  const elapsed=timestamp-animationTimestamp;
+  if(shift.enabled)shift.phase=CurveAnimation.advance(shift.phase,elapsed,Number(shift.duration));
+  if(morphActive)morph.phase=CurveAnimation.advance(morph.phase,elapsed,Number(morph.duration));
+  persist();
+ }
+ animationTimestamp=timestamp;preview();animationFrame=requestAnimationFrame(animationTick);
+}
+function syncAnimation(){
+ const shift=state.animations.shift,morph=state.animations.morph, isMorph=CurveAnimation.isMorph(state.draft), morphActive=morph.enabled && isMorph;
+ $('#shift-enabled').checked=shift.enabled;$('#shift-duration').value=shift.duration;$('#shift-duration-value').value=Number(shift.duration).toFixed(2)+' s';
+ $('#morph-animation').hidden=!isMorph;$('#morph-enabled').checked=morph.enabled;$('#morph-min').value=morph.min;$('#morph-max').value=morph.max;$('#morph-min-value').value=String(morph.min);$('#morph-max-value').value=String(morph.max);$('#morph-duration').value=morph.duration;$('#morph-duration-value').value=Number(morph.duration).toFixed(2)+' s';
+ const track=$('.dual-range');track.style.setProperty('--range-min',`${morph.min*100}%`);track.style.setProperty('--range-max',`${morph.max*100}%`);
+ animationTimestamp=null;
+ if((shift.enabled || morphActive) && !animationFrame)animationFrame=requestAnimationFrame(animationTick);
+ if(!shift.enabled && !morphActive && animationFrame){cancelAnimationFrame(animationFrame);animationFrame=0;}
+}
 function render(){
+ syncAnimation();
+ $('#canvas-grid').checked=state.canvas.grid;
+ $('#canvas-start').value=state.canvas.startColor;$('#canvas-end').value=state.canvas.endColor;$('#canvas-type').value=state.canvas.type;$('#canvas-angle').value=state.canvas.angle;$('#canvas-angle-label').hidden=state.canvas.type!=='transversal';
+ $('#drawing-start').value=state.drawing.startColor;$('#drawing-end').value=state.drawing.endColor;$('#drawing-thickness').value=state.drawing.thickness;
  $('#name').value=state.draft.name;$('#type').value=state.draft.type;$('#heading').textContent=state.draft.name||'New curve';$('#delete').hidden=!state.editing;library();fields();preview();
 }
 function preview(){
- const canvas=$('#canvas'),ctx=canvas.getContext('2d'),w=canvas.width;ctx.clearRect(0,0,w,w);ctx.fillStyle='#090c12';ctx.fillRect(0,0,w,w);
- ctx.lineWidth=1;for(let i=0;i<=10;i++){let v=i*w/10;ctx.strokeStyle=i===5?'#4a5a73':'#1a2534';ctx.beginPath();ctx.moveTo(v,0);ctx.lineTo(v,w);ctx.moveTo(0,v);ctx.lineTo(w,v);ctx.stroke();}
+ const canvas=$('#canvas'),ctx=canvas.getContext('2d'),w=canvas.width;ctx.clearRect(0,0,w,w);CurveCanvas.paint(ctx,w,state.canvas);
  try{
-  const pieces=Curves.build(state.draft,id=>id===state.draft.id?state.draft:lookup(id));
-  ctx.strokeStyle='#74e1c1';ctx.lineWidth=2.5;ctx.lineCap='round';ctx.lineJoin='round';
-  for(const piece of pieces){ctx.beginPath();let started=false;const steps=Math.max(2,Math.ceil(1200*(piece.b-piece.a)));for(let i=0;i<=steps;i++) {const t=piece.a+(piece.b-piece.a)*i/steps;const [x,y]=piece.point(t);if(typeof x!=='number'||typeof y!=='number'||!Number.isFinite(x)||!Number.isFinite(y)){started=false;continue;} const px=(x+100)*w/200,py=(100-y)*w/200;if(started)ctx.lineTo(px,py);else {ctx.moveTo(px,py);started=true;}}ctx.stroke();}
-  $('#error').textContent='';return true;
+  const draft=CurveAnimation.animatedCurve(state.draft,state.animations);
+  const pieces=CurveAnimation.apply(Curves.build(draft,id=>id===draft.id?draft:lookup(id)),state.animations);
+  $('#error').textContent='';
+  try{CurveDrawing.draw(ctx,pieces,w,state.drawing);$('#drawing-error').textContent='';}
+  catch(error){$('#drawing-error').textContent=error.message;}
+  return true;
  }catch(e){$('#error').textContent=e.message;return false;}
 }
 function openFormula(key){slot=key;state.dialog=key;persist();$('#formula-title').textContent='Edit '+({x:'x',y:'y',r:'R',theta:'θ'}[key]);$('#formula-frame').src='/editor.html';$('#formula-dialog').showModal();}
@@ -145,13 +182,49 @@ window.CurvesEditor={
  save(editor,result){if(!slot)return;state.draft.formulas[slot]={state:editor,code:result.code||'',message:result.message||''};persist();fields();preview();}
 };
 function closeFormula(){const frame=$('#formula-frame');try{frame.contentWindow.flushSave();}catch{} state.dialog=null;persist();$('#formula-dialog').close();frame.src='about:blank';slot=null;fields();preview();}
+$('#canvas-grid').addEventListener('change',event=>{state.canvas.grid=event.target.checked;persist();preview();});
+for(const [selector,key] of [['#canvas-start','startColor'],['#canvas-end','endColor'],['#canvas-type','type']])$(selector).addEventListener('input',event=>{state.canvas[key]=event.target.value;$('#canvas-angle-label').hidden=state.canvas.type!=='transversal';persist();preview();});
+$('#canvas-angle').addEventListener('input',event=>{const value=event.target.value;if(value!=='' && Number.isFinite(Number(value))){state.canvas.angle=Number(value);persist();preview();}});
 $('#close-formula').onclick=closeFormula;$('#formula-dialog').addEventListener('cancel',e=>{e.preventDefault();closeFormula();});
+function exchangeExpression(withMorph){
+ const draft=state.draft, factor=draft.type==='morph'?Curves.constant(draft.morphFactor):draft.type==='analytic' && draft.expression?CurveFormula.parse(draft.expression).factor:undefined;
+ const definition=withMorph && draft.type==='morph'?{...draft,symbolicMorph:true}:draft;
+ const pieces=Curves.build(definition,id=>id===draft.id?definition:lookup(id));
+ return CurveFormula.exportPieces(pieces,withMorph?factor:undefined);
+}
+function openExchange(){
+ if(!state.exchange){let text='',withMorph=false;try{withMorph=state.draft.type==='analytic' && CurveAnimation.isMorph(state.draft);text=state.draft.type==='analytic'?state.draft.expression:exchangeExpression(false);}catch{}state.exchange={text,baseline:text,withMorph,manuallyEdited:false};persist();}
+ const editor=state.exchange;$('#exchange-text').value=editor.text;$('#exchange-with-morph').checked=editor.withMorph;$('#exchange-with-morph').disabled=editor.manuallyEdited || !CurveAnimation.isMorph(state.draft);$('#exchange-error').textContent='';$('#exchange-dialog').showModal();
+}
+$('#formula-edit').onclick=()=>openExchange();
+$('#exchange-text').addEventListener('input',event=>{state.exchange.text=event.target.value;state.exchange.manuallyEdited=true;$('#exchange-with-morph').disabled=true;$('#exchange-error').textContent='';persist();});
+$('#exchange-with-morph').addEventListener('change',event=>{try{const text=exchangeExpression(event.target.checked);state.exchange.text=text;state.exchange.withMorph=event.target.checked;$('#exchange-text').value=text;$('#exchange-error').textContent='';persist();}catch(error){event.target.checked=state.exchange.withMorph;$('#exchange-error').textContent=error.message;}});
+$('#exchange-copy').onclick=async()=>{try{await CurveClipboard.copy($('#exchange-text'),navigator.clipboard,document);$('#exchange-error').textContent='Copied.';}catch{$('#exchange-error').textContent='Copy unavailable. Select the text and copy it manually.';}};
+$('#exchange-paste').onclick=async()=>{try{$('#exchange-text').value=await navigator.clipboard.readText();state.exchange.text=$('#exchange-text').value;state.exchange.manuallyEdited=true;$('#exchange-with-morph').disabled=true;persist();$('#exchange-error').textContent='';}catch{$('#exchange-error').textContent='Paste unavailable. Paste into the text field manually.';}};
+function finishExchange(){const expression=$('#exchange-text').value.trim();try{CurveFormula.pieces(expression);}catch(error){$('#exchange-error').textContent=error.message;return;}if(expression!==state.exchange.baseline.trim())state.draft={...fresh(),id:state.draft.id,name:state.draft.name,type:'analytic',expression};delete state.exchange;state.dialog=null;persist();$('#exchange-dialog').close();render();}
+$('#exchange-close').onclick=finishExchange;
+$('#exchange-dialog').addEventListener('cancel',event=>{event.preventDefault();finishExchange();});
+for(const [selector,key] of [['#drawing-start','startColor'],['#drawing-end','endColor'],['#drawing-thickness','thickness']]){
+ $(selector).addEventListener('input',event=>{state.drawing[key]=event.target.value;persist();preview();});
+}
+$('#shift-enabled').addEventListener('change',event=>{
+ state.animations.shift.enabled=event.target.checked;
+ if(!event.target.checked)state.animations.shift.phase=0;
+ persist();syncAnimation();preview();
+});
+$('#shift-duration').addEventListener('input',event=>{
+ state.animations.shift.duration=event.target.value;$('#shift-duration-value').value=Number(event.target.value).toFixed(2)+' s';persist();
+});
+$('#morph-enabled').addEventListener('change',event=>{state.animations.morph.enabled=event.target.checked;if(!event.target.checked)state.animations.morph.phase=0;persist();syncAnimation();preview();});
+for(const [selector,key,other] of [['#morph-min','min','max'],['#morph-max','max','min']])$(selector).addEventListener('input',event=>{const m=state.animations.morph,value=Number(event.target.value);m[key]=key==='min'?Math.min(value,m[other]):Math.max(value,m[other]);syncAnimation();persist();preview();});
+$('#morph-duration').addEventListener('input',event=>{state.animations.morph.duration=event.target.value;$('#morph-duration-value').value=Number(event.target.value).toFixed(2)+' s';persist();});
 $('#name').addEventListener('keydown',e=>{if(e.key==='Enter' && !e.isComposing){e.preventDefault();$('#save').click();}});
 $('#name').addEventListener('input',e=>{state.draft.name=e.target.value;$('#heading').textContent=e.target.value||'New curve';persist();});
-$('#type').addEventListener('change',e=>{if(e.target.value==='morph' && state.draft.morphFactor===undefined)state.draft.morphFactor='0';if(e.target.value==='concat' && state.draft.concatCount===undefined){state.draft.concatCount='';state.draft.concatSources=[];state.draft.concatFractions=[];}state.draft.type=e.target.value;persist();fields();preview();});
+$('#type').addEventListener('change',e=>{if(e.target.value==='analytic' && state.draft.expression===undefined)state.draft.expression='';if(e.target.value==='morph' && state.draft.morphFactor===undefined)state.draft.morphFactor='0';if(e.target.value==='concat' && state.draft.concatCount===undefined){state.draft.concatCount='';state.draft.concatSources=[];state.draft.concatFractions=[];}state.draft.type=e.target.value;persist();syncAnimation();fields();preview();});
 $('#new').onclick=()=>{state.editing=null;state.draft=fresh();state.dialog=null;persist();render();};
 $('#save').onclick=()=>{
  const name=state.draft.name.trim();if(!name){$('#error').textContent='Enter a curve name.';return;}if(state.curves.some(c=>c.name===name&&c.id!==state.draft.id)){$('#error').textContent='A curve with this name already exists.';return;}if(!preview())return;
+ if(state.draft.type==='morph' && state.animations.morph.enabled){try{Curves.build(state.draft,id=>id===state.draft.id?state.draft:lookup(id));}catch(error){$('#error').textContent=error.message;return;}}
  if(state.draft.type==='concat' && state.draft.concatCount!==undefined){const n=Number(state.draft.concatCount);state.draft.concatSources=state.draft.concatSources.slice(0,n);state.draft.concatFractions=state.draft.concatFractions.slice(0,n-1);}
  state.draft.name=name;const i=state.curves.findIndex(c=>c.id===state.draft.id);if(i<0)state.curves.push(structuredClone(state.draft));else state.curves[i]=structuredClone(state.draft);state.editing=state.draft.id;persist();render();
 };
@@ -173,6 +246,9 @@ function importChoice(title,message,choices){
  if(!$('#import-dialog').open)$('#import-dialog').showModal();
 }
 function applyImported(next){
+ next.drawing=CurveDrawing.settings(next.drawing);
+ next.animations=CurveAnimation.settings(next.animations);
+ next.canvas=CurveCanvas.settings(next.canvas);
  try{localStorage.setItem(KEY,JSON.stringify(next));}catch{alert('Could not save the imported workspace. Your current workspace has not been changed.');return;}
  state=next;importedWorkspace=null;if($('#import-dialog').open)$('#import-dialog').close();render();
  if(state.dialog && ['x','y','r','theta'].includes(state.dialog))openFormula(state.dialog);
@@ -224,5 +300,5 @@ $('#import-file').addEventListener('change',async event=>{
   ['Merge workspaces',()=>mergeImported()],
  ]);
 });
-$('#clear').onclick=()=>{if(!confirm('Delete all curves and clear the workspace?'))return;state={curves:[],draft:fresh(),editing:null,dialog:null};persist();render();};
-render();if(state.dialog&&['x','y','r','theta'].includes(state.dialog))openFormula(state.dialog);
+$('#clear').onclick=()=>{if(!confirm('Delete all curves and clear the workspace?'))return;state={curves:[],draft:fresh(),editing:null,dialog:null,drawing:CurveDrawing.settings(),animations:CurveAnimation.settings(),canvas:CurveCanvas.settings()};persist();render();};
+render();if(state.dialog&&['x','y','r','theta'].includes(state.dialog))openFormula(state.dialog);else if(state.exchange)openExchange();
