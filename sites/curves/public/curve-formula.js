@@ -61,7 +61,7 @@ const CurveFormula=(()=>{
  function successiveExpression(first,second,parameters){
   const boundaries=new Set([0,1]);for(const p of [...first,...second]){if(p.a>0&&p.a<1)boundaries.add(p.a);if(p.b>0&&p.b<1)boundaries.add(p.b);}
   const cuts=[...boundaries].sort((a,b)=>a-b),segments=[];
-  function covering(pieces,a,b){const exact=pieces.find(p=>p.a<=a&&p.b>=b);if(exact)return exact;const before=pieces.findLast(p=>p.b<=a),after=pieces.find(p=>p.a>=b),tolerance=2*Number.EPSILON;if(before&&after&&after.a-before.b<=tolerance)return after;if(a===0&&after&&after.a<=tolerance)return after;if(b===1&&before&&1-before.b<=tolerance)return before;throw new Error('The source curves do not cover the full parameter interval.');}
+  function covering(pieces,a,b){const midpoint=a+(b-a)/2,tolerance=32*Number.EPSILON;const exact=pieces.find(p=>p.a-tolerance<=midpoint&&p.b+tolerance>=midpoint);if(exact)return exact;const before=pieces.findLast(p=>p.b<=a),after=pieces.find(p=>p.a>=b),gapTolerance=32*Number.EPSILON;if(before&&after&&after.a-before.b<=gapTolerance)return after;if(a===0&&after&&after.a<=gapTolerance)return after;if(b===1&&before&&1-before.b<=gapTolerance)return before;return pieces.find(p=>p.a<=a+tolerance&&p.b>=b-tolerance);}
   for(let i=0;i<cuts.length-1;i++){const a=cuts[i],b=cuts[i+1],[x,y]=successiveCoordinates([covering(first,a,b)],[covering(second,a,b)]);segments.push({a,b,pair:`[${x}, ${y}, s1=${parameters.s1}, s2=${parameters.s2}, e=${parameters.e}]`});}
   return segments.map((part,i)=>i===segments.length-1?part.pair:`t < ${part.b} ? ${part.pair} :\n`).join('');
  }

@@ -46,3 +46,9 @@ test('shifting the drawing carries the start color to the shifted point',()=>{
  assert.equal(ctx.gradients[0][0][1],'#ff0000');
  assert.equal(ctx.lines[0].moves[0][0],500);
 });
+test('drawing rounds and clamps coordinates to the virtual canvas grid',()=>{
+ const ctx=context(),pieces=[{a:0,b:1,point:t=>[1000.6*t-100.4,1000*t]}];
+ Drawing.draw(ctx,pieces,200,{startColor:'#000000',endColor:'#000000',thickness:'3'});
+ assert.deepEqual(ctx.lines[0].moves[0],[0,100]);
+ assert.deepEqual(ctx.lines[0].lines.at(-1),[200,0]);
+});
