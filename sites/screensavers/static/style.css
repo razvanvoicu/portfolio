@@ -1,2 +1,6 @@
 html, body { margin: 0; width: 100%; height: 100%; overflow: hidden; background: #101c29; }
 canvas { display: block; width: 100%; height: 100%; }
+.cycle { position: fixed; right: 2vmin; bottom: 2vmin; display: grid; grid-auto-flow: column; gap: 1.5vmin; }
+.cycle button { display: grid; place-items: center; width: 7vmin; height: 7vmin; min-width: 36px; min-height: 36px; padding: 0; border: 0; border-radius: 50%; color: #fff; background: rgb(255 255 255 / 0.14); opacity: 0.5; cursor: pointer; -webkit-tap-highlight-color: transparent; }
+.cycle button:hover, .cycle button:focus-visible { background: rgb(255 255 255 / 0.28); opacity: 0.9; }
+.cycle svg { width: 55%; height: 55%; fill: none; stroke: currentColor; stroke-width: 2.5; stroke-linecap: round; stroke-linejoin: round; }

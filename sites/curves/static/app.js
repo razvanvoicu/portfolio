@@ -12,7 +12,12 @@ let slot=null;
 let draggedCurve=null;
 const persist=()=>{ try { localStorage.setItem(KEY,JSON.stringify(state)); $('#storage').textContent='Workspace saved locally'; } catch { $('#storage').textContent='Unable to save workspace'; } };
 const lookup=id=>state.curves.find(c=>c.id===id);
-function exportAnimation(){try{const definition=structuredClone(state.draft),pieces=Curves.build(definition,id=>id===definition.id?definition:lookup(id)),payload={format:'curves-animation',version:1,curve:{name:definition.name,expression:CurveFormula.exportPieces(pieces),definition},animations:structuredClone(state.animations),drawing:structuredClone(state.drawing),canvas:structuredClone(state.canvas)},file=new Blob([JSON.stringify(payload,null,2)],{type:'application/json'}),url=URL.createObjectURL(file),link=document.createElement('a');link.href=url;link.download=(definition.name||'curve')+'-animation.json';link.click();setTimeout(()=>URL.revokeObjectURL(url),0);}catch(error){$('#error').textContent=error.message;}}
+function animationExpression(){
+ const draft=state.draft;
+ if(draft.type==='analytic'||(draft.type==='successiveMorph'&&typeof draft.expression==='string')){CurveFormula.parse(draft.expression);return draft.expression;}
+ return exchangeExpression(draft.type==='successiveMorph'||CurveAnimation.isMorph(draft));
+}
+function exportAnimation(){try{const definition=structuredClone(state.draft),payload={format:'curves-animation',version:1,curve:{name:definition.name,expression:animationExpression(),definition},animations:structuredClone(state.animations),drawing:structuredClone(state.drawing),canvas:structuredClone(state.canvas)},file=new Blob([JSON.stringify(payload,null,2)],{type:'application/json'}),url=URL.createObjectURL(file),link=document.createElement('a');link.href=url;link.download=(definition.name||'curve')+'-animation.json';link.click();setTimeout(()=>URL.revokeObjectURL(url),0);}catch(error){$('#error').textContent=error.message;}}
 const labels={equation:'Equations',analytic:'Analytical expression',translate:'Translation',rotate:'Rotation',scale:'Scaling',reverse:'Reverse',shift:'Shift',morph:'Simple morph',successiveMorph:'Successive morph',slice:'Slice',concat:'Concatenation',iterate:'Iterated concatenation',splice:'Splicing'};
 function library(){
   $('#count').textContent=state.curves.length;

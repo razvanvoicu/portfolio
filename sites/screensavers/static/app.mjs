@@ -22,14 +22,21 @@ function resize() {
 }
 
 window.addEventListener('resize', resize);
+function cycle(step) {
+  index = (index + step + screensavers.length) % screensavers.length;
+  animation = screensavers[index].create();
+  animation.resize(width, height);
+}
+
 window.addEventListener('keydown', event => {
   const step = event.key === 'ArrowRight' ? 1 : event.key === 'ArrowLeft' ? -1 : 0;
   if (!step) return;
   event.preventDefault();
-  index = (index + step + screensavers.length) % screensavers.length;
-  animation = screensavers[index].create();
-  animation.resize(width, height);
+  cycle(step);
 });
+for (const button of document.querySelectorAll('[data-step]')) {
+  button.addEventListener('click', () => { cycle(Number(button.dataset.step)); button.blur(); });
+}
 document.addEventListener('visibilitychange', () => { previous = undefined; });
 
 function frame(now) {
