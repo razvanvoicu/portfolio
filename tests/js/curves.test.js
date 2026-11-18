@@ -43,8 +43,21 @@ test('successive morph accepts intervals at adjacent floating-point boundaries',
  const shifted={id:'float-shift',type:'shift',source1:repeated.id,shiftStart:'.3'};sources[shifted.id]=shifted;
  assert.doesNotThrow(()=>Curves.build({...morph,source1:shifted.id,successiveStart:'.2',successiveEnd:'.7'},id=>sources[id]));
  const originalFormula=global.CurveFormula;
- try{global.CurveFormula={pieces:()=>[{a:0,b:.3},{a:.31,b:1}]};sources.gap={id:'gap',type:'analytic',expression:'unused'};assert.throws(()=>Curves.build({...morph,source1:'gap'},id=>sources[id]),/do not cover/);}
+ try{global.CurveFormula={pieces:()=>[{a:0,b:.3,point:()=>[30,0]},{a:.3+1e-14,b:1,point:()=>[31,0]}]};sources.gap={id:'gap',type:'analytic',expression:'unused'};assert.doesNotThrow(()=>Curves.build({...morph,source1:'gap'},id=>sources[id]));}
  finally{global.CurveFormula=originalFormula;}
+});
+
+test('successive morph uses the correct source immediately after a piece boundary',()=>{
+ const originalFormula=global.CurveFormula;
+ const first={id:'piecewise',type:'analytic',expression:'unused'};
+ const second={id:'constant',type:'equation',mode:'cartesian',formulas:{x:formula('0'),y:formula('0')}};
+ try{
+  global.CurveFormula={pieces:()=>[{a:0,b:.5,point:()=>[0,0]},{a:.5,b:1,point:()=>[100,0]}]};
+  const curve={id:'morph',type:'successiveMorph',source1:first.id,source2:second.id,successiveStart:'.501',successiveEnd:'.8',epsilon:'.1'};
+  const pieces=Curves.build(curve,id=>id===first.id?first:second);
+  const t=.5005,piece=pieces.find(p=>p.a<=t&&t<p.b);
+  assert.deepEqual(piece.point(t),[100,0]);
+ }finally{global.CurveFormula=originalFormula;}
 });
 
 test('equations, slicing, translation and rotation preserve coordinates', () => {

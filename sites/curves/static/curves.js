@@ -42,17 +42,18 @@ const Curves = (() => {
     const cuts=[...points].sort((a,b)=>a-b),result=[];
     for(let i=0;i<cuts.length-1;i++){
       const a=cuts[i],b=cuts[i+1],center=a+(b-a)/2,mid=center===b?a:center,base=normalize(start),turn=mid<base?1:0,u=mid+turn-base;
-      // Mapping adjacent pieces can leave a gap of a few rounding units.
-      // Treat only such machine-precision gaps as the shared boundary.
+      // Source pieces partition the timeline. Floating-point transformations
+      // may leave a gap between adjacent endpoints; use the nearer piece there.
       const covering=pieces=>{
-        const exact=pieces.find(p=>p.a<=a&&p.b>=b);if(exact)return exact;
-        const before=pieces.findLast(p=>p.b<=a),after=pieces.find(p=>p.a>=b),roundoff=2*Number.EPSILON;
-        if(before&&after&&after.a-before.b<=roundoff)return after;
-        if(a===0&&after&&after.a<=roundoff)return after;
-        if(b===1&&before&&1-before.b<=roundoff)return before;
+        const midpoint=a+(b-a)/2;
+        const exact=pieces.find(p=>p.a<=midpoint&&midpoint<p.b);if(exact)return exact;
+        if(!pieces.length)throw new Error('A source curve has no segments.');
+        return pieces.reduce((best,p)=>{
+          const gap=q=>midpoint<q.a?q.a-midpoint:midpoint>q.b?midpoint-q.b:0;
+          return gap(p)<=gap(best)?p:best;
+        });
       };
       const left=covering(first),right=covering(second);
-      if(!left||!right)throw new Error('The source curves do not cover the full parameter interval.');
       if(u>=distance){result.push({...left,a,b});continue;}
       if(epsilon===0 || (u>=epsilon && distance-u>=epsilon)){result.push({...right,a,b});continue;}
       let weight,weightExpression;

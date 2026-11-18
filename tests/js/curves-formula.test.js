@@ -72,3 +72,10 @@ test('successive morph expression carries only its parameters and remains editab
  const changed={s1:.1,s2:.7,e:.2},points=CurveFormula.pieces(expression,undefined,changed);
  assert.notDeepEqual(points[0].point(.1),CurveFormula.pieces(expression)[0].point(.1));
 });
+test('successive morph export selects the source piece next to a transition',()=>{
+ const first=[{a:0,b:.5,expression:()=>['0','0']},{a:.5,b:1,expression:()=>['100','0']}];
+ const second=[{a:0,b:1,expression:()=>['0','0']}];
+ const expression=CurveFormula.successiveExpression(first,second,{s1:.501,s2:.8,e:.1});
+ const pieces=CurveFormula.pieces(expression),t=.5005;
+ assert.deepEqual(pieces.find(p=>p.a<=t&&t<p.b).point(t),[100,0]);
+});
