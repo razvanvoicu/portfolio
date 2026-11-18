@@ -32,9 +32,9 @@ const CurveDrawing = (() => {
       for(const t of times){
         const [x,y]=piece.point(t);
         if(typeof x!=='number'||typeof y!=='number'||!Number.isFinite(x)||!Number.isFinite(y)){previous=null;continue;}
-        // The virtual drawing surface is a 200×200 integer grid: coordinates
-        // are rounded and constrained before they are mapped to device pixels.
-        const virtualX=Math.max(-100,Math.min(100,Math.round(x))),virtualY=Math.max(-100,Math.min(100,Math.round(y)));
+        // Keep two decimal places on the virtual canvas while constraining its range.
+        const round2=value=>Math.round(value*100)/100;
+        const virtualX=Math.max(-100,Math.min(100,round2(x))),virtualY=Math.max(-100,Math.min(100,round2(y)));
         const current={x:(virtualX+100)*width/200,y:(100-virtualY)*width/200,t};
         if(uniform){if(previous)ctx.lineTo(current.x,current.y);else ctx.moveTo(current.x,current.y);}
         else if(previous){

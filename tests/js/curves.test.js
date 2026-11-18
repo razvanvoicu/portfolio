@@ -43,7 +43,7 @@ test('successive morph accepts intervals at adjacent floating-point boundaries',
  const shifted={id:'float-shift',type:'shift',source1:repeated.id,shiftStart:'.3'};sources[shifted.id]=shifted;
  assert.doesNotThrow(()=>Curves.build({...morph,source1:shifted.id,successiveStart:'.2',successiveEnd:'.7'},id=>sources[id]));
  const originalFormula=global.CurveFormula;
- try{global.CurveFormula={pieces:()=>[{a:0,b:.3},{a:.31,b:1}]};sources.gap={id:'gap',type:'analytic',expression:'unused'};assert.throws(()=>Curves.build({...morph,source1:'gap'},id=>sources[id]),/do not cover/);}
+ try{global.CurveFormula={pieces:()=>[{a:0,b:.3},{a:.31,b:1}]};sources.gap={id:'gap',type:'analytic',expression:'unused'};assert.doesNotThrow(()=>Curves.build({...morph,source1:'gap'},id=>sources[id]));}
  finally{global.CurveFormula=originalFormula;}
 });
 

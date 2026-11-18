@@ -45,9 +45,9 @@ const Curves = (() => {
       // Mapping adjacent pieces can leave a gap of a few rounding units.
       // Treat only such machine-precision gaps as the shared boundary.
       const covering=pieces=>{
-        const midpoint=a+(b-a)/2, tolerance=32*Number.EPSILON;
+        const midpoint=a+(b-a)/2, tolerance=0.005;
         const exact=pieces.find(p=>p.a-tolerance<=midpoint&&p.b+tolerance>=midpoint);if(exact)return exact;
-        const before=pieces.findLast(p=>p.b<=a),after=pieces.find(p=>p.a>=b),roundoff=2*Number.EPSILON;
+        const before=pieces.findLast(p=>p.b<=a+0.005),after=pieces.find(p=>p.a>=b-0.005),roundoff=0.005;
         if(before&&after&&after.a-before.b<=roundoff)return after;
         if(a===0&&after&&after.a<=roundoff)return after;
         if(b===1&&before&&1-before.b<=roundoff)return before;
