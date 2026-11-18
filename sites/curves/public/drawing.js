@@ -36,6 +36,7 @@ const CurveDrawing = (() => {
         const round2=value=>Math.round(value*100)/100;
         const virtualX=Math.max(-100,Math.min(100,round2(x))),virtualY=Math.max(-100,Math.min(100,round2(y)));
         const current={x:(virtualX+100)*width/200,y:(100-virtualY)*width/200,t};
+        if(previous && current.x===previous.x && current.y===previous.y){previous={...current};continue;}
         if(uniform){if(previous)ctx.lineTo(current.x,current.y);else ctx.moveTo(current.x,current.y);}
         else if(previous){
           const gradient=ctx.createLinearGradient(previous.x,previous.y,current.x,current.y);
