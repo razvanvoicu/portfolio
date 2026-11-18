@@ -138,21 +138,22 @@ test('Wheely rotates uniformly every nine seconds with 80% trails above the rod'
   }
 });
 
-test('curve screensaver is registered after the existing screensavers', () => {
+test('curve screensavers are registered after the existing screensavers', () => {
   const source = require('node:fs').readFileSync(require('node:path').join(__dirname, '../../sites/screensavers/static/app.mjs'), 'utf8');
-  assert.match(source, /\[wheely, pillows, curve\]/);
+  assert.match(source, /\[wheely, pillows, star, pentagram\]/);
 });
 
-test('curve screensaver geometry is closed, continuous and matches the exported morph weight', async () => {
-  const { curvePoint, weight, second } = await import('../../sites/screensavers/static/animations/curve.mjs');
-  const { segments } = await import('../../sites/screensavers/static/animations/curve-spec.mjs');
+const distance = (a, b) => Math.hypot(a[0] - b[0], a[1] - b[1]);
+
+test('star screensaver geometry is closed, continuous and matches the exported morph weight', async () => {
+  const { curvePoint, weight } = await import('../../sites/screensavers/static/animations/curve-saver.mjs');
+  const { starPieces, segments, second } = await import('../../sites/screensavers/static/animations/curve-star.mjs');
   const CurveFormula = require('../../sites/curves/static/curve-formula.js');
-  const distance = (a, b) => Math.hypot(a[0] - b[0], a[1] - b[1]);
   // Without a morph interval the curve is the first curve alone: a closed loop with no jumps.
-  let previous = curvePoint(0, 0, 0, 0.1);
-  assert.ok(distance(previous, curvePoint(1, 0, 0, 0.1)) < 1e-9);
+  let previous = curvePoint(starPieces, 0, 0, 0, 0.1);
+  assert.ok(distance(previous, curvePoint(starPieces, 1, 0, 0, 0.1)) < 1e-9);
   for (let i = 1; i <= 20000; i++) {
-    const point = curvePoint(i / 20000, 0, 0, 0.1);
+    const point = curvePoint(starPieces, i / 20000, 0, 0, 0.1);
     assert.ok(distance(previous, point) < 1, `jump near t=${i / 20000}`);
     previous = point;
   }
@@ -170,11 +171,25 @@ test('curve screensaver geometry is closed, continuous and matches the exported 
   }
 });
 
+test('pentagram screensaver has a closed flower, and a closed pentagram made of five joined edges', async () => {
+  const { flower, edge, pentagramPieces } = await import('../../sites/screensavers/static/animations/curve-pentagram.mjs');
+  assert.ok(distance(flower(0), flower(1)) < 1e-9);
+  for (let turns = 0; turns < 5; turns++) {
+    const next = (turns + 1) % 5;
+    assert.ok(distance(edge(turns, (turns + 1) * 0.2), edge(next, next * 0.2)) < 1e-9, `edge ${turns} does not meet edge ${next}`);
+  }
+  // Each segment's second curve is the edge it covers.
+  for (const t of [0.05, 0.25, 0.5, 0.65, 0.95]) {
+    const turns = Math.min(4, Math.floor(t / 0.2));
+    assert.ok(distance(edge(turns, t), pentagramPieces.find(p => t < p.end).to(t)) < 1e-12);
+  }
+});
+
 test('curve screensaver successive motion matches the Curves app animation', async () => {
-  const { advanceSuccessive, oscillation } = await import('../../sites/screensavers/static/animations/curve.mjs');
-  const { animations } = await import('../../sites/screensavers/static/animations/curve-spec.mjs');
+  const { advanceSuccessive, oscillation } = await import('../../sites/screensavers/static/animations/curve-saver.mjs');
+  const { starAnimations } = await import('../../sites/screensavers/static/animations/curve-star.mjs');
   const CurveAnimation = require('../../sites/curves/static/animation.js');
-  const copy = structuredClone(animations.successive), reference = structuredClone(animations.successive);
+  const copy = structuredClone(starAnimations.successive), reference = structuredClone(starAnimations.successive);
   for (let step = 0; step < 6000; step++) {
     advanceSuccessive(copy, 1000 / 120);
     CurveAnimation.advanceSuccessive(reference, 1000 / 120);

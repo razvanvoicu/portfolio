@@ -1,12 +1,15 @@
+import { curveSaver } from './curve-saver.mjs';
+
+const TAU = Math.PI * 2;
 // Exported from the Curves app ("curves-animation" file, successive morph).
 // The exported expression repeats the same morph weight in every segment, so
 // only what differs per segment is kept here:
 //   end  - the segment covers t up to (excluding) this value, as in "t < end ? ..."
 //   from - the first curve there: ['c', radius, turns] is a circle point,
 //          ['l', t0, width, x0, x1, y0, y1] is a straight join from (x0,y0) to (x1,y1)
-//   to   - the second curve there: one of the keys of `second` in curve.mjs
+//   to   - the second curve there: one of the keys of `second` below
 // Each segment blends from -> to with the successive-morph weight built from s1, s2 and e.
-export const segments = [
+const segments = [
   [0.09, ['c', 50, 0.1], 'spiral'],
   [0.09999999999999999, ['l', 0.09, 0.009999999999999995, 40.45084971874737, 30.901699437494745, 29.389262614623657, 95.10565162951535], 'spiral'],
   [0.19, ['c', 100, 0.2], 'spiral'],
@@ -34,7 +37,7 @@ export const segments = [
   [Infinity, ['l', 0.9899999999999999, 0.01000000000000012, 100, 40.45084971874737, -2.4492935982947064e-14, 29.389262614623657], 'tail'],
 ];
 
-export const animations = {
+const animations = {
   shift: { enabled: true, duration: '3.98218804749854', phase: 0.5583639486285008 },
   successive: {
     enabled: true,
@@ -52,7 +55,39 @@ export const animations = {
   },
 };
 
-export const drawing = { startColor: '#af0856', endColor: '#c35418', thickness: 15 };
-export const canvas = { startColor: '#2c3a33', endColor: '#090c12' };
-// Thickness in the Curves app is in pixels of its 800 px preview canvas.
-export const referenceWidth = 800;
+const drawing = { startColor: '#af0856', endColor: '#c35418', thickness: 15 };
+const canvas = { startColor: '#2c3a33', endColor: '#090c12' };
+
+const radial = (r, theta) => [r * Math.cos(theta), r * Math.sin(theta)];
+// The second curve, by name, as exported from the Curves app (t runs from 0 to 1).
+export const second = {
+  spiral: t => radial(20 + 60 * (t / 0.4), 6 * Math.PI * (t / 0.4)),
+  bulb: t => {
+    const angle = 2 * Math.PI * ((1 - (t - 0.4) / 0.025) / 2);
+    return [0.05 * 100 * Math.cos(angle) + 85, 0.05 * 100 * Math.sin(angle)];
+  },
+  return: t => {
+    const u = 1 - (t - 0.42500000000000004) / 0.55;
+    return radial(10 + 80 * u, 8 * Math.PI * u);
+  },
+  tail: t => {
+    const angle = 2 * Math.PI * (((t - 0.9750000000000001) / 0.02499999999999991 - -1) / 2);
+    return [0.05 * 100 * Math.cos(angle) + 15, 0.05 * 100 * Math.sin(angle)];
+  },
+};
+
+function first([kind, ...values]) {
+  if (kind === 'c') {
+    const [radius, turns] = values;
+    return () => [radius * Math.cos(TAU * turns), radius * Math.sin(TAU * turns)];
+  }
+  const [t0, width, x0, x1, y0, y1] = values;
+  return t => {
+    const f = (t - t0) / width;
+    return [x0 + f * (x1 - x0), y0 + f * (y1 - y0)];
+  };
+}
+
+export const starPieces = segments.map(([end, from, to]) => ({ end, from: first(from), to: second[to] }));
+export const star = curveSaver({ name: 'Star', pieces: starPieces, animations, drawing, canvas });
+export { segments, animations as starAnimations };

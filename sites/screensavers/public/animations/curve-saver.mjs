@@ -1,39 +1,7 @@
 import { Wander } from '../wander.mjs';
-import { segments, animations, drawing, canvas, referenceWidth } from './curve-spec.mjs';
 
 const TAU = Math.PI * 2;
 const STEPS_PER_UNIT = 1200;
-
-const radial = (r, theta) => [r * Math.cos(theta), r * Math.sin(theta)];
-// The second curve, by name, as exported from the Curves app (t runs from 0 to 1).
-export const second = {
-  spiral: t => radial(20 + 60 * (t / 0.4), 6 * Math.PI * (t / 0.4)),
-  bulb: t => {
-    const angle = 2 * Math.PI * ((1 - (t - 0.4) / 0.025) / 2);
-    return [0.05 * 100 * Math.cos(angle) + 85, 0.05 * 100 * Math.sin(angle)];
-  },
-  return: t => {
-    const u = 1 - (t - 0.42500000000000004) / 0.55;
-    return radial(10 + 80 * u, 8 * Math.PI * u);
-  },
-  tail: t => {
-    const angle = 2 * Math.PI * (((t - 0.9750000000000001) / 0.02499999999999991 - -1) / 2);
-    return [0.05 * 100 * Math.cos(angle) + 15, 0.05 * 100 * Math.sin(angle)];
-  },
-};
-
-function first([kind, ...values]) {
-  if (kind === 'c') {
-    const [radius, turns] = values;
-    return () => [radius * Math.cos(TAU * turns), radius * Math.sin(TAU * turns)];
-  }
-  const [t0, width, x0, x1, y0, y1] = values;
-  return t => {
-    const f = (t - t0) / width;
-    return [x0 + f * (x1 - x0), y0 + f * (y1 - y0)];
-  };
-}
-const pieces = segments.map(([end, from, to]) => ({ end, from: first(from), to: second[to] }));
 
 // Weight of the second curve: 0 outside the interval from s1 to s2, rising to 1 over e.
 export function weight(t, s1, s2, e) {
@@ -42,7 +10,8 @@ export function weight(t, s1, s2, e) {
   return distance === 0 || offset >= distance ? 0 : Math.min(1, Math.min(offset / e, (distance - offset) / e));
 }
 
-export function curvePoint(t, s1, s2, e) {
+// pieces: [{ end, from(t), to(t) }]; each covers t up to (excluding) end, and blends from -> to.
+export function curvePoint(pieces, t, s1, s2, e) {
   const piece = pieces.find(p => t < p.end);
   const w = weight(t, s1, s2, e);
   const [ax, ay] = piece.from(t), [bx, by] = piece.to(t);
@@ -76,19 +45,26 @@ export function advanceSuccessive(animation, elapsedMs) {
 
 // Same triangular colour ramp as the Curves app: start colour at both ends, end colour in the middle.
 const channels = hex => [1, 3, 5].map(i => parseInt(hex.slice(i, i + 2), 16));
-const startRgb = channels(drawing.startColor), endRgb = channels(drawing.endColor);
-export function colorAt(t) {
+export function colorAt(colors, t) {
   const position = t <= 0.5 ? 2 * t : 2 * (1 - t);
-  return `rgb(${startRgb.map((a, i) => Math.round(a + (endRgb[i] - a) * position)).join(' ')})`;
+  return `rgb(${colors.start.map((a, i) => Math.round(a + (colors.end[i] - a) * position)).join(' ')})`;
 }
 
-export const curve = { name: 'Curve', create: () => new CurveSaver() };
+// spec: { name, pieces, animations: { shift, successive }, drawing: { startColor, endColor, thickness }, canvas }
+// as exported from the Curves app; thickness is in pixels of its 800 px preview canvas.
+export function curveSaver(spec) {
+  return { name: spec.name, create: () => new CurveSaver(spec) };
+}
+
+const REFERENCE_WIDTH = 800;
 
 class CurveSaver {
-  constructor() {
+  constructor(spec) {
+    this.spec = spec;
+    this.colors = { start: channels(spec.drawing.startColor), end: channels(spec.drawing.endColor) };
     this.wander = new Wander();
-    this.shift = { ...animations.shift };
-    this.successive = { ...animations.successive };
+    this.shift = { ...spec.animations.shift };
+    this.successive = { ...spec.animations.successive };
   }
 
   resize(width, height) {
@@ -105,7 +81,7 @@ class CurveSaver {
   }
 
   draw(ctx) {
-    const { width, height } = this;
+    const { width, height } = this, { drawing, canvas, pieces } = this.spec;
     const background = ctx.createRadialGradient(width / 2, height / 2, 0, width / 2, height / 2, Math.hypot(width, height) / 2);
     background.addColorStop(0, canvas.startColor);
     background.addColorStop(1, canvas.endColor);
@@ -117,7 +93,7 @@ class CurveSaver {
     const scale = this.side / 200;
     ctx.save();
     ctx.translate(this.wander.x, this.wander.y);
-    ctx.lineWidth = drawing.thickness * this.side / referenceWidth;
+    ctx.lineWidth = Number(drawing.thickness) * this.side / REFERENCE_WIDTH;
     ctx.lineCap = 'round';
     ctx.lineJoin = 'round';
     // Shifting the starting point to S splits the curve into [S, 1] followed by [0, S].
@@ -127,13 +103,13 @@ class CurveSaver {
       let previous = null;
       for (let i = 0; i <= steps; i++) {
         const t = i === steps ? to : from + (to - from) * i / steps;
-        const [x, y] = curvePoint(t, position1, position2, e);
+        const [x, y] = curvePoint(pieces, t, position1, position2, e);
         if (!Number.isFinite(x) || !Number.isFinite(y)) { previous = null; continue; }
         const current = { x: x * scale, y: -y * scale, u: offset + (t - from) };
         if (previous) {
           const gradient = ctx.createLinearGradient(previous.x, previous.y, current.x, current.y);
-          gradient.addColorStop(0, colorAt(previous.u));
-          gradient.addColorStop(1, colorAt(current.u));
+          gradient.addColorStop(0, colorAt(this.colors, previous.u));
+          gradient.addColorStop(1, colorAt(this.colors, current.u));
           ctx.strokeStyle = gradient;
           ctx.beginPath(); ctx.moveTo(previous.x, previous.y); ctx.lineTo(current.x, current.y); ctx.stroke();
         }
