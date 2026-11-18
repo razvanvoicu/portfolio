@@ -8,6 +8,15 @@ const defs = new Map([[line.id,line]]);
 const lookup = id => defs.get(id);
 const close = (actual,expected) => actual.forEach((x,i)=>assert.ok(Math.abs(x-expected[i])<1e-8, `${actual} != ${expected}`));
 const make = (type, more) => ({id:type,type,source1:'line',...more});
+test('rotating morph inputs preserves parameter positions',()=>{
+ const second={...line,id:'rotation-second',formulas:{x:formula('10*t'),y:formula('0')}};
+ const find=id=>id===line.id?line:second;
+ for(const morph of [{id:'m',type:'morph',source1:line.id,source2:second.id,morphFactor:'.3',morphShift:'0'},
+  {id:'s',type:'successiveMorph',source1:line.id,source2:second.id,successiveStart:'.1',successiveEnd:'.8',epsilon:'.2'}]){
+  const a=Curves.build(morph,find),b=Curves.build({...morph,rotationAngle:Math.PI/2},find);
+  assert.equal(a.length,b.length);for(let i=0;i<a.length;i++){const t=(a[i].a+a[i].b)/2,[x,y]=a[i].point(t);close(b[i].point(t),[-y,x]);}
+ }
+});
 
 test('successive morph blends along the interval, including overlap and wrap-around',()=>{
  const a={id:'sm-a',type:'equation',mode:'cartesian',formulas:{x:formula('0'),y:formula('0')}};

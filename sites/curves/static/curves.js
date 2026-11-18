@@ -66,13 +66,21 @@ const Curves = (() => {
     if (!curve) throw new Error('Choose a source curve.');
     if (seen.has(curve.id)) throw new Error('A curve cannot depend on itself.');
     const next = new Set(seen); next.add(curve.id);
-    const source = key => build(lookup(curve[key]), lookup, next);
+    const source = key => {const pieces=build(lookup(curve[key]), lookup, next);return curve.rotationAngle!==undefined && ['morph','successiveMorph'].includes(curve.type)?transform(pieces,curve.rotationAngle,0,0):pieces;};
     if (curve.type === 'equation') {
       const x=coordinate(curve.formulas[curve.mode === 'polar' ? 'r' : 'x']);
       const y=coordinate(curve.formulas[curve.mode === 'polar' ? 'theta' : 'y']);
       return [{a:0,b:1,point:curve.mode === 'polar' ? t => {const r=x(t), angle=y(t); return [r*Math.cos(angle),r*Math.sin(angle)];} : t => [x(t),y(t)],expression:curve.mode==='polar'?t=>{const r=x.expression(t),a=y.expression(t);return [`(${r})*Math.cos(${a})`,`(${r})*Math.sin(${a})`];}:t=>[x.expression(t),y.expression(t)]}];
     }
-    if(curve.type==='analytic')return CurveFormula.pieces(curve.expression,curve.morphOverride);
+    if(curve.type==='analytic'){const pieces=CurveFormula.pieces(curve.expression,curve.morphOverride);return curve.rotationAngle!==undefined?transform(pieces,curve.rotationAngle,0,0):pieces;}
+    if(curve.type==='successiveMorph' && typeof curve.expression==='string'){
+      const parsed=CurveFormula.parse(curve.expression);
+      if(!parsed.successive) throw new Error('Successive morph expression must include s1, s2, and e.');
+      const params={s1:constant(curve.successiveStart),s2:constant(curve.successiveEnd),e:constant(curve.epsilon)};
+      if(params.s1<0||params.s1>1||params.s2<0||params.s2>1||params.e<=0||params.e>1) throw new Error('Invalid successive morph parameters.');
+      const pieces=CurveFormula.pieces(curve.expression,undefined,params);
+      return curve.rotationAngle!==undefined?transform(pieces,curve.rotationAngle,0,0):pieces;
+    }
     if (curve.type === 'concat') {
       const count=curve.concatCount === undefined ? 2 : constant(curve.concatCount);
       if (!Number.isSafeInteger(count) || count<2) throw new Error('Number of curves N must be an integer of at least 2.');
@@ -93,8 +101,14 @@ const Curves = (() => {
       }
       return result;
     }
-    const first=source('source1');
     if(curve.type==='successiveMorph'){
+      if(typeof curve.expression==='string'){
+        const parsed=CurveFormula.parse(curve.expression); if(!parsed.successive) throw new Error('Successive morph expression must include s1, s2, and e.');
+        const params={s1:constant(curve.successiveStart),s2:constant(curve.successiveEnd),e:constant(curve.epsilon)};
+        if(params.s1<0||params.s1>1||params.s2<0||params.s2>1||params.e<=0||params.e>1) throw new Error('Invalid successive morph parameters.');
+        const pieces=CurveFormula.pieces(curve.expression,undefined,params); return curve.rotationAngle!==undefined?transform(pieces,curve.rotationAngle,0,0):pieces;
+      }
+      const first=source('source1');
       const second=source('source2'),s1=constant(curve.successiveStart),s2=constant(curve.successiveEnd),epsilon=constant(curve.epsilon);
       if(s1<0||s1>1||s2<0||s2>1)throw new Error('s1 and s2 must be between 0 and 1.');
       if(epsilon<=0||epsilon>1)throw new Error('Transition length ε must be greater than 0 and at most 1.');
@@ -103,6 +117,7 @@ const Curves = (() => {
       if(typeof distance!=='number'||!Number.isFinite(distance)||distance<0||distance>1)throw new Error('Invalid successive morph interval.');
       return distance===0?first:successive(first,second,start,distance,epsilon);
     }
+    const first=source('source1');
     if (curve.type === 'morph') {
       const factor=constant(curve.morphFactor), second=shift(source('source2'),constant(curve.morphShift ?? '0'));
       if(factor<0 || factor>1)throw new Error('Morph factor must be between 0 and 1.');

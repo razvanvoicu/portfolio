@@ -54,3 +54,21 @@ test('symbolic Simple Morph exports retain both curves even at factor endpoints'
   assert.ok(points.every((v,i)=>Math.abs(v-(a[i]+b[i])/2)<1e-10));
  }
 });
+test('successive morph coordinates remain parameterized when the interval wraps',()=>{
+ const xys=CurveFormula.successiveCoordinates(Curves.build(base,lookup),Curves.build(other,lookup));
+ for(const coordinate of xys){const result=JsFormula.compile(coordinate);assert.ok(result.names.every(name=>['t','s1','s2','e'].includes(name)));}
+ const fn=Function('t','s1','s2','e',`return [${xys.join(',')}];`);
+ for(const [s1,s2,e] of [[.1,.8,.2],[.8,.2,.3],[.2,.6,.3]]){
+  const c={id:'c',type:'successiveMorph',source1:'a',source2:'b',successiveStart:String(s1),successiveEnd:String(s2),epsilon:String(e)},pieces=Curves.build(c,lookup);
+  for(const t of [.01,.15,.35,.52,.74,.93]){const p=pieces.find(p=>p.a<=t&&t<p.b).point(t),q=fn(t,s1,s2,e);p.forEach((v,i)=>assert.ok(Math.abs(v-q[i])<1e-8));}
+ }
+});
+test('successive morph expression carries only its parameters and remains editable',()=>{
+ const sources=[Curves.build(base,lookup),Curves.build(other,lookup)],params={s1:.8,s2:.2,e:.3};
+ const expression=CurveFormula.successiveExpression(...sources,params),parsed=CurveFormula.parse(expression);
+ assert.deepEqual(parsed.successive,params);
+ const source={id:'c',type:'successiveMorph',source1:'a',source2:'b',successiveStart:'.8',successiveEnd:'.2',epsilon:'.3'},original=Curves.build(source,lookup);
+ for(const t of [.01,.15,.35,.52,.74,.93]){const a=original.find(p=>p.a<=t&&t<p.b).point(t),b=CurveFormula.pieces(expression)[0].point(t);a.forEach((v,i)=>assert.ok(Math.abs(v-b[i])<1e-8));}
+ const changed={s1:.1,s2:.7,e:.2},points=CurveFormula.pieces(expression,undefined,changed);
+ assert.notDeepEqual(points[0].point(.1),CurveFormula.pieces(expression)[0].point(.1));
+});

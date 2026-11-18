@@ -9,6 +9,12 @@ const combination={id:'c2',name:'Scaled',type:'scale',mode:'cartesian',formulas:
 const state={curves:[source,combination],draft:{...combination},editing:'c2',dialog:null};
 const file={format:'curves-workspace',version:1,workspace:state};
 const copy=()=>structuredClone(file);
+test('workspace stores and validates shared rotation settings',()=>{
+ const candidate=copy();candidate.workspace.animations={shift:{enabled:false,duration:'5',phase:0},rotation:{speed:-.5,phase:.25}};
+ assert.deepEqual(Workspace.validate(JSON.parse(JSON.stringify(candidate))).animations,candidate.workspace.animations);
+ candidate.workspace.animations.rotation.speed=-2;assert.throws(()=>Workspace.validate(candidate),/animation settings/);
+ candidate.workspace.animations.rotation={period:-2,phase:.25};assert.doesNotThrow(()=>Workspace.validate(candidate));
+});
 test('successive morph tracks both source dependencies during workspace merge',()=>{
  const incoming=structuredClone(state);
  incoming.curves.push({id:'sm',name:'Successive',type:'successiveMorph',formulas:{},source1:'c1',source2:'c2',successiveStart:'.8',successiveEnd:'.2',epsilon:'.1'});

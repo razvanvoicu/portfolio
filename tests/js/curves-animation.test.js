@@ -52,9 +52,31 @@ test('duration controls elapsed time for a complete forward cycle',()=>{
  assert.equal(Animation.advance(.9,1000,5),.10000000000000009);
 });
 test('animation settings default to stopped five-second cycles',()=>{
- const morph={enabled:false,duration:'5',phase:0,min:0,max:1},successive={...Animation.successiveDefaults};
- assert.deepEqual(Animation.settings(),{shift:{enabled:false,duration:'5',phase:0},morph,successive});
- assert.deepEqual(Animation.settings({shift:{enabled:true,duration:'2',phase:1}}),{shift:{enabled:true,duration:'2',phase:1},morph,successive});
+ const morph={enabled:false,duration:'5',phase:0,min:0,max:1},successive={...Animation.successiveDefaults},rotation={speed:0,phase:0};
+ assert.deepEqual(Animation.settings(),{shift:{enabled:false,duration:'5',phase:0},morph,successive,rotation});
+ assert.deepEqual(Animation.settings({shift:{enabled:true,duration:'2',phase:1}}),{shift:{enabled:true,duration:'2',phase:1},morph,successive,rotation});
+});
+test('rotation speed determines direction and rate and zero pauses',()=>{
+ assert.equal(Animation.advanceRotation(.25,1000,.25),0);
+ assert.equal(Animation.advanceRotation(.25,1000,-.25),.5);
+ assert.equal(Animation.advanceRotation(.25,4000,.25),.25);
+ assert.equal(Animation.advanceRotation(.25,1000,0),.25);
+ assert.equal(Animation.advanceRotation(0,1000,1),0);
+ assert.deepEqual(Animation.settings({rotation:{period:-4,phase:.2}}).rotation,{speed:-.1,phase:.2});
+ assert.deepEqual(Animation.settings({rotation:{period:.5,phase:.2}}).rotation,{speed:.1,phase:.2});
+ assert.deepEqual(Animation.settings({rotation:{speed:-.5,phase:.2}}).rotation,{speed:-.1,phase:.2});
+ assert.deepEqual(Animation.settings({rotation:{speed:.04,phase:.2}}).rotation,{speed:.04,phase:.2});
+});
+test('shared rotation applies to morphs independently of their animation toggle',()=>{
+ const formula=code=>({code,state:{variables:[{name:'t',text:'0'}]}});
+ const first={id:'a',type:'equation',mode:'cartesian',formulas:{x:formula('100'),y:formula('0')}};
+ const second={id:'b',type:'equation',mode:'cartesian',formulas:{x:formula('50'),y:formula('0')}};
+ const find=id=>({a:first,b:second})[id],settings=Animation.settings({rotation:{speed:.1,phase:Animation.advanceRotation(0,2500,.1)}});
+ for(const curve of [{id:'m',type:'morph',source1:'a',source2:'b',morphFactor:'.5',morphShift:'0'},
+  {id:'s',type:'successiveMorph',source1:'a',source2:'b',successiveStart:'.2',successiveEnd:'.8',epsilon:'.1'}]){
+  const pieces=Curves.build(Animation.animatedCurve(curve,settings),find),p=pieces.find(x=>x.a<=.5&&.5<x.b).point(.5);
+  assert.ok(Math.abs(p[0])<1e-10);assert.ok(p[1]<0);
+ }
 });
 test('morph animation changes only the preview definition',()=>{
  const curve={type:'morph',morphFactor:'0.1'}, animations=Animation.settings({morph:{enabled:true,min:.2,max:.8,phase:.5}});

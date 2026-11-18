@@ -22,8 +22,13 @@ test('drawing keeps disconnected pieces separate and uses global t at boundaries
  assert.equal(ctx.gradients[599][1][1],'#0000ff');assert.equal(ctx.gradients[600][0][1],'#0000ff');
  assert.notDeepEqual(ctx.lines[599].lines[0],ctx.lines[600].moves[0]);
 });
-test('drawing preserves the existing default and rejects invalid widths',()=>{
- assert.deepEqual(Drawing.settings(),{startColor:'#74e1c1',endColor:'#74e1c1',thickness:'2.5'});
+test('drawing uses the new default and clamps existing widths to the slider range',()=>{
+ assert.deepEqual(Drawing.settings(),{startColor:'#74e1c1',endColor:'#74e1c1',thickness:'3'});
+ assert.equal(Drawing.settings({thickness:'2.5'}).thickness,'3');
+ assert.equal(Drawing.settings({thickness:'30'}).thickness,'25');
+ assert.equal(Drawing.settings({thickness:'12.5'}).thickness,'13');
+ assert.equal(Drawing.settings({thickness:'12.4'}).thickness,'12');
+ assert.equal(Drawing.settings({thickness:''}).thickness,'3');
  for(const thickness of ['', '0','-1'])assert.throws(()=>Drawing.draw(context(),[],800,{...Drawing.settings(),thickness}),/positive thickness/);
 });
 test('gradient reaches the midpoint color when the sampling grid misses t=0.5',()=>{

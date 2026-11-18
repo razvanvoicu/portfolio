@@ -12,6 +12,7 @@ let slot=null;
 let draggedCurve=null;
 const persist=()=>{ try { localStorage.setItem(KEY,JSON.stringify(state)); $('#storage').textContent='Workspace saved locally'; } catch { $('#storage').textContent='Unable to save workspace'; } };
 const lookup=id=>state.curves.find(c=>c.id===id);
+function exportAnimation(){try{const definition=structuredClone(state.draft),pieces=Curves.build(definition,id=>id===definition.id?definition:lookup(id)),payload={format:'curves-animation',version:1,curve:{name:definition.name,expression:CurveFormula.exportPieces(pieces),definition},animations:structuredClone(state.animations),drawing:structuredClone(state.drawing),canvas:structuredClone(state.canvas)},file=new Blob([JSON.stringify(payload,null,2)],{type:'application/json'}),url=URL.createObjectURL(file),link=document.createElement('a');link.href=url;link.download=(definition.name||'curve')+'-animation.json';link.click();setTimeout(()=>URL.revokeObjectURL(url),0);}catch(error){$('#error').textContent=error.message;}}
 const labels={equation:'Equations',analytic:'Analytical expression',translate:'Translation',rotate:'Rotation',scale:'Scaling',reverse:'Reverse',shift:'Shift',morph:'Simple morph',successiveMorph:'Successive morph',slice:'Slice',concat:'Concatenation',iterate:'Iterated concatenation',splice:'Splicing'};
 function library(){
   $('#count').textContent=state.curves.length;
@@ -128,6 +129,7 @@ function fields(){
   if(d.type==='concat'){concatFields(area,d);return;}
   area.append(source(['splice','morph','successiveMorph'].includes(d.type)?'First curve':'Curve','source1'));
   if(['splice','morph','successiveMorph'].includes(d.type))area.append(source('Second curve','source2'));
+  if(d.type==='successiveMorph' && typeof d.expression==='string'){area.replaceChildren();for(const text of ['Curve 1','Curve 2']){const label=document.createElement('div');label.className='source-label';label.textContent=text;area.append(label);}}
   if(d.type==='translate'||d.type==='iterate') area.append(field('ΔX','dx'),field('ΔY','dy'));
   if(d.type==='rotate'||d.type==='iterate') area.append(field('α · radians','alpha','Math.PI / 2'));
   if(d.type==='scale')area.append(scaleControl(d));
@@ -142,35 +144,37 @@ function fields(){
 let animationFrame=0, animationTimestamp=null;
 function animationTick(timestamp){
  animationFrame=0;
- const shift=state.animations.shift,morph=state.animations.morph,successive=state.animations.successive, morphActive=morph.enabled && CurveAnimation.isMorph(state.draft),successiveActive=successive.enabled && state.draft.type==='successiveMorph';
- if(!shift.enabled && !morphActive && !successiveActive){animationTimestamp=null;return;}
+ const shift=state.animations.shift,morph=state.animations.morph,successive=state.animations.successive,rotation=state.animations.rotation, morphActive=morph.enabled && CurveAnimation.isMorph(state.draft),successiveActive=successive.enabled && state.draft.type==='successiveMorph',rotationActive=rotation.speed!==0 && CurveAnimation.isRotatable(state.draft);
+ if(!shift.enabled && !morphActive && !successiveActive && !rotationActive){animationTimestamp=null;return;}
  if(animationTimestamp!==null){
   const elapsed=timestamp-animationTimestamp;
   if(shift.enabled)shift.phase=CurveAnimation.advance(shift.phase,elapsed,Number(shift.duration));
   if(morphActive)morph.phase=CurveAnimation.advance(morph.phase,elapsed,Number(morph.duration));
   if(successiveActive){CurveAnimation.advanceSuccessive(successive,elapsed);$('#successive-position1').value=successive.position1.toFixed(2);$('#successive-position2').value=successive.position2.toFixed(2);$('#successive-epsilon-value').value=CurveAnimation.oscillation(successive.midpoint,successive.amplitude,successive.phase).toFixed(3);}
+  if(rotationActive)rotation.phase=CurveAnimation.advanceRotation(rotation.phase,elapsed,rotation.speed);
   persist();
  }
  animationTimestamp=timestamp;preview();animationFrame=requestAnimationFrame(animationTick);
 }
 function syncAnimation(){
- const shift=state.animations.shift,morph=state.animations.morph,successive=state.animations.successive, isMorph=CurveAnimation.isMorph(state.draft), morphActive=morph.enabled && isMorph,successiveActive=successive.enabled && state.draft.type==='successiveMorph';
+ const shift=state.animations.shift,morph=state.animations.morph,successive=state.animations.successive,rotation=state.animations.rotation, isMorph=CurveAnimation.isMorph(state.draft), morphActive=morph.enabled && isMorph,successiveActive=successive.enabled && state.draft.type==='successiveMorph',rotatable=CurveAnimation.isRotatable(state.draft),rotationActive=rotation.speed!==0 && rotatable;
  $('#shift-enabled').checked=shift.enabled;$('#shift-duration').value=shift.duration;$('#shift-duration-value').value=Number(shift.duration).toFixed(2)+' s';
  $('#morph-animation').hidden=!isMorph;$('#morph-enabled').checked=morph.enabled;$('#morph-min').value=morph.min;$('#morph-max').value=morph.max;$('#morph-min-value').value=String(morph.min);$('#morph-max-value').value=String(morph.max);$('#morph-duration').value=morph.duration;$('#morph-duration-value').value=Number(morph.duration).toFixed(2)+' s';
  const track=$('.dual-range');track.style.setProperty('--range-min',`${morph.min*100}%`);track.style.setProperty('--range-max',`${morph.max*100}%`);
+ $('#rotation-control').hidden=!rotatable;$('#rotation-speed').value=rotation.speed;$('#rotation-speed-value').value=String(Number(rotation.speed.toPrecision(3)))+' rotations/s';
  $('#successive-animation').hidden=state.draft.type!=='successiveMorph';$('#successive-enabled').checked=successive.enabled;
  $('#successive-amplitude').max=Math.min(.95*successive.midpoint,1-successive.midpoint);
  for(const [id,key,precision] of [['successive-speed1','speed1',2],['successive-speed2','speed2',2],['successive-trigger','trigger',2],['successive-mid','midpoint',3],['successive-amplitude','amplitude',3],['successive-period','period',2]]){$('#'+id).value=successive[key];$('#'+id+'-value').value=Number(successive[key]).toFixed(precision);}
  $('#successive-position1').value=successive.position1.toFixed(2);$('#successive-position2').value=successive.position2.toFixed(2);$('#successive-epsilon-value').value=CurveAnimation.oscillation(successive.midpoint,successive.amplitude,successive.phase).toFixed(3);
  animationTimestamp=null;
- if((shift.enabled || morphActive || successiveActive) && !animationFrame)animationFrame=requestAnimationFrame(animationTick);
- if(!shift.enabled && !morphActive && !successiveActive && animationFrame){cancelAnimationFrame(animationFrame);animationFrame=0;}
+ if((shift.enabled || morphActive || successiveActive || rotationActive) && !animationFrame)animationFrame=requestAnimationFrame(animationTick);
+ if(!shift.enabled && !morphActive && !successiveActive && !rotationActive && animationFrame){cancelAnimationFrame(animationFrame);animationFrame=0;}
 }
 function render(){
  syncAnimation();
  $('#canvas-grid').checked=state.canvas.grid;
  $('#canvas-start').value=state.canvas.startColor;$('#canvas-end').value=state.canvas.endColor;$('#canvas-type').value=state.canvas.type;$('#canvas-angle').value=state.canvas.angle;$('#canvas-angle-label').hidden=state.canvas.type!=='transversal';
- $('#drawing-start').value=state.drawing.startColor;$('#drawing-end').value=state.drawing.endColor;$('#drawing-thickness').value=state.drawing.thickness;
+ $('#drawing-start').value=state.drawing.startColor;$('#drawing-end').value=state.drawing.endColor;$('#drawing-thickness').value=state.drawing.thickness;$('#drawing-thickness-value').value=state.drawing.thickness;
  $('#name').value=state.draft.name;$('#type').value=state.draft.type;$('#heading').textContent=state.draft.name||'New curve';$('#delete').hidden=!state.editing;library();fields();preview();
 }
 function preview(){
@@ -196,24 +200,26 @@ $('#canvas-angle').addEventListener('input',event=>{const value=event.target.val
 $('#close-formula').onclick=closeFormula;$('#formula-dialog').addEventListener('cancel',e=>{e.preventDefault();closeFormula();});
 function exchangeExpression(withMorph){
  const draft=state.draft, factor=draft.type==='morph'?Curves.constant(draft.morphFactor):draft.type==='analytic' && draft.expression?CurveFormula.parse(draft.expression).factor:undefined;
+ if(draft.type==='successiveMorph' && withMorph){const first=Curves.build(lookup(draft.source1),lookup),second=Curves.build(lookup(draft.source2),lookup);return CurveFormula.successiveExpression(first,second,{s1:Curves.constant(draft.successiveStart),s2:Curves.constant(draft.successiveEnd),e:Curves.constant(draft.epsilon)});}
  const definition=withMorph && draft.type==='morph'?{...draft,symbolicMorph:true}:draft;
  const pieces=Curves.build(definition,id=>id===draft.id?definition:lookup(id));
  return CurveFormula.exportPieces(pieces,withMorph?factor:undefined);
 }
 function openExchange(){
- if(!state.exchange){let text='',withMorph=false;try{withMorph=state.draft.type==='analytic' && CurveAnimation.isMorph(state.draft);text=state.draft.type==='analytic'?state.draft.expression:exchangeExpression(false);}catch{}state.exchange={text,baseline:text,withMorph,manuallyEdited:false};persist();}
- const editor=state.exchange;$('#exchange-text').value=editor.text;$('#exchange-with-morph').checked=editor.withMorph;$('#exchange-with-morph').disabled=editor.manuallyEdited || !CurveAnimation.isMorph(state.draft);$('#exchange-error').textContent='';$('#exchange-dialog').showModal();
+ if(!state.exchange){let text='',withMorph=false;try{withMorph=(state.draft.type==='analytic' && CurveAnimation.isMorph(state.draft))||state.draft.type==='successiveMorph';text=state.draft.type==='analytic'||(state.draft.type==='successiveMorph'&&typeof state.draft.expression==='string')?state.draft.expression:exchangeExpression(withMorph);}catch{}state.exchange={text,baseline:text,withMorph,manuallyEdited:false};persist();}
+ $('#exchange-morph-label').textContent=state.draft.type==='successiveMorph'?'With morph parameters':'With morph factor';
+ const editor=state.exchange;$('#exchange-text').value=editor.text;$('#exchange-with-morph').checked=editor.withMorph;$('#exchange-with-morph').disabled=editor.manuallyEdited || !(CurveAnimation.isMorph(state.draft)||state.draft.type==='successiveMorph');$('#exchange-error').textContent='';$('#exchange-dialog').showModal();
 }
 $('#formula-edit').onclick=()=>openExchange();
 $('#exchange-text').addEventListener('input',event=>{state.exchange.text=event.target.value;state.exchange.manuallyEdited=true;$('#exchange-with-morph').disabled=true;$('#exchange-error').textContent='';persist();});
 $('#exchange-with-morph').addEventListener('change',event=>{try{const text=exchangeExpression(event.target.checked);state.exchange.text=text;state.exchange.withMorph=event.target.checked;$('#exchange-text').value=text;$('#exchange-error').textContent='';persist();}catch(error){event.target.checked=state.exchange.withMorph;$('#exchange-error').textContent=error.message;}});
 $('#exchange-copy').onclick=async()=>{try{await CurveClipboard.copy($('#exchange-text'),navigator.clipboard,document);$('#exchange-error').textContent='Copied.';}catch{$('#exchange-error').textContent='Copy unavailable. Select the text and copy it manually.';}};
 $('#exchange-paste').onclick=async()=>{try{$('#exchange-text').value=await navigator.clipboard.readText();state.exchange.text=$('#exchange-text').value;state.exchange.manuallyEdited=true;$('#exchange-with-morph').disabled=true;persist();$('#exchange-error').textContent='';}catch{$('#exchange-error').textContent='Paste unavailable. Paste into the text field manually.';}};
-function finishExchange(){const expression=$('#exchange-text').value.trim();try{CurveFormula.pieces(expression);}catch(error){$('#exchange-error').textContent=error.message;return;}if(expression!==state.exchange.baseline.trim())state.draft={...fresh(),id:state.draft.id,name:state.draft.name,type:'analytic',expression};delete state.exchange;state.dialog=null;persist();$('#exchange-dialog').close();render();}
+function finishExchange(){const expression=$('#exchange-text').value.trim();let parsed;try{parsed=CurveFormula.parse(expression);}catch(error){$('#exchange-error').textContent=error.message;return;}if(expression!==state.exchange.baseline.trim()){const next={...fresh(),id:state.draft.id,name:state.draft.name,type:parsed.successive?'successiveMorph':'analytic',expression};if(parsed.successive){next.successiveStart=String(parsed.successive.s1);next.successiveEnd=String(parsed.successive.s2);next.epsilon=String(parsed.successive.e);}state.draft=next;}delete state.exchange;state.dialog=null;persist();$('#exchange-dialog').close();render();}
 $('#exchange-close').onclick=finishExchange;
 $('#exchange-dialog').addEventListener('cancel',event=>{event.preventDefault();finishExchange();});
 for(const [selector,key] of [['#drawing-start','startColor'],['#drawing-end','endColor'],['#drawing-thickness','thickness']]){
- $(selector).addEventListener('input',event=>{state.drawing[key]=event.target.value;persist();preview();});
+ $(selector).addEventListener('input',event=>{state.drawing[key]=event.target.value;if(key==='thickness')$('#drawing-thickness-value').value=event.target.value;persist();preview();});
 }
 $('#shift-enabled').addEventListener('change',event=>{
  state.animations.shift.enabled=event.target.checked;
@@ -223,6 +229,7 @@ $('#shift-enabled').addEventListener('change',event=>{
 $('#shift-duration').addEventListener('input',event=>{
  state.animations.shift.duration=event.target.value;$('#shift-duration-value').value=Number(event.target.value).toFixed(2)+' s';persist();
 });
+$('#rotation-speed').addEventListener('input',event=>{state.animations.rotation.speed=Number(event.target.value);persist();syncAnimation();preview();});
 $('#morph-enabled').addEventListener('change',event=>{state.animations.morph.enabled=event.target.checked;if(!event.target.checked)state.animations.morph.phase=0;persist();syncAnimation();preview();});
 for(const [selector,key,other] of [['#morph-min','min','max'],['#morph-max','max','min']])$(selector).addEventListener('input',event=>{const m=state.animations.morph,value=Number(event.target.value);m[key]=key==='min'?Math.min(value,m[other]):Math.max(value,m[other]);syncAnimation();persist();preview();});
 $('#morph-duration').addEventListener('input',event=>{state.animations.morph.duration=event.target.value;$('#morph-duration-value').value=Number(event.target.value).toFixed(2)+' s';persist();});
@@ -244,6 +251,7 @@ $('#type').addEventListener('change',e=>{if(e.target.value==='analytic' && state
 $('#new').onclick=()=>{state.editing=null;state.draft=fresh();state.dialog=null;persist();render();};
 $('#save').onclick=()=>{
  const name=state.draft.name.trim();if(!name){$('#error').textContent='Enter a curve name.';return;}if(state.curves.some(c=>c.name===name&&c.id!==state.draft.id)){$('#error').textContent='A curve with this name already exists.';return;}if(!preview())return;
+ if((name==='Curve 1'||name==='Curve 2') && !state.curves.some(c=>c.id===state.draft.id&&c.name===name)){$('#error').textContent='“Curve 1” and “Curve 2” are reserved labels.';return;}
  if((state.draft.type==='morph' && state.animations.morph.enabled)||(state.draft.type==='successiveMorph' && state.animations.successive.enabled)){try{Curves.build(state.draft,id=>id===state.draft.id?state.draft:lookup(id));}catch(error){$('#error').textContent=error.message;return;}}
  if(state.draft.type==='concat' && state.draft.concatCount!==undefined){const n=Number(state.draft.concatCount);state.draft.concatSources=state.draft.concatSources.slice(0,n);state.draft.concatFractions=state.draft.concatFractions.slice(0,n-1);}
  state.draft.name=name;const i=state.curves.findIndex(c=>c.id===state.draft.id);if(i<0)state.curves.push(structuredClone(state.draft));else state.curves[i]=structuredClone(state.draft);state.editing=state.draft.id;persist();render();
@@ -321,4 +329,6 @@ $('#import-file').addEventListener('change',async event=>{
  ]);
 });
 $('#clear').onclick=()=>{if(!confirm('Delete all curves and clear the workspace?'))return;state={curves:[],draft:fresh(),editing:null,dialog:null,drawing:CurveDrawing.settings(),animations:CurveAnimation.settings(),canvas:CurveCanvas.settings()};persist();render();};
+const animationHeading=[...document.querySelectorAll('.section-label')].find(node=>node.textContent.trim()==='ANIMATION');
+if(animationHeading){const button=document.createElement('button');button.className='clear icon-button';button.type='button';button.title='Export animation';button.setAttribute('aria-label','Export animation');button.textContent='⇩';button.onclick=exportAnimation;animationHeading.append(' ',button);}
 render();if(state.dialog&&['x','y','r','theta'].includes(state.dialog))openFormula(state.dialog);else if(state.exchange)openExchange();

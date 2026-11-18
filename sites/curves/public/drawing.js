@@ -1,7 +1,12 @@
 'use strict';
 const CurveDrawing = (() => {
-  const defaults={startColor:'#74e1c1',endColor:'#74e1c1',thickness:'2.5'};
-  const settings=value=>({...defaults,...value});
+  const defaults={startColor:'#74e1c1',endColor:'#74e1c1',thickness:'3'};
+  function settings(value){
+    const result={...defaults,...value},raw=result.thickness;
+    const thickness=typeof raw==='string' && raw.trim()?Number(raw):NaN;
+    result.thickness=Number.isFinite(thickness)?String(Math.max(3,Math.min(25,Math.round(thickness)))):defaults.thickness;
+    return result;
+  }
   function colorAt(start,end,t){
     const position=t<=0.5 ? 2*t : 2*(1-t);
     const result=[0,2,4].map(i=>{
