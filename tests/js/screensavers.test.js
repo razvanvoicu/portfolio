@@ -137,3 +137,48 @@ test('Wheely rotates uniformly every nine seconds with 80% trails above the rod'
     assert.equal(operations.filter(o => o.op === 'closePath').length, 2);
   }
 });
+
+test('curve screensaver is registered after the existing screensavers', () => {
+  const source = require('node:fs').readFileSync(require('node:path').join(__dirname, '../../sites/screensavers/static/app.mjs'), 'utf8');
+  assert.match(source, /\[wheely, pillows, curve\]/);
+});
+
+test('curve screensaver geometry is closed, continuous and matches the exported morph weight', async () => {
+  const { curvePoint, weight, second } = await import('../../sites/screensavers/static/animations/curve.mjs');
+  const { segments } = await import('../../sites/screensavers/static/animations/curve-spec.mjs');
+  const CurveFormula = require('../../sites/curves/static/curve-formula.js');
+  const distance = (a, b) => Math.hypot(a[0] - b[0], a[1] - b[1]);
+  // Without a morph interval the curve is the first curve alone: a closed loop with no jumps.
+  let previous = curvePoint(0, 0, 0, 0.1);
+  assert.ok(distance(previous, curvePoint(1, 0, 0, 0.1)) < 1e-9);
+  for (let i = 1; i <= 20000; i++) {
+    const point = curvePoint(i / 20000, 0, 0, 0.1);
+    assert.ok(distance(previous, point) < 1, `jump near t=${i / 20000}`);
+    previous = point;
+  }
+  // Every segment boundary is continuous for the second curve too.
+  const names = segments.map(segment => segment[2]);
+  for (let i = 1; i < segments.length; i++) {
+    const boundary = segments[i - 1][0];
+    if (names[i] !== names[i - 1]) assert.ok(distance(second[names[i - 1]](boundary), second[names[i]](boundary)) < 1e-9, `second curve jumps at ${boundary}`);
+  }
+  // The weight is the one the Curves app exports.
+  const [x] = CurveFormula.successiveCoordinates([{ a: 0, b: 1, expression: () => ['3', '5'] }], [{ a: 0, b: 1, expression: () => ['7', '11'] }]);
+  for (const [t, s1, s2, e] of [[0.1, 0.3, 0.85, 0.3], [0.5, 0.3, 0.85, 0.3], [0.9, 0.8, 0.2, 0.1], [0.05, 0.8, 0.2, 0.1], [0.3, 0.2, 0.2, 0.1], [0.7, 1.4, 2.9, 0.05]]) {
+    const expected = (Function('t', 's1', 's2', 'e', `return ${x};`)(t, s1, s2, e) - 3) / 4;
+    assert.ok(Math.abs(weight(t, s1, s2, e) - expected) < 1e-12);
+  }
+});
+
+test('curve screensaver successive motion matches the Curves app animation', async () => {
+  const { advanceSuccessive, oscillation } = await import('../../sites/screensavers/static/animations/curve.mjs');
+  const { animations } = await import('../../sites/screensavers/static/animations/curve-spec.mjs');
+  const CurveAnimation = require('../../sites/curves/static/animation.js');
+  const copy = structuredClone(animations.successive), reference = structuredClone(animations.successive);
+  for (let step = 0; step < 6000; step++) {
+    advanceSuccessive(copy, 1000 / 120);
+    CurveAnimation.advanceSuccessive(reference, 1000 / 120);
+  }
+  assert.deepEqual(copy, reference);
+  assert.equal(oscillation(0.1, 0.02, 0.25), CurveAnimation.oscillation(0.1, 0.02, 0.25));
+});
