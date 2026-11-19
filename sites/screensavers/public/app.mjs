@@ -2,9 +2,11 @@ import { wheely } from './animations/wheely.mjs';
 import { pillows } from './animations/lissajous.mjs';
 import { star } from './animations/curve-star.mjs';
 import { pentagram } from './animations/curve-pentagram.mjs';
+import { sineflower } from './animations/curve-sineflower.mjs';
+import { morph } from './animations/curve-morph.mjs';
 
 // Reorder or extend this array to change the screensaver sequence.
-export const screensavers = [wheely, pillows, star, pentagram];
+export const screensavers = [wheely, pillows, star, pentagram, sineflower, morph];
 
 const canvas = document.querySelector('canvas');
 const context = canvas.getContext('2d');

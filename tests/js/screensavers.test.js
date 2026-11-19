@@ -140,7 +140,7 @@ test('Wheely rotates uniformly every nine seconds with 80% trails above the rod'
 
 test('curve screensavers are registered after the existing screensavers', () => {
   const source = require('node:fs').readFileSync(require('node:path').join(__dirname, '../../sites/screensavers/static/app.mjs'), 'utf8');
-  assert.match(source, /\[wheely, pillows, star, pentagram\]/);
+  assert.match(source, /\[wheely, pillows, star, pentagram, sineflower, morph\]/);
 });
 
 const distance = (a, b) => Math.hypot(a[0] - b[0], a[1] - b[1]);
@@ -196,4 +196,37 @@ test('curve screensaver successive motion matches the Curves app animation', asy
   }
   assert.deepEqual(copy, reference);
   assert.equal(oscillation(0.1, 0.02, 0.25), CurveAnimation.oscillation(0.1, 0.02, 0.25));
+});
+
+test('sineflower screensaver blends the flower into a closed circle and rotates like the Curves app', async () => {
+  const { curvePoint, advanceRotation, rotatePoint } = await import('../../sites/screensavers/static/animations/curve-saver.mjs');
+  const { circle, sineflowerPieces } = await import('../../sites/screensavers/static/animations/curve-sineflower.mjs');
+  const CurveAnimation = require('../../sites/curves/static/animation.js');
+  assert.ok(distance(circle(0), circle(1)) < 1e-9);
+  assert.ok(Math.abs(Math.hypot(...circle(0.37)) - 80) < 1e-9);
+  // Well inside the morph interval the curve is the circle; outside it, the flower.
+  assert.ok(distance(curvePoint(sineflowerPieces, 0.5, 0.1, 0.9, 0.01), circle(0.5)) < 1e-9);
+  assert.ok(distance(curvePoint(sineflowerPieces, 0.95, 0.1, 0.9, 0.01), curvePoint(sineflowerPieces, 0.95, 0.1, 0.1, 0.01)) < 1e-9);
+  for (const [phase, ms, speed] of [[0.9957944218056966, 8.3, 0.0192703950245372], [0.1, 1000, -0.05], [0.5, 16, 0]]) {
+    assert.equal(advanceRotation(phase, ms, speed), CurveAnimation.advanceRotation(phase, ms, speed));
+  }
+  const [x, y] = rotatePoint([3, 4], Math.PI / 2);
+  assert.ok(Math.abs(x + 4) < 1e-12 && Math.abs(y - 3) < 1e-12);
+});
+
+test('morph screensaver follows the first curve at m=0 and the reversed, half-turned curve at m=1', async () => {
+  const { morphAt, advanceRotation } = await import('../../sites/screensavers/static/animations/curve-saver.mjs');
+  const { first, backwards, morphPoint } = await import('../../sites/screensavers/static/animations/curve-morph.mjs');
+  const CurveAnimation = require('../../sites/curves/static/animation.js');
+  for (const t of [0, 0.01, 0.2, 0.41, 0.5, 0.58, 0.7, 0.99, 1]) {
+    assert.ok(distance(morphPoint(t, 0), first(t)) < 1e-9);
+    assert.ok(distance(morphPoint(t, 1), backwards(t)) < 1e-9);
+    assert.ok(distance(morphPoint(t, 0.5), [(first(t)[0] + backwards(t)[0]) / 2, (first(t)[1] + backwards(t)[1]) / 2]) < 1e-9);
+  }
+  // Both ends of the first curve meet the other curve's ends turned half a revolution.
+  assert.ok(distance(backwards(0), [-first(1)[0], -first(1)[1]]) < 1e-9);
+  // The first curve is continuous.
+  let previous = first(0);
+  for (let i = 1; i <= 20000; i++) { const point = first(i / 20000); assert.ok(distance(previous, point) < 1, `jump near t=${i / 20000}`); previous = point; }
+  for (const [phase, min, max] of [[0, 0, 1], [0.25, 0, 1], [0.11495795987551283, 0.2, 0.7]]) assert.equal(morphAt(phase, min, max), CurveAnimation.morphAt(phase, min, max));
 });

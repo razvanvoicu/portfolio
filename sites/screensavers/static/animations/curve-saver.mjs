@@ -43,6 +43,15 @@ export function advanceSuccessive(animation, elapsedMs) {
   animation.phase = advance(animation.phase, elapsedMs, Number(animation.period));
 }
 
+export const morphAt = (phase, min, max) => min + (max - min) * (1 - Math.cos(TAU * phase)) / 2;
+
+// The Curves app rotates the whole morph about the origin by phase turns; phase falls at speed turns per second.
+export const advanceRotation = (phase, elapsedMs, speed) => speed === 0 ? phase : wrap(phase - speed * (elapsedMs / 1000));
+export function rotatePoint([x, y], angle) {
+  const c = Math.cos(angle), s = Math.sin(angle);
+  return [c * x - s * y, s * x + c * y];
+}
+
 // Same triangular colour ramp as the Curves app: start colour at both ends, end colour in the middle.
 const channels = hex => [1, 3, 5].map(i => parseInt(hex.slice(i, i + 2), 16));
 export function colorAt(colors, t) {
@@ -50,8 +59,11 @@ export function colorAt(colors, t) {
   return `rgb(${colors.start.map((a, i) => Math.round(a + (colors.end[i] - a) * position)).join(' ')})`;
 }
 
-// spec: { name, pieces, animations: { shift, successive }, drawing: { startColor, endColor, thickness }, canvas }
-// as exported from the Curves app; thickness is in pixels of its 800 px preview canvas.
+// spec, as exported from the Curves app (thickness is in pixels of its 800 px preview canvas):
+//   { name, drawing: { startColor, endColor, thickness }, canvas, animations: { shift, rotation (optional), ... } }
+// plus, for a successive morph, pieces: [{ end, from(t), to(t) }] and animations.successive,
+// or, for a simple morph, point(t, m) and animations.morph. Like the app, only the animation
+// that belongs to the morph type is applied.
 export function curveSaver(spec) {
   return { name: spec.name, create: () => new CurveSaver(spec) };
 }
@@ -64,7 +76,10 @@ class CurveSaver {
     this.colors = { start: channels(spec.drawing.startColor), end: channels(spec.drawing.endColor) };
     this.wander = new Wander();
     this.shift = { ...spec.animations.shift };
+    this.morphing = Boolean(spec.point);
     this.successive = { ...spec.animations.successive };
+    this.morph = { ...spec.animations.morph };
+    this.rotation = { speed: 0, phase: 0, ...spec.animations.rotation };
   }
 
   resize(width, height) {
@@ -77,19 +92,32 @@ class CurveSaver {
   update(dt) {
     this.wander.update(dt);
     this.shift.phase = advance(this.shift.phase, dt * 1000, Number(this.shift.duration));
-    advanceSuccessive(this.successive, dt * 1000);
+    if (this.morphing) this.morph.phase = advance(this.morph.phase, dt * 1000, Number(this.morph.duration));
+    else advanceSuccessive(this.successive, dt * 1000);
+    this.rotation.phase = advanceRotation(this.rotation.phase, dt * 1000, this.rotation.speed);
+  }
+
+  // The curve for the current animation state, as a function of t.
+  curveFunction() {
+    const { spec } = this;
+    if (this.morphing) {
+      const { min, max, phase } = this.morph, m = morphAt(phase, min, max);
+      return t => spec.point(t, m);
+    }
+    const { position1, position2, midpoint, amplitude, phase } = this.successive;
+    const e = oscillation(midpoint, amplitude, phase);
+    return t => curvePoint(spec.pieces, t, position1, position2, e);
   }
 
   draw(ctx) {
-    const { width, height } = this, { drawing, canvas, pieces } = this.spec;
+    const { width, height } = this, { drawing, canvas } = this.spec;
     const background = ctx.createRadialGradient(width / 2, height / 2, 0, width / 2, height / 2, Math.hypot(width, height) / 2);
     background.addColorStop(0, canvas.startColor);
     background.addColorStop(1, canvas.endColor);
     ctx.fillStyle = background;
     ctx.fillRect(0, 0, width, height);
 
-    const { position1, position2, midpoint, amplitude, phase } = this.successive;
-    const e = oscillation(midpoint, amplitude, phase), shift = this.shift.phase;
+    const curveAt = this.curveFunction(), shift = this.shift.phase, angle = this.rotation.phase * TAU;
     const scale = this.side / 200;
     ctx.save();
     ctx.translate(this.wander.x, this.wander.y);
@@ -103,7 +131,7 @@ class CurveSaver {
       let previous = null;
       for (let i = 0; i <= steps; i++) {
         const t = i === steps ? to : from + (to - from) * i / steps;
-        const [x, y] = curvePoint(pieces, t, position1, position2, e);
+        const [x, y] = rotatePoint(curveAt(t), angle);
         if (!Number.isFinite(x) || !Number.isFinite(y)) { previous = null; continue; }
         const current = { x: x * scale, y: -y * scale, u: offset + (t - from) };
         if (previous) {
