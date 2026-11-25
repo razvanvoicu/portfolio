@@ -19,9 +19,9 @@ test('warning and inactive end markers do not suppress colocated ordinary speed 
   const t=new m.DriveTracker([[...point(0,-100),60,0,1],[...point(0,0),40,0,2],[...point(0,150),70,0,3]],c,[
     marker(0,0,0,4,'school-warning'),marker(0,150,0,5,'school-end')
   ]);
-  for(let y=-150;y<=50;y+=10)t.update(point(0,y));
+  for(let y=-150;y<=50;y+=10){t.update(point(0,y));t.acceptCandidate();}
   assert.equal(t.limit,40);assert.equal(t.sign.id,2);assert.equal(t.schoolZone,null);
-  for(let y=60;y<=180;y+=10)t.update(point(0,y));
+  for(let y=60;y<=180;y+=10){t.update(point(0,y));t.acceptCandidate();}
   assert.equal(t.limit,70);assert.equal(t.sign.id,3);assert.equal(t.schoolZone,null);
 });
 
@@ -55,7 +55,7 @@ test('opposite school markers do not apply; a later zone saves a fresh pre-zone 
   for(let y=-50;y<=10;y+=10)t.update(point(0,y));assert.equal(t.limit,50);
   for(let y=20;y<=60;y+=10)t.update(point(0,y));assert.equal(t.limit,40);
   for(let y=70;y<=130;y+=10)t.update(point(0,y));assert.equal(t.limit,50);
-  for(let y=140;y<=190;y+=10)t.update(point(0,y));assert.equal(t.limit,70);
+  for(let y=140;y<=190;y+=10){t.update(point(0,y));t.acceptCandidate();}assert.equal(t.limit,70);
   for(let y=200;y<=260;y+=10)t.update(point(0,y));assert.equal(t.schoolZone.limit,70);
   for(let y=270;y<=340;y+=10)t.update(point(0,y));assert.equal(t.limit,70);
 });

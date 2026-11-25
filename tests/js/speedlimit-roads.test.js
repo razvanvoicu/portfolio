@@ -52,7 +52,7 @@ test('road limits apply without passing a sign; unresolved stretch uses default 
   t.update(point(200,0));t.update(point(200,10));t.update(point(200,20));t.update(point(200,30));
   assert.equal(t.limit,50);assert.equal(t.roadMatch.road.code,'B');assert.equal(t.sign,null);
 });
-test('uncovered stretches use the latest qualifying sign passed under a mapped limit',async()=>{
+test('uncovered stretches offer the latest sign as a candidate regardless of vehicle speed',async()=>{
   const [m,{CONFIG:c}]=await modules;
   const sections=[[0,80,1,[point(0,-150),point(0,0)]],[0,null,2,[point(0,0),point(0,160)]]];
   const signs=[
@@ -66,8 +66,11 @@ test('uncovered stretches use the latest qualifying sign passed under a mapped l
   assert.equal(t.sign.kind,'road');
   t.update(point(0,10),75);
   assert.equal(t.roadMatch.road.featureId,2);
-  assert.equal(t.limit,70);
-  assert.equal(t.sign.id,2);
+  assert.equal(t.limit,80);
+  assert.equal(t.candidate.limit,50);
+  assert.equal(t.candidate.id,4);
+  t.acceptCandidate();
+  assert.equal(t.limit,50);
   for(let y=20;y<=100;y+=10)t.update(point(0,y),60);
   assert.equal(t.limit,60);
   assert.equal(t.sign.id,5);

@@ -81,9 +81,9 @@ export class RoadDriveTracker extends DriveTracker {
     if (Number.isFinite(road?.limit)) return road;
     // Mapped limits end at the edge of coverage. Use the last qualifying sign
     // even if it was passed while a mapped limit took precedence.
-    if (!this.schoolZone && this.sign?.kind==='road') {
-      this.sign=this.fallbackSign;
-      this.limit=this.sign?.limit??this.config.defaultLimitKph;
+    if (!this.schoolZone && !this.candidate && this.sign?.kind==='road') {
+      if (this.fallbackSign) this.considerSign(this.fallbackSign);
+      else { this.sign=null; this.limit=this.config.defaultLimitKph; }
     }
     return null;
   }

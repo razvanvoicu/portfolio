@@ -1,6 +1,7 @@
 // Agreed driving rules. Distances are metres, angles degrees, speeds km/h.
 export const CONFIG = Object.freeze({
   defaultLimitKph: 50,
+  candidateDifferenceKph: 20,
   signRadiusM: 30,
   signRecheckDistanceM: 30,
   signConeRangeM: 60,

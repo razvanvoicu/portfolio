@@ -1,6 +1,13 @@
 {
   "corrections": [
     {
+      "operation": "disable",
+      "id": 46108,
+      "expected": [103.7671787, 1.3474211, 40, 70.50178375, 46108],
+      "reason": "Obsolete 40 km/h sign on Old Jurong Road. The former school and school zone are no longer present; retain the mapped 60 km/h limit for the entire road.",
+      "evidence": "User confirmed on 2026-11-25 that this sign no longer exists, the school has closed, and there is no school zone on Old Jurong Road. User explicitly requested disabling this sign and retaining 60 km/h throughout Old Jurong Road. Google Maps imagery is outdated for this location."
+    },
+    {
       "operation": "add",
       "id": "manual:hillview-avenue-lanai-40",
       "sign": [103.762112, 1.356569, 40, 270, "manual:hillview-avenue-lanai-40"],

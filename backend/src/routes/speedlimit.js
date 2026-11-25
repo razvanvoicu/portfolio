@@ -13,6 +13,7 @@ const optionalNumber = value => value === null || Number.isFinite(value);
 const identifier = value => value === null || Number.isSafeInteger(value) || (typeof value === "string" && value.length <= 200);
 const nullableText = value => value === null || (typeof value === "string" && value.length <= 200);
 const INFERENCE_FIELDS = ["receivedAt", "processingStatus", "source", "headingDeg", "signId", "roadMatchState", "roadCode", "roadName", "roadFeatureId", "roadLimitKph", "roadDistanceM", "schoolZone", "manualOverride", "rejectedSignId"];
+const CANDIDATE_FIELDS = ["candidateLimitKph", "candidateSignId"];
 
 function validInference(value) {
   return value && typeof value === "object" && !Array.isArray(value) && validTime(value.receivedAt) &&
@@ -21,7 +22,9 @@ function validInference(value) {
     optionalNumber(value.headingDeg) && identifier(value.signId) && identifier(value.roadFeatureId) && identifier(value.rejectedSignId) &&
     ["heading", "matched", "unmatched", "uncertain"].includes(value.roadMatchState) &&
     nullableText(value.roadCode) && nullableText(value.roadName) && optionalNumber(value.roadLimitKph) && optionalNumber(value.roadDistanceM) &&
-    typeof value.schoolZone === "boolean" && typeof value.manualOverride === "boolean";
+    typeof value.schoolZone === "boolean" && typeof value.manualOverride === "boolean" &&
+    (value.candidateLimitKph === undefined || value.candidateLimitKph === null || (Number.isFinite(value.candidateLimitKph) && value.candidateLimitKph > 0)) &&
+    (value.candidateSignId === undefined || identifier(value.candidateSignId));
 }
 
 function readPassword() {
@@ -75,7 +78,8 @@ export function createSpeedlimitRoutes({ password = readPassword(), getDatabase 
     const fixes = body.fixes.map(fix => {
       const stored = Object.fromEntries(["timestamp", "latitude", "longitude", "accuracy", "altitude", "altitudeAccuracy", "heading", "speed"].map(key => [key, fix[key]]));
       if (fix.speedLimitKph !== undefined) stored.speedLimitKph = fix.speedLimitKph;
-      if (fix.inference !== undefined) stored.inference = Object.fromEntries(INFERENCE_FIELDS.map(key => [key, fix.inference[key]]));
+      if (fix.inference !== undefined) stored.inference = Object.fromEntries(
+        [...INFERENCE_FIELDS, ...CANDIDATE_FIELDS.filter(key => fix.inference[key] !== undefined)].map(key => [key, fix.inference[key]]));
       return stored;
     });
     try {

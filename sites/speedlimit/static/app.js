@@ -184,13 +184,14 @@ function stop(saveRecording = true) {
 }
 function recordFix(position, processingStatus) {
   const road = tracker.roadMatch.road;
-  const mapped = tracker.sign?.kind === 'road' && road?.code === tracker.sign.roadCode && road?.limit === tracker.limit;
   recorder.record(position, {
     // This is the same value render() writes into the speed-limit display.
     speedLimitKph: tracker.limit,
     inference: {
       receivedAt: Date.now(), processingStatus,
-      source: tracker.schoolZone ? 'school-zone' : mapped ? 'mapped-road' : tracker.sign ? 'sign' : 'default',
+      source: tracker.schoolZone ? 'school-zone' : tracker.sign?.kind === 'road' ? 'mapped-road' : tracker.sign ? 'sign' : 'default',
+      candidateLimitKph: tracker.candidate?.limit ?? null,
+      candidateSignId: tracker.candidate?.kind === 'road' ? null : tracker.candidate?.id ?? null,
       headingDeg: tracker.heading,
       signId: tracker.sign?.kind === 'road' ? null : tracker.sign?.id ?? null,
       roadMatchState: tracker.roadMatch.state,
@@ -202,6 +203,18 @@ function recordFix(position, processingStatus) {
       rejectedSignId: null,
     },
   });
+}
+function acceptCandidate() {
+  if (running && tracker.acceptCandidate()) render();
+}
+for (const id of ['limit-panel', 'speed-panel']) {
+  $(id).onclick = acceptCandidate;
+  $(id).onkeydown = event => {
+    if (event.key === 'Enter' || event.key === ' ') {
+      event.preventDefault();
+      acceptCandidate();
+    }
+  };
 }
 $('start').onclick = async () => {
   if (running) { stop(); return; }
@@ -224,7 +237,7 @@ $('start').onclick = async () => {
     fix = position; locationError = '';
     const point = [position.coords.longitude, position.coords.latitude];
     const covered = inSingapore(point, SG_POLYGONS);
-    if (covered) tracker.update(point, speedKph(position.coords));
+    if (covered) tracker.update(point);
     render();
     recordFix(position, covered ? 'processed' : 'outside-singapore');
   }, error => {
@@ -249,7 +262,7 @@ function render() {
         const road = tracker.roadMatch.road;
         const roadName = road?.name || road?.code;
         const knownRoadLimit = tracker.sign?.kind === 'road' && road?.code === tracker.sign.roadCode && road?.limit === tracker.limit;
-        info = tracker.schoolZone ? 'School zone' : knownRoadLimit ? 'Mapped road limit' : tracker.sign ? 'Sign limit · fallback' : '50 km/h default · fallback';
+        info = tracker.schoolZone ? 'School zone' : knownRoadLimit ? 'Mapped road limit' : tracker.sign?.kind === 'road' ? 'Mapped limit · retained' : tracker.sign ? 'Sign limit · fallback' : '50 km/h default · fallback';
         const heading = tracker.heading === null ? 'Heading pending movement' : `Heading ${Math.round(tracker.heading)}°`;
         const roadStatus = roadName || (tracker.roadMatch.state === 'uncertain' ? 'Road match uncertain' : tracker.roadMatch.state === 'heading' ? 'Road match pending' : 'No road match');
         note = `${roadStatus} · ${heading}${tracker.schoolZone ? ' · 40 km/h until End of School Zone.' : knownRoadLimit ? ' · Statutory road limit.' : ' · Sign/default fallback.'}`;
@@ -268,12 +281,22 @@ function render() {
   $('speed').setAttribute('aria-label', speed === null ? 'Speed unavailable' : `${speed.toFixed(1)} kilometres per hour`);
   $('limit').textContent = limit ?? '—';
   $('limit').setAttribute('aria-label', `${limit} kilometres per hour`);
+  const candidate = tracker.candidate;
+  $('candidate').hidden = !candidate;
+  $('candidate').textContent = candidate?.limit ?? '';
+  $('candidate').setAttribute('aria-label', candidate ? `Candidate ${candidate.limit} kilometres per hour. Tap either reading row to accept.` : '');
+  for (const id of ['limit-panel', 'speed-panel']) {
+    $(id).setAttribute('role', candidate ? 'button' : 'region');
+    $(id).setAttribute('aria-label', candidate ? `Accept candidate limit of ${candidate.limit} kilometres per hour` : id === 'limit-panel' ? 'Estimated speed limit' : 'Current speed');
+    $(id).tabIndex = candidate ? 0 : -1;
+    $(id).style.cursor = candidate ? 'pointer' : '';
+  }
   $('status').textContent = status;
   $('dot').className = running && speed !== null ? 'dot active' : 'dot';
   $('alert').textContent = over ? 'SLOW DOWN · ABOVE ALERT THRESHOLD' : speed === null ? 'SINGAPORE SPEED MONITOR' : 'WITHIN ALERT THRESHOLD';
   $('alert').className = `alert${over ? ' over' : ''}`;
   $('threshold').textContent = `${limit < CONFIG.minimumAudibleLimitKph ? 'Colour' : 'Alert'} above ${threshold(limit, tolerance)} km/h${limit < CONFIG.minimumAudibleLimitKph ? ' · silent' : ''}`;
-  $('limit-description').textContent = info;
+  $('limit-description').textContent = candidate ? `${info} · tap either reading to accept ${candidate.limit}` : info;
   $('location-note').textContent = note;
   $('start').innerHTML = running ? 'Stop drive <span aria-hidden="true">■</span>' : 'Start drive <span aria-hidden="true">↗</span>';
   $('start').className = `primary${running ? ' running' : ''}`;

@@ -35,7 +35,7 @@ async function setup(signLimit = 70, schoolSigns = [], initialStorage = {}, road
   const code = fs.readFileSync('sites/speedlimit/static/app.js','utf8').replace(/^import .*;\r?\n/gm,'');
   vm.runInNewContext(code, context);
   return {get, context, saved, docHandlers, timers, gainValues, bodyClasses, requests,
-    start:async()=>{await get('start').onclick(); gps({timestamp:now, coords:{latitude:1.2999,longitude:103.85,accuracy:5,speed:0}}); gps({timestamp:now,coords:{latitude:1.3,longitude:103.85,accuracy:5,speed:0}});}, stop:()=>get('start').onclick(),
+    start:async(acceptInitial=true)=>{await get('start').onclick(); gps({timestamp:now, coords:{latitude:1.2999,longitude:103.85,accuracy:5,speed:0}}); gps({timestamp:now,coords:{latitude:1.3,longitude:103.85,accuracy:5,speed:0}}); if(acceptInitial)get('limit-panel').onclick();}, stop:()=>get('start').onclick(),
     position:(speed, extras={})=>gps({timestamp:now, coords:{latitude:1.3,longitude:103.85,accuracy:5,speed,...extras}}),
     rawPosition:position=>gps(position),
     error:code=>gpsError({code}), advance:ms=>{now+=ms; for(const fn of [...timers.values()])fn();},
@@ -138,13 +138,32 @@ test('display enters silent school zone then restores the preceding limit and al
   assert.equal(app.gainValues.includes(0.16),true);
 });
 
-test('speed limit is a read-only display with no manual undo action', async () => {
+test('the number has no undo action and the containing panel accepts candidates', async () => {
   const app = await setup(); await app.start();
   assert.equal(app.get('limit').onclick, undefined);
   assert.equal(app.get('limit').textContent, 70);
   const html = fs.readFileSync('sites/speedlimit/templates/index.html', 'utf8');
   assert.match(html, /<div id="limit"/);
   assert.doesNotMatch(html, /reject-hint/);
+});
+
+test('a higher candidate does not suppress active-limit alerts and keyboard acceptance updates them', async () => {
+  const app=await setup(60,[],{},[],[],[[103.85,1.301,90,0,2]]);
+  await app.start();
+  app.position(75/3.6,{latitude:1.3005});
+  app.position(75/3.6,{latitude:1.3011});
+  assert.equal(app.get('limit').textContent,60);
+  assert.equal(app.get('candidate').textContent,90);
+  assert.equal(app.get('speed').className,'reading over');
+  assert.equal(app.bodyClasses.has('severe'),true);
+  assert.ok(app.gainValues.includes(0.16));
+  let prevented=false;
+  app.get('speed-panel').onkeydown({key:'Enter',preventDefault(){prevented=true;}});
+  assert.equal(prevented,true);assert.equal(app.get('limit').textContent,90);
+  assert.equal(app.get('candidate').hidden,true);
+  assert.equal(app.get('speed').className,'reading good');
+  assert.equal(app.bodyClasses.has('severe'),false);
+  assert.equal(app.gainValues.at(-1),0);
 });
 
 test('default tolerance is 2 and gentle stepper buttons persist changes', async () => {
@@ -227,8 +246,9 @@ test('recorded limits match the display after processing, including skipped fixe
   app.position(15,{latitude:1.3001});
   const fixes = await savedFixes(app);
   assert.equal(fixes[0].speedLimitKph, 50); assert.equal(fixes[0].inference.source, 'default');
-  assert.equal(fixes[1].speedLimitKph, 70); assert.equal(fixes[1].inference.source, 'sign');
-  assert.equal(fixes[1].inference.signId, 1); assert.equal(fixes[1].inference.headingDeg, 0);
+  assert.equal(fixes[1].speedLimitKph, 50); assert.equal(fixes[1].inference.source, 'default');
+  assert.equal(fixes[1].inference.candidateLimitKph, 70); assert.equal(fixes[1].inference.candidateSignId, 1);
+  assert.equal(fixes[1].inference.headingDeg, 0);
   assert.deepEqual(fixes.slice(2,6).map(f => f.inference.processingStatus), ['background','stale','future','outside-singapore']);
   assert.ok(fixes.slice(2,6).every(f => f.speedLimitKph === 70));
   assert.equal(fixes.at(-1).speedLimitKph, 70);
@@ -260,16 +280,73 @@ test('recorded mapped road limit and road identity explain why the nearby sign i
 });
 
 
-test('current GPS speed in metres per second controls lower-sign filtering and recorded display', async () => {
-  for (const [speedKph, expectedLimit] of [[72,80],[65,50],[64,50],[null,50]]) {
+test('candidate keeps the active limit and alerts independent of vehicle speed until either row accepts it', async () => {
+  for (const [speedKph, panel] of [[72,'speed-panel'],[65,'limit-panel'],[0,'speed-panel'],[null,'limit-panel']]) {
     const app = await setup(80, [], recordingOn, [], [], [[103.85,1.301,50,0,2]]);
     await app.start();
     app.position(10/3.6, {latitude:1.3005});
     app.position(speedKph === null ? null : speedKph/3.6, {latitude:1.3011});
-    assert.equal(app.get('limit').textContent, expectedLimit, `GPS speed ${speedKph}`);
+    assert.equal(app.get('limit').textContent, 80, `GPS speed ${speedKph}`);
+    assert.equal(app.get('candidate').textContent, 50);
+    assert.equal(app.get('candidate').hidden, false);
+    assert.equal(app.get('speed').className, speedKph === null ? 'reading neutral' : 'reading good');
+    assert.equal(app.gainValues.at(-1), 0);
+    app.get(panel).onclick();
+    assert.equal(app.get('limit').textContent,50);
+    assert.equal(app.get('candidate').hidden,true);
+    assert.equal(app.get('candidate').textContent,'');
+    app.position(60/3.6,{latitude:1.3012});
+    assert.equal(app.get('speed').className,'reading over');
     const fixes = await savedFixes(app);
-    assert.equal(fixes.at(-1).speedLimitKph, expectedLimit);
-    assert.equal(fixes.at(-1).inference.signId, expectedLimit === 80 ? 1 : 2);
+    assert.equal(fixes.at(-1).speedLimitKph, 50);
+    assert.equal(fixes.at(-1).inference.signId, 2);
+    assert.equal(fixes.at(-1).inference.candidateLimitKph,null);
+    const pending=fixes.find(f=>f.latitude===1.3011);
+    assert.equal(pending.speedLimitKph,80);
+    assert.equal(pending.inference.candidateLimitKph,50);
+    assert.equal(pending.inference.candidateSignId,2);
     assert.equal(fixes.at(-1).inference.manualOverride, false);
+  }
+});
+
+test('automatic sign swaps preserve the alternative, follow the active alert limit and record each stage', async () => {
+  const app=await setup(80,[],recordingOn,[],[],[
+    [103.85,1.301,50,0,2],[103.85,1.302,50,0,3],
+    [103.85,1.303,80,0,4],[103.85,1.304,80,0,5],
+  ]);
+  await app.start();
+  for(const [latitude,active,candidate,over,activeId,candidateId] of [
+    [1.3011,80,50,false,1,2],
+    [1.3021,50,80,true,3,1],
+    [1.3031,80,50,false,4,3],
+    [1.3041,80,'',false,5,null],
+  ]) {
+    app.position(70/3.6,{latitude});
+    assert.equal(app.get('limit').textContent,active);
+    assert.equal(app.get('candidate').textContent,candidate);
+    assert.equal(app.get('candidate').hidden,candidate==='');
+    assert.equal(app.get('speed').className,over?'reading over':'reading good');
+    assert.equal(app.bodyClasses.has('severe'),over);
+  }
+  const fixes=await savedFixes(app);
+  for(const [latitude,active,candidate,activeId,candidateId] of [
+    [1.3011,80,50,1,2],[1.3021,50,80,3,1],[1.3031,80,50,4,3],[1.3041,80,null,5,null],
+  ]) {
+    const f=fixes.find(f=>f.latitude===latitude);
+    assert.equal(f.speedLimitKph,active);assert.equal(f.inference.signId,activeId);
+    assert.equal(f.inference.candidateLimitKph,candidate);assert.equal(f.inference.candidateSignId,candidateId);
+  }
+});
+
+test('either reading panel can restore the previous limit after the second conflicting sign',async()=>{
+  for(const panel of ['speed-panel','limit-panel']) {
+    const app=await setup(80,[],{},[],[],[[103.85,1.301,50,0,2],[103.85,1.302,50,0,3]]);
+    await app.start();
+    app.position(70/3.6,{latitude:1.3011});app.position(70/3.6,{latitude:1.3021});
+    assert.equal(app.get('limit').textContent,50);assert.equal(app.get('candidate').textContent,80);
+    app.get(panel).onclick();
+    assert.equal(app.get('limit').textContent,80);assert.equal(app.get('candidate').hidden,true);
+    assert.equal(app.get('speed').className,'reading good');
+    app.position(70/3.6,{latitude:1.3022});assert.equal(app.get('limit').textContent,80);
   }
 });

@@ -55,10 +55,6 @@ export function signInCone(point, sign, heading, config, reverse = false) {
     (config.signConeFarHalfAngleDeg - config.signConeNearHalfAngleDeg) * meters / config.signConeRangeM;
   return angleDifference(bearing(point, sign), (heading + (reverse ? 180 : 0)) % 360) <= halfAngle + 1e-8;
 }
-export function ignoreSpeedSign(currentLimit, signLimit, vehicleSpeedKph) {
-  return currentLimit - signLimit >= 20 && Number.isFinite(vehicleSpeedKph) &&
-    vehicleSpeedKph > (currentLimit + signLimit) / 2;
-}
 export class DriveTracker {
   constructor(signs, config, schoolSigns = []) {
     // Warning-only school signs must not set a limit or suppress numeric signs.
@@ -70,6 +66,7 @@ export class DriveTracker {
     this.positions = []; this.headings = []; this.travelled = 0;
     this.heading = null; this.sign = null; this.limit = this.config.defaultLimitKph;
     this.fallbackSign = null;
+    this.candidate = null;
     this.turned = false;
     this.schoolZone = null;
     this.encounters = new Map();
@@ -108,7 +105,38 @@ export class DriveTracker {
     }
   }
   resolveRoad() { return null; }
-  applySigns(useSignLimit = true, vehicleSpeedKph = null) {
+  considerSign(sign) {
+    if (this.candidate) {
+      if (sign.limit === this.candidate.limit) {
+        const previous = this.sign ?? { limit: this.limit, id: null, kind: 'default' };
+        this.sign = sign;
+        this.limit = sign.limit;
+        this.candidate = previous;
+        return true;
+      }
+      if (sign.limit !== this.limit && sign.limit !== this.candidate.limit) {
+        this.candidate = sign;
+        return false;
+      }
+    } else if (Math.abs(sign.limit - this.limit) >= this.config.candidateDifferenceKph) {
+      this.candidate = sign;
+      return false;
+    }
+    this.sign = sign;
+    this.limit = sign.limit;
+    this.candidate = null;
+    return true;
+  }
+  acceptCandidate() {
+    if (!this.candidate) return false;
+    this.limit = this.candidate.limit;
+    this.sign = this.candidate.kind === 'default' ? null : this.candidate;
+    this.fallbackSign = this.sign;
+    this.candidate = null;
+    this.appliedSignId = this.sign?.id ?? null;
+    return true;
+  }
+  applySigns(useSignLimit = true) {
     const c = this.config;
     if (!Number.isFinite(this.heading)) return;
     const eligible = [...this.encounters.values()].filter(entry => !entry.handled && entry.passedAt !== null && entry.behind &&
@@ -122,29 +150,29 @@ export class DriveTracker {
       zone.handled = true;
       if (zone.sign[5] === 'school-end' && !this.schoolZone) continue;
       if (zone.sign[5] === 'school-start' && !this.schoolZone) {
+        this.candidate = null;
         this.schoolZone = { limit: this.limit, sign: this.sign };
         this.limit = c.schoolZoneLimitKph;
         this.sign = { limit: this.limit, id: zone.sign[4], kind: 'school-start' };
       } else if (zone.sign[5] === 'school-end' && this.schoolZone) {
+        this.candidate = null;
         this.limit = this.schoolZone.limit; this.sign = this.schoolZone.sign;
         this.schoolZone = null;
       } else if (!zone.sign[5] && !this.schoolZone &&
           ![...zonePassages].some(passedAt => Math.abs(passedAt - zone.passedAt) < 1e-8)) {
-        if (ignoreSpeedSign(this.limit, zone.sign[2], vehicleSpeedKph)) continue;
         this.fallbackSign = { limit: zone.sign[2], meters: zone.meters, id: zone.sign[4] };
         if (!useSignLimit) continue;
-        this.sign = this.fallbackSign;
-        this.limit = this.sign.limit;
+        if (!this.considerSign(this.fallbackSign)) continue;
       } else continue;
       if (zone.sign[5]) zonePassages.add(zone.passedAt);
       this.appliedSignId = zone.sign[4];
     }
   }
-  update(point, vehicleSpeedKph = null) {
+  update(point) {
     this.appliedSignId = null;
-    this.advance(point, vehicleSpeedKph);
+    this.advance(point);
   }
-  advance(point, vehicleSpeedKph) {
+  advance(point) {
     const c = this.config, last = this.positions.at(-1);
     this.turned = false;
     if (!last) { this.positions.push([...point]); this.rememberSigns(point); return; }
@@ -158,10 +186,10 @@ export class DriveTracker {
     this.headings = this.headings.filter(item => this.travelled - item.at <= c.turnHistoryDistanceM + 1e-8);
     this.turned = this.headings.some(item => angleDifference(item.heading, this.heading) + 1e-8 >= c.turnAngleDeg);
     if (this.turned) {
-      if (!this.schoolZone) { this.limit = c.defaultLimitKph; this.sign = null; this.fallbackSign = null; }
+      if (!this.schoolZone && !this.candidate) { this.limit = c.defaultLimitKph; this.sign = null; this.fallbackSign = null; }
       // A corner sign may already have matched during the turn. Reapply it
       // after the turn reset, provided it is still in the 30 m travel window.
-      if (!this.schoolZone) for (const entry of this.encounters.values()) {
+      if (!this.schoolZone && !this.candidate) for (const entry of this.encounters.values()) {
         if (!entry.sign[5]) entry.handled = false;
       }
       // Begin a new road's smoothing/history with the latest actual movement.
@@ -174,10 +202,11 @@ export class DriveTracker {
     const road = this.resolveRoad(point);
     const roadLimitKnown = Number.isFinite(road?.limit);
     if (roadLimitKnown && !this.schoolZone) {
+      this.candidate = null;
       this.limit = road.limit;
       this.sign = { kind: 'road', limit: road.limit, id: road.featureId, roadCode: road.code };
     }
-    this.applySigns(!roadLimitKnown, vehicleSpeedKph);
+    this.applySigns(!roadLimitKnown);
   }
 }
 export function shouldSound(speed, limit, tolerance, config) {

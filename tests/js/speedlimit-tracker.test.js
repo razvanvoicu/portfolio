@@ -19,6 +19,7 @@ test('retained limit, stopped GPS jitter and four-position queue',async()=>{
   const t = new m.DriveTracker([[...origin,80,0,1]],c);
   assert.equal(t.limit,50);
   for(const y of [-20,-10,0,10,20,40,60]) t.update(point(0,y));
+  t.acceptCandidate();
   assert.equal(t.limit,80);
   const history=JSON.stringify([t.positions,t.headings,t.heading]);
   for(let i=0;i<1000;i++)t.update(point(i%2,60+i%2));
@@ -31,6 +32,7 @@ test('left and right turns reset retained limit, smaller turns do not',async()=>
   for(const direction of [-1,1]) {
     const t=new m.DriveTracker([[...origin,80,0,1]],c);
     for(const y of [-20,-10,0,10,20,30,40])t.update(point(0,y));
+    t.acceptCandidate();
     assert.equal(t.limit,80);
     t.update(point(6*direction,40)); assert.equal(t.limit,80);
     t.update(point(12*direction,40)); assert.equal(t.limit,50);
@@ -39,7 +41,7 @@ test('left and right turns reset retained limit, smaller turns do not',async()=>
 test('new qualifying sign replaces old limit and audio cut-off is inclusive',async()=>{
   const [m,{CONFIG:c}] = await modules;
   const t=new m.DriveTracker([[...origin,80,0,1],[...point(0,100),60,0,2]],c);
-  for(let y=-20;y<=100;y+=10)t.update(point(0,y));
+  for(let y=-20;y<=100;y+=10){t.update(point(0,y));t.acceptCandidate();}
   assert.equal(t.limit,60);
   assert.equal(m.shouldSound(100,50,0,c),false);
   assert.equal(m.shouldSound(61,60,0,c),true);
@@ -48,7 +50,7 @@ test('new qualifying sign replaces old limit and audio cut-off is inclusive',asy
 test('smaller successive direction changes accumulate into a sharp turn',async()=>{
   const [m,{CONFIG:c}] = await modules;
   const t=new m.DriveTracker([[...origin,80,0,1]],c);
-  for(const y of [-18,-12,-6,0,6,12,18,24,30])t.update(point(0,y));
+  for(const y of [-18,-12,-6,0,6,12,18,24,30]){t.update(point(0,y));t.acceptCandidate();}
   let east=0,north=30;
   for(const heading of [20,40,60,81]) {
     east+=6*Math.sin(heading*Math.PI/180);north+=6*Math.cos(heading*Math.PI/180);
@@ -64,7 +66,7 @@ test('configuration controls distance, angle, default and history settings',asyn
   assert.equal(t.limit,40);
   t.update(point(0,-15));t.update(point(0,-9));assert.equal(t.heading,null);
   t.update(point(0,-6));assert.equal(t.limit,40);
-  t.update(point(0,3));assert.equal(t.limit,80);
+  t.update(point(0,3));assert.equal(t.candidate.limit,80);t.acceptCandidate();assert.equal(t.limit,80);
   assert.equal(m.qualifyingSign(origin,t.signs,21,config),null);
   assert.equal(m.qualifyingSign(point(0,11),t.signs,0,config),null);
 });

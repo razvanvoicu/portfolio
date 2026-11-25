@@ -72,6 +72,15 @@ test('per-fix displayed limits and diagnostic fields are validated and saved wit
   const stored = writes.get(`SpeedLimit/${body.tripId}/fixes/000000`).fixes[0];
   assert.equal(stored.speedLimitKph,70); assert.equal(stored.inference.signId,18019);
   assert.equal(stored.inference.roadCode,'UPT00R'); assert.equal('password' in stored.inference,false);
+  assert.equal('candidateLimitKph' in stored.inference,false,'pending uploads from older versions remain valid');
+  body.fixes[0].inference.candidateLimitKph=40;
+  body.fixes[0].inference.candidateSignId='manual:candidate';
+  assert.equal((await post('/trips',body)).status,200);
+  const pending=writes.get(`SpeedLimit/${body.tripId}/fixes/000000`).fixes[0].inference;
+  assert.equal(pending.candidateLimitKph,40);assert.equal(pending.candidateSignId,'manual:candidate');
+  body.fixes[0].inference.candidateLimitKph='40';assert.equal((await post('/trips',body)).status,400);
+  body.fixes[0].inference.candidateLimitKph=null;body.fixes[0].inference.candidateSignId=null;
+  assert.equal((await post('/trips',body)).status,200);
   body.fixes[0].speedLimitKph = '70'; assert.equal((await post('/trips',body)).status,400);
   body.fixes[0].speedLimitKph = 70; body.fixes[0].inference.source='invented';
   assert.equal((await post('/trips',body)).status,400);

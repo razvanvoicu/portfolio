@@ -38,8 +38,9 @@ Approved runtime rules (all driving thresholds are in static/config.mjs):
   road only if it remains eligible; otherwise label the match uncertain.
 - Use the mapped statutory limit only for that matched line part. Uncertain or
   unresolved stretches use the last qualifying sign, including a sign passed
-  while displaying a mapped limit. The usual sign filters and turn reset still
-  apply. If no qualifying sign is retained, use the 50 km/h default.
+  while displaying a mapped limit. The candidate-confirmation rules below apply
+  when the fallback differs from the active limit. If no qualifying sign is
+  retained, use the 50 km/h default.
 - School-zone entry/end behavior takes precedence and retains the agreed saved
   pre-zone limit. GPS fixes below the existing movement threshold preserve the
   road/heading history while stopped.
@@ -145,14 +146,28 @@ Signs encountered within range are retained for rechecking over the next
 This accommodates signs at corners while the averaged heading catches up.
 The recheck distance is configured by signRecheckDistanceM.
 
-An ordinary numeric sign is ignored when its limit is at least 20 km/h below
-the current limit and the vehicle's current GPS speed is strictly above the
-midpoint of those two limits. For example, an 80-to-50 change is ignored above
-65 km/h; exactly 65 km/h is allowed. Smaller reductions and increases are
-unaffected. If GPS speed is unavailable, the ignore condition cannot be met.
-The sign is marked handled when evaluated, so slowing down after passage does
-not immediately apply it. The existing corner rechecks and encounter expiry
-still apply. The limit display no longer has a tap-to-undo action.
+An ordinary numeric sign differing from the active limit by at least 20 km/h,
+higher or lower, becomes a pending display candidate. Vehicle speed does not
+filter signs. The white active limit stays on the left; the yellow candidate
+on the right pulses between high and low intensity at the same font size.
+Alerts and threshold colours continue using the active limit. Tapping anywhere
+in the speed or speed-limit panel accepts the candidate; Enter/Space also work
+when either panel has keyboard focus. Acceptance clears the candidate.
+
+A later qualifying sign matching the candidate swaps the two values: the
+encountered limit becomes active and the previous active limit remains as the
+candidate. A sign matching the active value clears the candidate. For example,
+starting at 80, successive 50 signs give 80/50, then 50/80, then 50 with no
+candidate. From 50/80, an 80 sign gives 80/50, and another 80 clears the candidate.
+A third value replaces the candidate without changing the active limit.
+Encounter expiry and turns do not dismiss a pending
+candidate or change its active limit, and a turn does not rearm previously
+handled signs while a candidate is pending. Mapped limits and explicit school
+zones take precedence and clear pending candidates. Stop/Start clears state.
+An ordinary sign encountered under a mapped limit is retained for fallback;
+when coverage ends, a difference of at least 20 km/h becomes a candidate.
+Recorded fixes include the active limit and optional candidate limit/sign ID;
+the backend continues accepting pending uploads from older versions.
 
 Generic school-zone warnings do not change the speed limit or block ordinary
 numeric signs. Normal mapped-road and numeric-sign behavior continues through
