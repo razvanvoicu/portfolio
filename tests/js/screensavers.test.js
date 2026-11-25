@@ -140,10 +140,47 @@ test('Wheely rotates uniformly every nine seconds with 80% trails above the rod'
 
 test('curve screensavers are registered after the existing screensavers', () => {
   const source = require('node:fs').readFileSync(require('node:path').join(__dirname, '../../sites/screensavers/static/app.mjs'), 'utf8');
-  assert.match(source, /\[wheely, pillows, star, pentagram, sineflower, morph\]/);
+  assert.match(source, /\[wheely, pillows, star, pentagram, sineflower, morph, pentagonWavy\]/);
 });
 
 const distance = (a, b) => Math.hypot(a[0] - b[0], a[1] - b[1]);
+
+test('pentagon-wavy reproduces the supplied export across segment boundaries and animated states', async () => {
+  const { pentagonWavy, pentagonWavyPieces, pentagonWavyAnimations } = await import('../../sites/screensavers/static/animations/curve-pentagon-wavy.mjs');
+  const { curvePoint } = await import('../../sites/screensavers/static/animations/curve-saver.mjs');
+  const exported = require('../fixtures/screensavers/smorph-pentagon-wavy-animation.json');
+  const CurveAnimation = require('../../sites/curves/static/animation.js');
+  const reference = Function('t', 's1', 's2', 'e', `return (${exported.curve.expression});`);
+  assert.deepEqual(pentagonWavyAnimations, exported.animations);
+  const saver = pentagonWavy.create();
+  saver.resize(1920, 1080);
+  assert.deepEqual(saver.spec.drawing, exported.drawing);
+  assert.deepEqual(saver.spec.canvas, exported.canvas);
+  const motion = structuredClone(exported.animations);
+  const boundaries = [0, 0.1, 0.2, 0.30000000000000004, 0.4, 0.5, 0.6, 0.6000000000000001, 0.7000000000000001, 0.8, 0.9, 1];
+  const parameters = [...Array.from({ length: 1001 }, (_, i) => i / 1000), ...boundaries.flatMap(t => [t - 1e-12, t, t + 1e-12]).filter(t => t >= 0 && t <= 1)];
+  for (let frame = 0; frame < 2400; frame++) {
+    if (frame % 120 === 0) {
+      const state = motion.successive;
+      const e = CurveAnimation.oscillation(state.midpoint, state.amplitude, state.phase);
+      const actual = saver.curveFunction();
+      for (const t of parameters) {
+        const expected = reference(t, state.position1, state.position2, e);
+        assert.ok(distance(actual(t), expected) < 1e-9, `export mismatch at frame=${frame}, t=${t}`);
+      }
+      assert.deepEqual(saver.successive, state);
+      assert.equal(saver.rotation.phase, motion.rotation.phase);
+      assert.equal(saver.shift.phase, motion.shift.phase);
+    }
+    saver.update(1 / 120);
+    CurveAnimation.advanceSuccessive(motion.successive, 1000 / 120);
+    motion.rotation.phase = CurveAnimation.advanceRotation(motion.rotation.phase, 1000 / 120, motion.rotation.speed);
+    motion.shift.phase = CurveAnimation.advance(motion.shift.phase, 1000 / 120, Number(motion.shift.duration));
+  }
+  for (const [s1, s2, e] of [[0, 0, 0.04], [0.2, 0.7, 0.04], [0.8, 0.2, 0.046]]) {
+    assert.ok(distance(curvePoint(pentagonWavyPieces, 0, s1, s2, e), curvePoint(pentagonWavyPieces, 1, s1, s2, e)) < 1e-9);
+  }
+});
 
 test('star screensaver geometry is closed, continuous and matches the exported morph weight', async () => {
   const { curvePoint, weight } = await import('../../sites/screensavers/static/animations/curve-saver.mjs');
