@@ -113,6 +113,12 @@ Rifle Range Underpass entrance records 142798 and 142799 are updated from 50 to
 142799. Both source positions and their 249-degree traffic-flow bearings are
 preserved.
 
+Westbound AYE exit slip-road record 68377 (toward Clementi Avenue 6 / PIE, just
+before the West Coast Way split and overhead pedestrian bridge) is updated from
+70 to 50 km/h. The user's Street View photograph shows a 50 km/h sign at that
+location; the source position (1.3127019, 103.7618491) and 315.57872557-degree
+traffic-flow bearing are preserved.
+
 After editing corrections, run `python scripts/speedlimit_data.py` using the
 cached downloads (or add `--download` to refresh), then rebuild the repository.
 
@@ -151,8 +157,10 @@ higher or lower, becomes a pending display candidate. Vehicle speed does not
 filter signs. The white active limit stays on the left; the yellow candidate
 on the right pulses between high and low intensity at the same font size.
 Alerts and threshold colours continue using the active limit. Tapping anywhere
-in the speed or speed-limit panel accepts the candidate; Enter/Space also work
-when either panel has keyboard focus. Acceptance clears the candidate.
+in the main display area above the Start/Stop drive button accepts the candidate
+immediately on pointer down (so road vibration or slight finger drift does not
+cancel the tap), while keeping Start/Stop and Settings independent; Enter/Space
+also work when either panel has keyboard focus. Acceptance clears the candidate.
 
 A later qualifying sign matching the candidate swaps the two values: the
 encountered limit becomes active and the previous active limit remains as the

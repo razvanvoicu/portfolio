@@ -350,3 +350,40 @@ test('either reading panel can restore the previous limit after the second confl
     app.position(70/3.6,{latitude:1.3022});assert.equal(app.get('limit').textContent,80);
   }
 });
+
+test('pointerdown anywhere in main readings area accepts candidate immediately, deduplicates trailing click, and keeps Stop independent', async () => {
+  const app = await setup(90, [], {}, [], [], [[103.85, 1.301, 50, 0, 2], [103.85, 1.302, 70, 0, 3]]);
+  await app.start();
+  app.position(80 / 3.6, { latitude: 1.3005 });
+  app.position(80 / 3.6, { latitude: 1.3011 });
+  assert.equal(app.get('limit').textContent, 90);
+  assert.equal(app.get('candidate').textContent, 50);
+
+  // Secondary touch and non-left mouse clicks are ignored.
+  app.get('readings').onpointerdown({ isPrimary: false, button: 0, preventDefault() {} });
+  app.get('readings').onpointerdown({ isPrimary: true, button: 2, preventDefault() {} });
+  assert.equal(app.get('limit').textContent, 90);
+
+  // Primary pointerdown on #readings accepts immediately and prevents default selection/drag.
+  let prevented = false;
+  app.get('readings').onpointerdown({ isPrimary: true, button: 0, preventDefault() { prevented = true; } });
+  assert.equal(prevented, true);
+  assert.equal(app.get('limit').textContent, 50);
+  assert.equal(app.get('candidate').hidden, true);
+  assert.equal(app.isCleared(), false);
+
+  // A new candidate arriving within the trailing-click window is not accidentally accepted by the synthetic click.
+  app.position(50 / 3.6, { latitude: 1.3021 });
+  assert.equal(app.get('candidate').textContent, 70);
+  app.get('readings').onclick();
+  assert.equal(app.get('limit').textContent, 50);
+  assert.equal(app.get('candidate').textContent, 70);
+
+  // After the deduplication window, click works normally; Stop button remains completely independent.
+  app.advance(600);
+  app.get('readings').onclick();
+  assert.equal(app.get('limit').textContent, 70);
+  assert.equal(app.isCleared(), false);
+  await app.stop();
+  assert.equal(app.isCleared(), true);
+});

@@ -90,6 +90,14 @@
       "sign": [103.7844164, 1.3430664, 40, 249, 142799],
       "reason": "The paired signs at the Rifle Range Underpass entrance show 40 km/h, rather than the inventory's 50 km/h. Preserve the source position and traffic-flow bearing.",
       "evidence": "User supplied a Street View image showing both 40 km/h signs at the Rifle Range Underpass entrance (codex-clipboard-df4c4ee8-6242-4535-9378-7b51e38ef473.png), then refined the map position to 1d20m35.4s N, 103d47m03.7s E on 2026-11-10 (1.3431667, 103.7843611). The refined point is 12.7 m from record 142799. Records 142798 and 142799 form a pair 9.8 m apart across the road, both with traffic bearing 249 degrees. The user approved correcting both existing records from 50 to 40."
+    },
+    {
+      "operation": "update",
+      "id": 68377,
+      "expected": [103.7618491, 1.3127019, 70, 315.57872557, 68377],
+      "sign": [103.7618491, 1.3127019, 50, 315.57872557, 68377],
+      "reason": "The sign on the westbound AYE exit slip road toward Clementi Avenue 6 / PIE (before the West Coast Way split and overhead pedestrian bridge) shows 50 km/h, rather than the inventory's 70 km/h. Preserve the source position and traffic-flow bearing.",
+      "evidence": "User supplied a Google Maps Street View image on 2026-11-27 showing the 50 km/h sign on the left of the westbound AYE exit slip road just before the West Coast Way / Clementi Ave 6 / PIE gore sign and pedestrian bridge lift. The user's 2026-11-26 trip (fix 1080) passed within 0.6 m of source record 68377 (1.3127019, 103.7618491, bearing 315.57872557 degrees)."
     }
   ]
 }

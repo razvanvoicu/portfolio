@@ -204,17 +204,31 @@ function recordFix(position, processingStatus) {
     },
   });
 }
+let ignoreClickUntil = 0;
 function acceptCandidate() {
   if (running && tracker.acceptCandidate()) render();
 }
-for (const id of ['limit-panel', 'speed-panel']) {
-  $(id).onclick = acceptCandidate;
-  $(id).onkeydown = event => {
-    if (event.key === 'Enter' || event.key === ' ') {
-      event.preventDefault();
-      acceptCandidate();
-    }
-  };
+function handleCandidatePointerDown(event) {
+  if (event && (event.isPrimary === false || (typeof event.button === 'number' && event.button !== 0))) return;
+  if (!running || !tracker.candidate) return;
+  event?.preventDefault?.();
+  ignoreClickUntil = Date.now() + 500;
+  acceptCandidate();
+}
+function handleCandidateClick() {
+  if (Date.now() < ignoreClickUntil) return;
+  acceptCandidate();
+}
+function handleCandidateKeyDown(event) {
+  if (event.key === 'Enter' || event.key === ' ') {
+    event.preventDefault();
+    acceptCandidate();
+  }
+}
+for (const id of ['readings', 'limit-panel', 'speed-panel']) {
+  $(id).onpointerdown = handleCandidatePointerDown;
+  $(id).onclick = handleCandidateClick;
+  $(id).onkeydown = handleCandidateKeyDown;
 }
 $('start').onclick = async () => {
   if (running) { stop(); return; }
@@ -284,7 +298,8 @@ function render() {
   const candidate = tracker.candidate;
   $('candidate').hidden = !candidate;
   $('candidate').textContent = candidate?.limit ?? '';
-  $('candidate').setAttribute('aria-label', candidate ? `Candidate ${candidate.limit} kilometres per hour. Tap either reading row to accept.` : '');
+  $('candidate').setAttribute('aria-label', candidate ? `Candidate ${candidate.limit} kilometres per hour. Tap the display area to accept.` : '');
+  $('readings').style.cursor = candidate ? 'pointer' : '';
   for (const id of ['limit-panel', 'speed-panel']) {
     $(id).setAttribute('role', candidate ? 'button' : 'region');
     $(id).setAttribute('aria-label', candidate ? `Accept candidate limit of ${candidate.limit} kilometres per hour` : id === 'limit-panel' ? 'Estimated speed limit' : 'Current speed');
@@ -296,7 +311,7 @@ function render() {
   $('alert').textContent = over ? 'SLOW DOWN · ABOVE ALERT THRESHOLD' : speed === null ? 'SINGAPORE SPEED MONITOR' : 'WITHIN ALERT THRESHOLD';
   $('alert').className = `alert${over ? ' over' : ''}`;
   $('threshold').textContent = `${limit < CONFIG.minimumAudibleLimitKph ? 'Colour' : 'Alert'} above ${threshold(limit, tolerance)} km/h${limit < CONFIG.minimumAudibleLimitKph ? ' · silent' : ''}`;
-  $('limit-description').textContent = candidate ? `${info} · tap either reading to accept ${candidate.limit}` : info;
+  $('limit-description').textContent = candidate ? `${info} · tap display to accept ${candidate.limit}` : info;
   $('location-note').textContent = note;
   $('start').innerHTML = running ? 'Stop drive <span aria-hidden="true">■</span>' : 'Start drive <span aria-hidden="true">↗</span>';
   $('start').className = `primary${running ? ' running' : ''}`;
