@@ -12,7 +12,8 @@ test('rotating morph inputs preserves parameter positions',()=>{
  const second={...line,id:'rotation-second',formulas:{x:formula('10*t'),y:formula('0')}};
  const find=id=>id===line.id?line:second;
  for(const morph of [{id:'m',type:'morph',source1:line.id,source2:second.id,morphFactor:'.3',morphShift:'0'},
-  {id:'s',type:'successiveMorph',source1:line.id,source2:second.id,successiveStart:'.1',successiveEnd:'.8',epsilon:'.2'}]){
+  {id:'s',type:'successiveMorph',source1:line.id,source2:second.id,successiveStart:'.1',successiveEnd:'.8',epsilon:'.2'},
+  {id:'w',type:'sweepMorph',source1:line.id,source2:second.id,sweepFactor:'.4',epsilon:'.2'}]){
   const a=Curves.build(morph,find),b=Curves.build({...morph,rotationAngle:Math.PI/2},find);
   assert.equal(a.length,b.length);for(let i=0;i<a.length;i++){const t=(a[i].a+a[i].b)/2,[x,y]=a[i].point(t);close(b[i].point(t),[-y,x]);}
  }
@@ -226,4 +227,50 @@ test('morph shifts only the second curve and keeps its timing',()=>{
  const legacy={...morph};delete legacy.morphShift;close(Curves.build(legacy,lookup)[0].point(0),[50,50]);
  assert.throws(()=>Curves.build({...morph,morphShift:'-0.1'},lookup),/between 0 and 1/);
  assert.throws(()=>Curves.build({...morph,morphShift:'1.1'},lookup),/between 0 and 1/);
+});
+
+test('sweep morph matches exact endpoints, slides linearly across [a, a+epsilon], and supports swap and epsilon=0',()=>{
+ const a={id:'sw-a',type:'equation',mode:'cartesian',formulas:{x:formula('10*t'),y:formula('0')}};
+ const b={id:'sw-b',type:'equation',mode:'cartesian',formulas:{x:formula('10*t+100'),y:formula('200')}};
+ const find=id=>({[a.id]:a,[b.id]:b})[id];
+ const curve=(p,e,swapped=false)=>({id:'sw',type:'sweepMorph',source1:a.id,source2:b.id,sweepFactor:String(p),epsilon:String(e),sweepSwapped:swapped});
+ const point=(pieces,t)=>pieces.find((p,i)=>p.a<=t&&(t<p.b||(t===1&&i===pieces.length-1))).point(t);
+ for(const e of [0,.2,.5,1]){
+  const at0=Curves.build(curve(0,e),find), at1=Curves.build(curve(1,e),find);
+  for(const t of [0,.1,.5,.9,1]){close(point(at0,t),[10*t,0]);close(point(at1,t),[10*t+100,200]);}
+ }
+ // Mid-sweep: p=0.5, e=0.2 => window [0.4, 0.6], C2 on [0,0.4], linear C2->C1 on [0.4,0.6], C1 on [0.6,1]
+ const mid=Curves.build(curve(.5,.2),find);
+ for(const [t,w] of [[0,1],[.4,1],[.45,.75],[.5,.5],[.55,.25],[.6,0],[1,0]])close(point(mid,t),[10*t+100*w,200*w]);
+ // Boundary smoothness for p near 0 and 1: window [p*(1+e)-e, p*(1+e)]
+ const early=Curves.build(curve(.1,.2),find); // [-0.08, 0.12]
+ for(const [t,w] of [[0,.6],[.06,.3],[.12,0],[.5,0],[1,0]])close(point(early,t),[10*t+100*w,200*w]);
+ const late=Curves.build(curve(.9,.2),find); // [0.88, 1.08]
+ for(const [t,w] of [[0,1],[.88,1],[.94,.7],[1,.4]])close(point(late,t),[10*t+100*w,200*w]);
+ // epsilon = 0 gives a sharp split
+ const sharp=Curves.build(curve(.3,0),find);
+ for(const [t,w] of [[0,1],[.29,1],[.31,0],[1,0]])close(point(sharp,t),[10*t+100*w,200*w]);
+ // Swapped reverses roles: p=0 => C2, p=1 => C1
+ const swapped=Curves.build(curve(.5,.2,true),find);
+ for(const [t,w] of [[0,0],[.4,0],[.5,.5],[.6,1],[1,1]])close(point(swapped,t),[10*t+100*w,200*w]);
+ close(point(Curves.build(curve(0,.2,true),find),.5),[105,200]);
+ close(point(Curves.build(curve(1,.2,true),find),.5),[5,0]);
+ for(const [p,e] of [[-.1,.2],[1.1,.2],[.5,-.1],[.5,1.1]])assert.throws(()=>Curves.build(curve(p,e),find));
+});
+
+test('sweep morph keeps closed curves contiguous by connecting the end of curve 1 to the start of curve 2',()=>{
+ const c1={id:'cl-1',type:'equation',mode:'polar',formulas:{r:formula('90'),theta:formula('(2*t+0.5)*Math.PI')}};
+ const c2={id:'cl-2',type:'equation',mode:'polar',formulas:{r:formula('80'),theta:formula('(2*t+0.5)*Math.PI')}};
+ const find=id=>({[c1.id]:c1,[c2.id]:c2})[id];
+ const point=(pieces,t)=>pieces.find((p,i)=>p.a<=t&&(t<p.b||(t===1&&i===pieces.length-1))).point(t);
+ for(const [p,e,sw] of [[0,.1,false],[.05,.1,false],[.5,.1,false],[.95,.1,false],[1,.1,false],[.618,.977,true],[.4,0,false]]){
+  const pieces=Curves.build({id:'sw',type:'sweepMorph',source1:c1.id,source2:c2.id,sweepFactor:String(p),epsilon:String(e),sweepSwapped:sw},find);
+  close(point(pieces,0),point(pieces,1));
+  if(p===.5 && e===.1 && !sw){
+   // At t=0.999 we are at the end of Curve 1 (0, 90); on [0.999, 1] we linearly join to start of Curve 2 (0, 80).
+   close(point(pieces,.999),[0,90]);
+   close(point(pieces,.9995),[0,85]);
+   close(point(pieces,1),[0,80]);
+  }
+ }
 });

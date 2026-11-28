@@ -31,6 +31,16 @@ const Curves = (() => {
     if(start===1){const last=pieces[pieces.length-1];return [{a:0,b:0,point:()=>last.point(1),expression:()=>last.expression('1')},...pieces];}
     return [...mapPieces(intersect(pieces,start,1),1,-start),...mapPieces(intersect(pieces,0,start),1,1-start)];
   }
+  function covering(pieces, a, b) {
+    const midpoint = a + (b - a) / 2;
+    const exact = pieces.find(p => p.a <= midpoint && midpoint < p.b);
+    if (exact) return exact;
+    if (!pieces.length) throw new Error('A source curve has no segments.');
+    return pieces.reduce((best, p) => {
+      const gap = q => midpoint < q.a ? q.a - midpoint : midpoint > q.b ? midpoint - q.b : 0;
+      return gap(p) <= gap(best) ? p : best;
+    });
+  }
   function successive(first,second,start,distance,epsilon){
     const normalize=value=>value-Math.floor(value);
     const points=new Set([0,1,normalize(start),normalize(start+distance)]);
@@ -42,18 +52,7 @@ const Curves = (() => {
     const cuts=[...points].sort((a,b)=>a-b),result=[];
     for(let i=0;i<cuts.length-1;i++){
       const a=cuts[i],b=cuts[i+1],center=a+(b-a)/2,mid=center===b?a:center,base=normalize(start),turn=mid<base?1:0,u=mid+turn-base;
-      // Source pieces partition the timeline. Floating-point transformations
-      // may leave a gap between adjacent endpoints; use the nearer piece there.
-      const covering=pieces=>{
-        const midpoint=a+(b-a)/2;
-        const exact=pieces.find(p=>p.a<=midpoint&&midpoint<p.b);if(exact)return exact;
-        if(!pieces.length)throw new Error('A source curve has no segments.');
-        return pieces.reduce((best,p)=>{
-          const gap=q=>midpoint<q.a?q.a-midpoint:midpoint>q.b?midpoint-q.b:0;
-          return gap(p)<=gap(best)?p:best;
-        });
-      };
-      const left=covering(first),right=covering(second);
+      const left=covering(first,a,b),right=covering(second,a,b);
       if(u>=distance){result.push({...left,a,b});continue;}
       if(epsilon===0 || (u>=epsilon && distance-u>=epsilon)){result.push({...right,a,b});continue;}
       let weight,weightExpression;
@@ -63,11 +62,52 @@ const Curves = (() => {
     }
     return result;
   }
+  function isClosed(pieces) {
+    if (!pieces.length) return false;
+    const start = pieces[0].point(pieces[0].a), end = pieces[pieces.length - 1].point(pieces[pieces.length - 1].b);
+    return start.every(Number.isFinite) && end.every(Number.isFinite) && Math.hypot(start[0] - end[0], start[1] - end[1]) < 1e-4;
+  }
+  function needsSweepClosure(first, second) {
+    if (!isClosed(first) || !isClosed(second)) return false;
+    const a = first[0].point(first[0].a), b = second[0].point(second[0].a);
+    return Math.hypot(a[0] - b[0], a[1] - b[1]) >= 1e-4;
+  }
+  const SWEEP_BODY_END = 0.999;
+  function sweep(first,second,p,epsilon,swapped=false){
+    const [from,to]=swapped?[second,first]:[first,second];
+    if(p===0)return from;
+    if(p===1)return to;
+    const start=p*(1+epsilon)-epsilon,end=p*(1+epsilon);
+    const points=new Set([0,1]);
+    if(start>0&&start<1)points.add(start);
+    if(end>0&&end<1)points.add(end);
+    for(const piece of [...from,...to]){if(piece.a>0&&piece.a<1)points.add(piece.a);if(piece.b>0&&piece.b<1)points.add(piece.b);}
+    const cuts=[...points].sort((a,b)=>a-b),body=[];
+    for(let i=0;i<cuts.length-1;i++){
+      const a=cuts[i],b=cuts[i+1],mid=a+(b-a)/2;
+      const left=covering(from,a,b),right=covering(to,a,b);
+      if(epsilon===0){body.push(mid<p?{...right,a,b}:{...left,a,b});continue;}
+      if(mid<=start){body.push({...right,a,b});continue;}
+      if(mid>=end){body.push({...left,a,b});continue;}
+      const weight=t=>(end-t)/epsilon,weightExpression=t=>`((${end})-(${t}))/(${epsilon})`;
+      body.push({a,b,point(t){const f=weight(t),[x1,y1]=left.point(t),[x2,y2]=right.point(t);return [(1-f)*x1+f*x2,(1-f)*y1+f*y2];},expression(t){const f=weightExpression(t),[x1,y1]=left.expression(t),[x2,y2]=right.expression(t);return [`(1-(${f}))*(${x1})+(${f})*(${x2})`,`(1-(${f}))*(${y1})+(${f})*(${y2})`];}});
+    }
+    if(!needsSweepClosure(from,to))return body;
+    const endPoint=body[body.length-1].point(1),startPoint=body[0].point(0);
+    const endExpr=body[body.length-1].expression('1'),startExpr=body[0].expression('0');
+    const result=mapPieces(body,SWEEP_BODY_END,0);
+    result.push({
+      a:SWEEP_BODY_END,b:1,
+      point(t){const u=(t-SWEEP_BODY_END)/(1-SWEEP_BODY_END);return [endPoint[0]+u*(startPoint[0]-endPoint[0]),endPoint[1]+u*(startPoint[1]-endPoint[1])];},
+      expression(t){const u=`((${t})-(${SWEEP_BODY_END}))/(${1-SWEEP_BODY_END})`;return [0,1].map(i=>`(${endExpr[i]})+(${u})*((${startExpr[i]})-(${endExpr[i]}))`);}
+    });
+    return result;
+  }
   function build(curve, lookup, seen = new Set()) {
     if (!curve) throw new Error('Choose a source curve.');
     if (seen.has(curve.id)) throw new Error('A curve cannot depend on itself.');
     const next = new Set(seen); next.add(curve.id);
-    const source = key => {const pieces=build(lookup(curve[key]), lookup, next);return curve.rotationAngle!==undefined && ['morph','successiveMorph'].includes(curve.type)?transform(pieces,curve.rotationAngle,0,0):pieces;};
+    const source = key => {const pieces=build(lookup(curve[key]), lookup, next);return curve.rotationAngle!==undefined && ['morph','successiveMorph','sweepMorph'].includes(curve.type)?transform(pieces,curve.rotationAngle,0,0):pieces;};
     if (curve.type === 'equation') {
       const x=coordinate(curve.formulas[curve.mode === 'polar' ? 'r' : 'x']);
       const y=coordinate(curve.formulas[curve.mode === 'polar' ? 'theta' : 'y']);
@@ -79,6 +119,14 @@ const Curves = (() => {
       if(!parsed.successive) throw new Error('Successive morph expression must include s1, s2, and e.');
       const params={s1:constant(curve.successiveStart),s2:constant(curve.successiveEnd),e:constant(curve.epsilon)};
       if(params.s1<0||params.s1>1||params.s2<0||params.s2>1||params.e<=0||params.e>1) throw new Error('Invalid successive morph parameters.');
+      const pieces=CurveFormula.pieces(curve.expression,undefined,params);
+      return curve.rotationAngle!==undefined?transform(pieces,curve.rotationAngle,0,0):pieces;
+    }
+    if(curve.type==='sweepMorph' && typeof curve.expression==='string'){
+      const parsed=CurveFormula.parse(curve.expression);
+      if(!parsed.sweep) throw new Error('Sweep morph expression must include p and e.');
+      const params={p:constant(curve.sweepFactor ?? '0'),e:constant(curve.epsilon ?? '0.1'),sw:curve.sweepSwapped?1:0};
+      if(params.p<0||params.p>1||params.e<0||params.e>1) throw new Error('Invalid sweep morph parameters.');
       const pieces=CurveFormula.pieces(curve.expression,undefined,params);
       return curve.rotationAngle!==undefined?transform(pieces,curve.rotationAngle,0,0):pieces;
     }
@@ -117,6 +165,13 @@ const Curves = (() => {
       const distance=curve.successiveDistance??(end>=start?end-start:1-start+end);
       if(typeof distance!=='number'||!Number.isFinite(distance)||distance<0||distance>1)throw new Error('Invalid successive morph interval.');
       return distance===0?first:successive(first,second,start,distance,epsilon);
+    }
+    if(curve.type==='sweepMorph'){
+      const first=source('source1'),second=source('source2');
+      const p=constant(curve.sweepFactor ?? '0'),epsilon=constant(curve.epsilon ?? '0.1');
+      if(p<0||p>1)throw new Error('Morph parameter p must be between 0 and 1.');
+      if(epsilon<0||epsilon>1)throw new Error('Morph width ε must be between 0 and 1.');
+      return sweep(first,second,p,epsilon,Boolean(curve.sweepSwapped));
     }
     const first=source('source1');
     if (curve.type === 'morph') {

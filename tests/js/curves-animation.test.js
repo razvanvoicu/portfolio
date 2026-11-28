@@ -52,9 +52,9 @@ test('duration controls elapsed time for a complete forward cycle',()=>{
  assert.equal(Animation.advance(.9,1000,5),.10000000000000009);
 });
 test('animation settings default to stopped five-second cycles',()=>{
- const morph={enabled:false,duration:'5',phase:0,min:0,max:1},successive={...Animation.successiveDefaults},rotation={speed:0,phase:0};
- assert.deepEqual(Animation.settings(),{shift:{enabled:false,duration:'5',phase:0},morph,successive,rotation});
- assert.deepEqual(Animation.settings({shift:{enabled:true,duration:'2',phase:1}}),{shift:{enabled:true,duration:'2',phase:1},morph,successive,rotation});
+ const morph={enabled:false,duration:'5',phase:0,min:0,max:1},successive={...Animation.successiveDefaults},sweep={...Animation.sweepDefaults},rotation={speed:0,phase:0};
+ assert.deepEqual(Animation.settings(),{shift:{enabled:false,duration:'5',phase:0},morph,successive,sweep,rotation});
+ assert.deepEqual(Animation.settings({shift:{enabled:true,duration:'2',phase:1}}),{shift:{enabled:true,duration:'2',phase:1},morph,successive,sweep,rotation});
 });
 test('rotation speed determines direction and rate and zero pauses',()=>{
  assert.equal(Animation.advanceRotation(.25,1000,.25),0);
@@ -73,7 +73,8 @@ test('shared rotation applies to morphs independently of their animation toggle'
  const second={id:'b',type:'equation',mode:'cartesian',formulas:{x:formula('50'),y:formula('0')}};
  const find=id=>({a:first,b:second})[id],settings=Animation.settings({rotation:{speed:.1,phase:Animation.advanceRotation(0,2500,.1)}});
  for(const curve of [{id:'m',type:'morph',source1:'a',source2:'b',morphFactor:'.5',morphShift:'0'},
-  {id:'s',type:'successiveMorph',source1:'a',source2:'b',successiveStart:'.2',successiveEnd:'.8',epsilon:'.1'}]){
+  {id:'s',type:'successiveMorph',source1:'a',source2:'b',successiveStart:'.2',successiveEnd:'.8',epsilon:'.1'},
+  {id:'w',type:'sweepMorph',source1:'a',source2:'b',sweepFactor:'.4',epsilon:'.2'}]){
   const pieces=Curves.build(Animation.animatedCurve(curve,settings),find),p=pieces.find(x=>x.a<=.5&&.5<x.b).point(.5);
   assert.ok(Math.abs(p[0])<1e-10);assert.ok(p[1]<0);
  }
@@ -102,4 +103,31 @@ test('morph oscillates sinusoidally between the selected limits',()=>{
  assert.equal(f(0),.2);assert.ok(Math.abs(f(.25)-.5)<1e-12);
  assert.ok(Math.abs(f(.5)-.8)<1e-12);assert.ok(Math.abs(f(.75)-.5)<1e-12);assert.equal(f(1),.2);
  assert.equal(Animation.morphAt(.3,.4,.4),.4);
+});
+test('sweep animation sweeps linearly from 0 to 1 and switches curve roles on each cycle',()=>{
+ const state={...Animation.sweepDefaults,enabled:true,duration:'4',epsilon:.2};
+ Animation.advanceSweep(state,2000);
+ assert.ok(Math.abs(state.phase-.5)<1e-12);assert.equal(state.swapped,false);
+ Animation.advanceSweep(state,3000); // crosses 1 once -> phase 0.25, swapped true
+ assert.ok(Math.abs(state.phase-.25)<1e-12);assert.equal(state.swapped,true);
+ Animation.advanceSweep(state,8000); // crosses 2 cycles -> phase 0.25, swapped unchanged
+ assert.ok(Math.abs(state.phase-.25)<1e-12);assert.equal(state.swapped,true);
+ Animation.advanceSweep(state,4000); // crosses 1 cycle -> phase 0.25, swapped false
+ assert.ok(Math.abs(state.phase-.25)<1e-12);assert.equal(state.swapped,false);
+ const curve={id:'w',type:'sweepMorph',source1:'a',source2:'b',sweepFactor:'0',epsilon:'0.1'};
+ assert.equal(Animation.isRotatable(curve),true);
+ const animated=Animation.animatedCurve(curve,Animation.settings({sweep:state}));
+ assert.equal(animated.sweepFactor,String(state.phase));assert.equal(animated.epsilon,'0.2');assert.equal(animated.sweepSwapped,false);
+ assert.equal(curve.sweepFactor,'0');
+});
+test('rotation speed slider lands on exact zero and Curves UI avoids fixed-decimal overflows',()=>{
+ const fs=require('node:fs'),path=require('node:path');
+ const html=fs.readFileSync(path.join(__dirname,'../../sites/curves/templates/index.html'),'utf8');
+ const app=fs.readFileSync(path.join(__dirname,'../../sites/curves/static/app.js'),'utf8');
+ assert.match(html,/id="rotation-speed"[^>]*min="-0\.1"[^>]*max="0\.1"[^>]*step="0\.001"/);
+ assert.ok(Math.abs(-0.1+100*0.001)<1e-12);
+ assert.match(html,/<option value="sweepMorph">Sweep morph<\/option>/);
+ assert.match(html,/id="sweep-duration"[^>]*max="20"/);
+ assert.match(html,/id="sweep-epsilon-anim"/);
+ assert.doesNotMatch(app,/\.toFixed\(/);
 });

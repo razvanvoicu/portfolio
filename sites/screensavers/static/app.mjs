@@ -5,9 +5,10 @@ import { pentagram } from './animations/curve-pentagram.mjs';
 import { sineflower } from './animations/curve-sineflower.mjs';
 import { morph } from './animations/curve-morph.mjs';
 import { pentagonWavy } from './animations/curve-pentagon-wavy.mjs';
+import { wavyHeptagonSweep } from './animations/curve-wavy-heptagon-sweep.mjs';
 
 // Reorder or extend this array to change the screensaver sequence.
-export const screensavers = [wheely, pillows, star, pentagram, sineflower, morph, pentagonWavy];
+export const screensavers = [wheely, pillows, star, pentagram, sineflower, morph, pentagonWavy, wavyHeptagonSweep];
 
 const canvas = document.querySelector('canvas');
 const context = canvas.getContext('2d');

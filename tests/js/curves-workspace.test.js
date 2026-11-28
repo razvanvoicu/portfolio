@@ -146,3 +146,14 @@ test('workspace preserves and validates successive morph animation settings',()=
  candidate.workspace.animations.successive.trigger=.5;assert.throws(()=>Workspace.validate(candidate),/animation settings/);
  candidate.workspace.animations.successive.trigger=.12;candidate.workspace.animations.successive.amplitude=.1;assert.throws(()=>Workspace.validate(candidate),/animation settings/);
 });
+test('sweep morph tracks source dependencies and validates sweep animation settings',()=>{
+ const incoming=structuredClone(state);
+ incoming.curves.push({id:'sw',name:'Sweep',type:'sweepMorph',formulas:{},source1:'c1',source2:'c2',sweepFactor:'.3',epsilon:'.2',sweepSwapped:false});
+ assert.deepEqual(Workspace.references(incoming.curves[2]),['c1','c2']);
+ incoming.animations={shift:{enabled:false,duration:'5',phase:0},sweep:{enabled:true,duration:'8',phase:.4,swapped:true,epsilon:.25}};
+ assert.deepEqual(Workspace.validate({format:'curves-workspace',version:1,workspace:incoming}).animations.sweep,incoming.animations.sweep);
+ let id=0;const merged=Workspace.merge(state,incoming,'rename','current',()=>`new${++id}`,false),item=merged.curves.find(c=>c.name==='Sweep');
+ assert.equal(item.source1,merged.curves[2].id);assert.equal(item.source2,merged.curves[3].id);
+ const bad=structuredClone(incoming);bad.animations.sweep.duration='0.1';assert.throws(()=>Workspace.validate({format:'curves-workspace',version:1,workspace:bad}),/animation settings/);
+ const badEps=structuredClone(incoming);badEps.animations.sweep.epsilon=1.5;assert.throws(()=>Workspace.validate({format:'curves-workspace',version:1,workspace:badEps}),/animation settings/);
+});

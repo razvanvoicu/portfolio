@@ -1,6 +1,18 @@
 'use strict';
 const $ = s => document.querySelector(s);
 const KEY='curves:workspace:v1';
+const roundSig=value=>{const n=Number(value);if(!Number.isFinite(n)||Math.abs(n)<1e-12)return 0;const r=Number(n.toPrecision(3));return Object.is(r,-0)?0:r;};
+const fmt3=value=>String(roundSig(value));
+function roundAnimations(animations){
+ const copy=structuredClone(animations);
+ for(const group of Object.values(copy)){
+  for(const [k,v] of Object.entries(group)){
+   if(typeof v==='number')group[k]=roundSig(v);
+   else if(typeof v==='string' && v.trim() && Number.isFinite(Number(v)))group[k]=fmt3(v);
+  }
+ }
+ return copy;
+}
 const fresh = () => ({id:Array.from(crypto.getRandomValues(new Uint8Array(16)), n => n.toString(16).padStart(2,'0')).join(''),name:'',type:'equation',mode:'cartesian',formulas:{},source1:'',source2:'',dx:'0',dy:'0',alpha:'0',from:'0',to:'1',n:'4',epsilon:'0',dropStart:'0',dropEnd:'0'});
 let state;
 try { state=JSON.parse(localStorage.getItem(KEY)); } catch { /* start an empty workspace */ }
@@ -14,11 +26,11 @@ const persist=()=>{ try { localStorage.setItem(KEY,JSON.stringify(state)); $('#s
 const lookup=id=>state.curves.find(c=>c.id===id);
 function animationExpression(){
  const draft=state.draft;
- if(draft.type==='analytic'||(draft.type==='successiveMorph'&&typeof draft.expression==='string')){CurveFormula.parse(draft.expression);return draft.expression;}
- return exchangeExpression(draft.type==='successiveMorph'||CurveAnimation.isMorph(draft));
+ if(draft.type==='analytic'||((draft.type==='successiveMorph'||draft.type==='sweepMorph')&&typeof draft.expression==='string')){CurveFormula.parse(draft.expression);return draft.expression;}
+ return exchangeExpression(draft.type==='successiveMorph'||draft.type==='sweepMorph'||CurveAnimation.isMorph(draft));
 }
-function exportAnimation(){try{const definition=structuredClone(state.draft),payload={format:'curves-animation',version:1,curve:{name:definition.name,expression:animationExpression(),definition},animations:structuredClone(state.animations),drawing:structuredClone(state.drawing),canvas:structuredClone(state.canvas)},file=new Blob([JSON.stringify(payload,null,2)],{type:'application/json'}),url=URL.createObjectURL(file),link=document.createElement('a');link.href=url;link.download=(definition.name||'curve')+'-animation.json';link.click();setTimeout(()=>URL.revokeObjectURL(url),0);}catch(error){$('#error').textContent=error.message;}}
-const labels={equation:'Equations',analytic:'Analytical expression',translate:'Translation',rotate:'Rotation',scale:'Scaling',reverse:'Reverse',shift:'Shift',morph:'Simple morph',successiveMorph:'Successive morph',slice:'Slice',concat:'Concatenation',iterate:'Iterated concatenation',splice:'Splicing'};
+function exportAnimation(){try{const definition=structuredClone(state.draft),canvas=structuredClone(state.canvas);canvas.angle=roundSig(canvas.angle);const payload={format:'curves-animation',version:1,curve:{name:definition.name,expression:animationExpression(),definition},animations:roundAnimations(state.animations),drawing:structuredClone(state.drawing),canvas},file=new Blob([JSON.stringify(payload,null,2)],{type:'application/json'}),url=URL.createObjectURL(file),link=document.createElement('a');link.href=url;link.download=(definition.name||'curve')+'-animation.json';link.click();setTimeout(()=>URL.revokeObjectURL(url),0);}catch(error){$('#error').textContent=error.message;}}
+const labels={equation:'Equations',analytic:'Analytical expression',translate:'Translation',rotate:'Rotation',scale:'Scaling',reverse:'Reverse',shift:'Shift',morph:'Simple morph',successiveMorph:'Successive morph',sweepMorph:'Sweep morph',slice:'Slice',concat:'Concatenation',iterate:'Iterated concatenation',splice:'Splicing'};
 function library(){
   $('#count').textContent=state.curves.length;
   const list=$('#library'); list.replaceChildren();
@@ -110,17 +122,18 @@ function concatFields(area,curve){
  renderRows();
 }
 let morphFrame=0;
-function morphControl(curve,key,labelText,id,defaultValue='0',precision=null){
+function morphControl(curve,key,labelText,id,defaultValue='0'){
  const wrap=document.createElement('div');wrap.className='field';
  const label=document.createElement('label');label.textContent=labelText;label.htmlFor=id;
  const row=document.createElement('div');row.className='morph-control';
  const slider=document.createElement('input');slider.type='range';slider.min='0';slider.max='1';slider.step='any';slider.setAttribute('aria-label',labelText);
  const text=document.createElement('input');text.type='text';text.id=id;text.inputMode='decimal';text.autocomplete='off';text.value=curve[key]??defaultValue;
- function formatText(){if(precision===null||!text.value.trim())return;try{text.value=Curves.constant(text.value).toFixed(precision);}catch{}}
+ function formatText(){if(!text.value.trim())return;try{text.value=fmt3(Curves.constant(text.value));}catch{}}
  function syncSlider(){try{const value=Curves.constant(text.value);if(value>=0&&value<=1)slider.value=String(value);}catch{}}
  text.addEventListener('input',()=>{curve[key]=text.value;syncSlider();persist();preview();});
- if(precision!==null){text.addEventListener('focus',()=>{text.value=curve[key]??defaultValue;});text.addEventListener('blur',formatText);}
- slider.addEventListener('input',()=>{curve[key]=slider.value;text.value=slider.value;formatText();persist();if(!morphFrame)morphFrame=requestAnimationFrame(()=>{morphFrame=0;preview();});});
+ text.addEventListener('focus',()=>{text.value=curve[key]??defaultValue;});
+ text.addEventListener('blur',formatText);
+ slider.addEventListener('input',()=>{const formatted=fmt3(slider.value);curve[key]=formatted;text.value=formatted;persist();if(!morphFrame)morphFrame=requestAnimationFrame(()=>{morphFrame=0;preview();});});
  syncSlider();formatText();row.append(slider,text);wrap.append(label,row);return wrap;
 }
 function fields(){
@@ -132,15 +145,16 @@ function fields(){
     const hint=document.createElement('p');hint.className='hint';hint.textContent='Use the variable t for time, from 0 to 1. Angles are in radians.';area.append(hint);return;
   }
   if(d.type==='concat'){concatFields(area,d);return;}
-  area.append(source(['splice','morph','successiveMorph'].includes(d.type)?'First curve':'Curve','source1'));
-  if(['splice','morph','successiveMorph'].includes(d.type))area.append(source('Second curve','source2'));
-  if(d.type==='successiveMorph' && typeof d.expression==='string'){area.replaceChildren();for(const text of ['Curve 1','Curve 2']){const label=document.createElement('div');label.className='source-label';label.textContent=text;area.append(label);}}
+  area.append(source(['splice','morph','successiveMorph','sweepMorph'].includes(d.type)?'First curve':'Curve','source1'));
+  if(['splice','morph','successiveMorph','sweepMorph'].includes(d.type))area.append(source('Second curve','source2'));
+  if((d.type==='successiveMorph'||d.type==='sweepMorph') && typeof d.expression==='string'){area.replaceChildren();for(const text of ['Curve 1','Curve 2']){const label=document.createElement('div');label.className='source-label';label.textContent=text;area.append(label);}}
   if(d.type==='translate'||d.type==='iterate') area.append(field('ΔX','dx'),field('ΔY','dy'));
   if(d.type==='rotate'||d.type==='iterate') area.append(field('α · radians','alpha','Math.PI / 2'));
   if(d.type==='scale')area.append(scaleControl(d));
   if(d.type==='shift')area.append(field('Starting point · S','shiftStart'));
   if(d.type==='morph')area.append(morphControl(d,'morphFactor','Morph factor · f','morph-factor'),morphControl(d,'morphShift','Second curve shift · S','morph-shift'));
-  if(d.type==='successiveMorph')area.append(morphControl(d,'successiveStart','First transition start · s1','successive-start','',2),morphControl(d,'successiveEnd','Second transition end · s2','successive-end','',2),morphControl(d,'epsilon','Transition length · ε','successive-epsilon','',3));
+  if(d.type==='successiveMorph')area.append(morphControl(d,'successiveStart','First transition start · s1','successive-start',''),morphControl(d,'successiveEnd','Second transition end · s2','successive-end',''),morphControl(d,'epsilon','Transition length · ε','successive-epsilon',''));
+  if(d.type==='sweepMorph')area.append(morphControl(d,'sweepFactor','Morph parameter · p','sweep-factor','0'),morphControl(d,'epsilon','Morph width · ε','sweep-epsilon','0.1'));
   if(d.type==='slice')area.append(field('Start · t','from'),field('End · t','to'));
   if(d.type==='iterate'||d.type==='splice')area.append(field(d.type==='splice'?'Number of segments · N (even)':'Number of copies · N','n'));
   if(d.type==='splice')area.append(field('Drop at start · t','dropStart'),field('Drop at end · t','dropEnd'),field('Joining time · ε (0 to 1/N)','epsilon'));
@@ -149,36 +163,41 @@ function fields(){
 let animationFrame=0, animationTimestamp=null;
 function animationTick(timestamp){
  animationFrame=0;
- const shift=state.animations.shift,morph=state.animations.morph,successive=state.animations.successive,rotation=state.animations.rotation, morphActive=morph.enabled && CurveAnimation.isMorph(state.draft),successiveActive=successive.enabled && state.draft.type==='successiveMorph',rotationActive=rotation.speed!==0 && CurveAnimation.isRotatable(state.draft);
- if(!shift.enabled && !morphActive && !successiveActive && !rotationActive){animationTimestamp=null;return;}
+ const shift=state.animations.shift,morph=state.animations.morph,successive=state.animations.successive,sweep=state.animations.sweep,rotation=state.animations.rotation, morphActive=morph.enabled && CurveAnimation.isMorph(state.draft),successiveActive=successive.enabled && state.draft.type==='successiveMorph',sweepActive=sweep.enabled && state.draft.type==='sweepMorph',rotationActive=rotation.speed!==0 && CurveAnimation.isRotatable(state.draft);
+ if(!shift.enabled && !morphActive && !successiveActive && !sweepActive && !rotationActive){animationTimestamp=null;return;}
  if(animationTimestamp!==null){
   const elapsed=timestamp-animationTimestamp;
   if(shift.enabled)shift.phase=CurveAnimation.advance(shift.phase,elapsed,Number(shift.duration));
   if(morphActive)morph.phase=CurveAnimation.advance(morph.phase,elapsed,Number(morph.duration));
-  if(successiveActive){CurveAnimation.advanceSuccessive(successive,elapsed);$('#successive-position1').value=successive.position1.toFixed(2);$('#successive-position2').value=successive.position2.toFixed(2);$('#successive-epsilon-value').value=CurveAnimation.oscillation(successive.midpoint,successive.amplitude,successive.phase).toFixed(3);}
+  if(successiveActive){CurveAnimation.advanceSuccessive(successive,elapsed);$('#successive-position1').value=fmt3(successive.position1);$('#successive-position2').value=fmt3(successive.position2);$('#successive-epsilon-value').value=fmt3(CurveAnimation.oscillation(successive.midpoint,successive.amplitude,successive.phase));}
+  if(sweepActive){CurveAnimation.advanceSweep(sweep,elapsed);$('#sweep-position').value=fmt3(sweep.phase);$('#sweep-direction').value=sweep.swapped?'Curve 2 → Curve 1':'Curve 1 → Curve 2';}
   if(rotationActive)rotation.phase=CurveAnimation.advanceRotation(rotation.phase,elapsed,rotation.speed);
   persist();
  }
  animationTimestamp=timestamp;preview();animationFrame=requestAnimationFrame(animationTick);
 }
 function syncAnimation(){
- const shift=state.animations.shift,morph=state.animations.morph,successive=state.animations.successive,rotation=state.animations.rotation, isMorph=CurveAnimation.isMorph(state.draft), morphActive=morph.enabled && isMorph,successiveActive=successive.enabled && state.draft.type==='successiveMorph',rotatable=CurveAnimation.isRotatable(state.draft),rotationActive=rotation.speed!==0 && rotatable;
- $('#shift-enabled').checked=shift.enabled;$('#shift-duration').value=shift.duration;$('#shift-duration-value').value=Number(shift.duration).toFixed(2)+' s';
- $('#morph-animation').hidden=!isMorph;$('#morph-enabled').checked=morph.enabled;$('#morph-min').value=morph.min;$('#morph-max').value=morph.max;$('#morph-min-value').value=String(morph.min);$('#morph-max-value').value=String(morph.max);$('#morph-duration').value=morph.duration;$('#morph-duration-value').value=Number(morph.duration).toFixed(2)+' s';
+ const shift=state.animations.shift,morph=state.animations.morph,successive=state.animations.successive,sweep=state.animations.sweep,rotation=state.animations.rotation, isMorph=CurveAnimation.isMorph(state.draft), morphActive=morph.enabled && isMorph,successiveActive=successive.enabled && state.draft.type==='successiveMorph',sweepActive=sweep.enabled && state.draft.type==='sweepMorph',rotatable=CurveAnimation.isRotatable(state.draft),rotationActive=rotation.speed!==0 && rotatable;
+ $('#shift-enabled').checked=shift.enabled;$('#shift-duration').value=shift.duration;$('#shift-duration-value').value=fmt3(shift.duration)+' s';
+ $('#morph-animation').hidden=!isMorph;$('#morph-enabled').checked=morph.enabled;$('#morph-min').value=morph.min;$('#morph-max').value=morph.max;$('#morph-min-value').value=fmt3(morph.min);$('#morph-max-value').value=fmt3(morph.max);$('#morph-duration').value=morph.duration;$('#morph-duration-value').value=fmt3(morph.duration)+' s';
  const track=$('.dual-range');track.style.setProperty('--range-min',`${morph.min*100}%`);track.style.setProperty('--range-max',`${morph.max*100}%`);
- $('#rotation-control').hidden=!rotatable;$('#rotation-speed').value=rotation.speed;$('#rotation-speed-value').value=String(Number(rotation.speed.toPrecision(3)))+' rotations/s';
+ $('#rotation-control').hidden=!rotatable;$('#rotation-speed').value=rotation.speed;$('#rotation-speed-value').value=fmt3(rotation.speed)+' rotations/s';
  $('#successive-animation').hidden=state.draft.type!=='successiveMorph';$('#successive-enabled').checked=successive.enabled;
  $('#successive-amplitude').max=Math.min(.95*successive.midpoint,1-successive.midpoint);
- for(const [id,key,precision] of [['successive-speed1','speed1',2],['successive-speed2','speed2',2],['successive-trigger','trigger',2],['successive-mid','midpoint',3],['successive-amplitude','amplitude',3],['successive-period','period',2]]){$('#'+id).value=successive[key];$('#'+id+'-value').value=Number(successive[key]).toFixed(precision);}
- $('#successive-position1').value=successive.position1.toFixed(2);$('#successive-position2').value=successive.position2.toFixed(2);$('#successive-epsilon-value').value=CurveAnimation.oscillation(successive.midpoint,successive.amplitude,successive.phase).toFixed(3);
+ for(const [id,key] of [['successive-speed1','speed1'],['successive-speed2','speed2'],['successive-trigger','trigger'],['successive-mid','midpoint'],['successive-amplitude','amplitude'],['successive-period','period']]){$('#'+id).value=successive[key];$('#'+id+'-value').value=fmt3(successive[key]);}
+ $('#successive-position1').value=fmt3(successive.position1);$('#successive-position2').value=fmt3(successive.position2);$('#successive-epsilon-value').value=fmt3(CurveAnimation.oscillation(successive.midpoint,successive.amplitude,successive.phase));
+ $('#sweep-animation').hidden=state.draft.type!=='sweepMorph';$('#sweep-enabled').checked=sweep.enabled;
+ $('#sweep-duration').value=sweep.duration;$('#sweep-duration-value').value=fmt3(sweep.duration)+' s';
+ $('#sweep-epsilon-anim').value=sweep.epsilon;$('#sweep-epsilon-anim-value').value=fmt3(sweep.epsilon);
+ $('#sweep-position').value=fmt3(sweep.phase);$('#sweep-direction').value=sweep.swapped?'Curve 2 → Curve 1':'Curve 1 → Curve 2';
  animationTimestamp=null;
- if((shift.enabled || morphActive || successiveActive || rotationActive) && !animationFrame)animationFrame=requestAnimationFrame(animationTick);
- if(!shift.enabled && !morphActive && !successiveActive && !rotationActive && animationFrame){cancelAnimationFrame(animationFrame);animationFrame=0;}
+ if((shift.enabled || morphActive || successiveActive || sweepActive || rotationActive) && !animationFrame)animationFrame=requestAnimationFrame(animationTick);
+ if(!shift.enabled && !morphActive && !successiveActive && !sweepActive && !rotationActive && animationFrame){cancelAnimationFrame(animationFrame);animationFrame=0;}
 }
 function render(){
  syncAnimation();
  $('#canvas-grid').checked=state.canvas.grid;
- $('#canvas-start').value=state.canvas.startColor;$('#canvas-end').value=state.canvas.endColor;$('#canvas-type').value=state.canvas.type;$('#canvas-angle').value=state.canvas.angle;$('#canvas-angle-label').hidden=state.canvas.type!=='transversal';
+ $('#canvas-start').value=state.canvas.startColor;$('#canvas-end').value=state.canvas.endColor;$('#canvas-type').value=state.canvas.type;$('#canvas-angle').value=fmt3(state.canvas.angle);$('#canvas-angle-label').hidden=state.canvas.type!=='transversal';
  $('#drawing-start').value=state.drawing.startColor;$('#drawing-end').value=state.drawing.endColor;$('#drawing-thickness').value=state.drawing.thickness;$('#drawing-thickness-value').value=state.drawing.thickness;
  $('#name').value=state.draft.name;$('#type').value=state.draft.type;$('#heading').textContent=state.draft.name||'New curve';$('#delete').hidden=!state.editing;library();fields();preview();
 }
@@ -202,25 +221,28 @@ function closeFormula(){const frame=$('#formula-frame');try{frame.contentWindow.
 $('#canvas-grid').addEventListener('change',event=>{state.canvas.grid=event.target.checked;persist();preview();});
 for(const [selector,key] of [['#canvas-start','startColor'],['#canvas-end','endColor'],['#canvas-type','type']])$(selector).addEventListener('input',event=>{state.canvas[key]=event.target.value;$('#canvas-angle-label').hidden=state.canvas.type!=='transversal';persist();preview();});
 $('#canvas-angle').addEventListener('input',event=>{const value=event.target.value;if(value!=='' && Number.isFinite(Number(value))){state.canvas.angle=Number(value);persist();preview();}});
+$('#canvas-angle').addEventListener('blur',event=>{state.canvas.angle=roundSig(state.canvas.angle);event.target.value=fmt3(state.canvas.angle);persist();preview();});
 $('#close-formula').onclick=closeFormula;$('#formula-dialog').addEventListener('cancel',e=>{e.preventDefault();closeFormula();});
 function exchangeExpression(withMorph){
  const draft=state.draft, factor=draft.type==='morph'?Curves.constant(draft.morphFactor):draft.type==='analytic' && draft.expression?CurveFormula.parse(draft.expression).factor:undefined;
- if(draft.type==='successiveMorph' && withMorph){const first=Curves.build(lookup(draft.source1),lookup),second=Curves.build(lookup(draft.source2),lookup);return CurveFormula.successiveExpression(first,second,{s1:Curves.constant(draft.successiveStart),s2:Curves.constant(draft.successiveEnd),e:Curves.constant(draft.epsilon)});}
+ if(draft.type==='successiveMorph' && withMorph){if(typeof draft.expression==='string')return draft.expression;const first=Curves.build(lookup(draft.source1),lookup),second=Curves.build(lookup(draft.source2),lookup);return CurveFormula.successiveExpression(first,second,{s1:Curves.constant(draft.successiveStart),s2:Curves.constant(draft.successiveEnd),e:Curves.constant(draft.epsilon)});}
+ if(draft.type==='sweepMorph' && withMorph){if(typeof draft.expression==='string')return draft.expression;const first=Curves.build(lookup(draft.source1),lookup),second=Curves.build(lookup(draft.source2),lookup);return CurveFormula.sweepExpression(first,second,{p:Curves.constant(draft.sweepFactor??'0'),e:Curves.constant(draft.epsilon??'0'),sw:draft.sweepSwapped?1:0});}
  const definition=withMorph && draft.type==='morph'?{...draft,symbolicMorph:true}:draft;
  const pieces=Curves.build(definition,id=>id===draft.id?definition:lookup(id));
  return CurveFormula.exportPieces(pieces,withMorph?factor:undefined);
 }
 function openExchange(){
- if(!state.exchange){let text='',withMorph=false;try{withMorph=(state.draft.type==='analytic' && CurveAnimation.isMorph(state.draft))||state.draft.type==='successiveMorph';text=state.draft.type==='analytic'||(state.draft.type==='successiveMorph'&&typeof state.draft.expression==='string')?state.draft.expression:exchangeExpression(withMorph);}catch{}state.exchange={text,baseline:text,withMorph,manuallyEdited:false};persist();}
- $('#exchange-morph-label').textContent=state.draft.type==='successiveMorph'?'With morph parameters':'With morph factor';
- const editor=state.exchange;$('#exchange-text').value=editor.text;$('#exchange-with-morph').checked=editor.withMorph;$('#exchange-with-morph').disabled=editor.manuallyEdited || !(CurveAnimation.isMorph(state.draft)||state.draft.type==='successiveMorph');$('#exchange-error').textContent='';$('#exchange-dialog').showModal();
+ const isParamMorph=state.draft.type==='successiveMorph'||state.draft.type==='sweepMorph';
+ if(!state.exchange){let text='',withMorph=false;try{withMorph=(state.draft.type==='analytic' && CurveAnimation.isMorph(state.draft))||isParamMorph;text=state.draft.type==='analytic'||(isParamMorph&&typeof state.draft.expression==='string')?state.draft.expression:exchangeExpression(withMorph);}catch{}state.exchange={text,baseline:text,withMorph,manuallyEdited:false};persist();}
+ $('#exchange-morph-label').textContent=isParamMorph?'With morph parameters':'With morph factor';
+ const editor=state.exchange;$('#exchange-text').value=editor.text;$('#exchange-with-morph').checked=editor.withMorph;$('#exchange-with-morph').disabled=editor.manuallyEdited || !(CurveAnimation.isMorph(state.draft)||isParamMorph);$('#exchange-error').textContent='';$('#exchange-dialog').showModal();
 }
 $('#formula-edit').onclick=()=>openExchange();
 $('#exchange-text').addEventListener('input',event=>{state.exchange.text=event.target.value;state.exchange.manuallyEdited=true;$('#exchange-with-morph').disabled=true;$('#exchange-error').textContent='';persist();});
 $('#exchange-with-morph').addEventListener('change',event=>{try{const text=exchangeExpression(event.target.checked);state.exchange.text=text;state.exchange.withMorph=event.target.checked;$('#exchange-text').value=text;$('#exchange-error').textContent='';persist();}catch(error){event.target.checked=state.exchange.withMorph;$('#exchange-error').textContent=error.message;}});
 $('#exchange-copy').onclick=async()=>{try{await CurveClipboard.copy($('#exchange-text'),navigator.clipboard,document);$('#exchange-error').textContent='Copied.';}catch{$('#exchange-error').textContent='Copy unavailable. Select the text and copy it manually.';}};
 $('#exchange-paste').onclick=async()=>{try{$('#exchange-text').value=await navigator.clipboard.readText();state.exchange.text=$('#exchange-text').value;state.exchange.manuallyEdited=true;$('#exchange-with-morph').disabled=true;persist();$('#exchange-error').textContent='';}catch{$('#exchange-error').textContent='Paste unavailable. Paste into the text field manually.';}};
-function finishExchange(){const expression=$('#exchange-text').value.trim();let parsed;try{parsed=CurveFormula.parse(expression);}catch(error){$('#exchange-error').textContent=error.message;return;}if(expression!==state.exchange.baseline.trim()){const next={...fresh(),id:state.draft.id,name:state.draft.name,type:parsed.successive?'successiveMorph':'analytic',expression};if(parsed.successive){next.successiveStart=String(parsed.successive.s1);next.successiveEnd=String(parsed.successive.s2);next.epsilon=String(parsed.successive.e);}state.draft=next;}delete state.exchange;state.dialog=null;persist();$('#exchange-dialog').close();render();}
+function finishExchange(){const expression=$('#exchange-text').value.trim();let parsed;try{parsed=CurveFormula.parse(expression);}catch(error){$('#exchange-error').textContent=error.message;return;}if(expression!==state.exchange.baseline.trim()){const next={...fresh(),id:state.draft.id,name:state.draft.name,type:parsed.successive?'successiveMorph':parsed.sweep?'sweepMorph':'analytic',expression};if(parsed.successive){next.successiveStart=fmt3(parsed.successive.s1);next.successiveEnd=fmt3(parsed.successive.s2);next.epsilon=fmt3(parsed.successive.e);}if(parsed.sweep){next.sweepFactor=fmt3(parsed.sweep.p);next.epsilon=fmt3(parsed.sweep.e);next.sweepSwapped=Boolean(parsed.sweep.sw);}state.draft=next;}delete state.exchange;state.dialog=null;persist();$('#exchange-dialog').close();render();}
 $('#exchange-close').onclick=finishExchange;
 $('#exchange-dialog').addEventListener('cancel',event=>{event.preventDefault();finishExchange();});
 for(const [selector,key] of [['#drawing-start','startColor'],['#drawing-end','endColor'],['#drawing-thickness','thickness']]){
@@ -232,12 +254,12 @@ $('#shift-enabled').addEventListener('change',event=>{
  persist();syncAnimation();preview();
 });
 $('#shift-duration').addEventListener('input',event=>{
- state.animations.shift.duration=event.target.value;$('#shift-duration-value').value=Number(event.target.value).toFixed(2)+' s';persist();
+ const v=fmt3(event.target.value);state.animations.shift.duration=v;$('#shift-duration-value').value=v+' s';persist();
 });
-$('#rotation-speed').addEventListener('input',event=>{state.animations.rotation.speed=Number(event.target.value);persist();syncAnimation();preview();});
+$('#rotation-speed').addEventListener('input',event=>{state.animations.rotation.speed=roundSig(event.target.value);persist();syncAnimation();preview();});
 $('#morph-enabled').addEventListener('change',event=>{state.animations.morph.enabled=event.target.checked;if(!event.target.checked)state.animations.morph.phase=0;persist();syncAnimation();preview();});
-for(const [selector,key,other] of [['#morph-min','min','max'],['#morph-max','max','min']])$(selector).addEventListener('input',event=>{const m=state.animations.morph,value=Number(event.target.value);m[key]=key==='min'?Math.min(value,m[other]):Math.max(value,m[other]);syncAnimation();persist();preview();});
-$('#morph-duration').addEventListener('input',event=>{state.animations.morph.duration=event.target.value;$('#morph-duration-value').value=Number(event.target.value).toFixed(2)+' s';persist();});
+for(const [selector,key,other] of [['#morph-min','min','max'],['#morph-max','max','min']])$(selector).addEventListener('input',event=>{const m=state.animations.morph,value=roundSig(event.target.value);m[key]=key==='min'?Math.min(value,m[other]):Math.max(value,m[other]);syncAnimation();persist();preview();});
+$('#morph-duration').addEventListener('input',event=>{const v=fmt3(event.target.value);state.animations.morph.duration=v;$('#morph-duration-value').value=v+' s';persist();});
 $('#successive-enabled').addEventListener('change',event=>{
  const a=state.animations.successive;
  if(event.target.checked){
@@ -246,18 +268,33 @@ $('#successive-enabled').addEventListener('change',event=>{
  }
  a.enabled=event.target.checked;persist();syncAnimation();preview();
 });
-for(const [id,key] of [['successive-speed1','speed1'],['successive-speed2','speed2'],['successive-period','period']])$('#'+id).addEventListener('input',event=>{state.animations.successive[key]=event.target.value;$('#'+id+'-value').value=Number(event.target.value).toFixed(2);persist();});
-$('#successive-trigger').addEventListener('input',event=>{state.animations.successive.trigger=Number(event.target.value);$('#successive-trigger-value').value=Number(event.target.value).toFixed(2);persist();});
-$('#successive-mid').addEventListener('input',event=>{const a=state.animations.successive,value=Number(event.target.value);if(value<=0){event.target.value=a.midpoint;$('#error').textContent='ε midpoint must be greater than 0.';return;}a.midpoint=value;a.amplitude=Math.min(a.amplitude,.95*value,1-value);persist();syncAnimation();preview();});
-$('#successive-amplitude').addEventListener('input',event=>{const a=state.animations.successive;a.amplitude=Number(event.target.value);$('#successive-amplitude-value').value=a.amplitude.toFixed(3);$('#successive-epsilon-value').value=CurveAnimation.oscillation(a.midpoint,a.amplitude,a.phase).toFixed(3);persist();preview();});
+for(const [id,key] of [['successive-speed1','speed1'],['successive-speed2','speed2'],['successive-period','period']])$('#'+id).addEventListener('input',event=>{const v=fmt3(event.target.value);state.animations.successive[key]=v;$('#'+id+'-value').value=v;persist();});
+$('#successive-trigger').addEventListener('input',event=>{const v=roundSig(event.target.value);state.animations.successive.trigger=v;$('#successive-trigger-value').value=fmt3(v);persist();});
+$('#successive-mid').addEventListener('input',event=>{const a=state.animations.successive,value=roundSig(event.target.value);if(value<=0){event.target.value=a.midpoint;$('#error').textContent='ε midpoint must be greater than 0.';return;}a.midpoint=value;a.amplitude=roundSig(Math.min(a.amplitude,.95*value,1-value));persist();syncAnimation();preview();});
+$('#successive-amplitude').addEventListener('input',event=>{const a=state.animations.successive;a.amplitude=roundSig(event.target.value);$('#successive-amplitude-value').value=fmt3(a.amplitude);$('#successive-epsilon-value').value=fmt3(CurveAnimation.oscillation(a.midpoint,a.amplitude,a.phase));persist();preview();});
+$('#sweep-enabled').addEventListener('change',event=>{
+ const a=state.animations.sweep;
+ if(event.target.checked){
+  try{
+   Curves.build(state.draft,lookup);
+   const p=Curves.constant(state.draft.sweepFactor??'0');
+   if(p<0||p>1)throw new Error('Morph parameter must be between 0 and 1.');
+   a.phase=p===1?0:p;
+   a.swapped=p===1?!Boolean(state.draft.sweepSwapped):Boolean(state.draft.sweepSwapped);
+  }catch(error){event.target.checked=false;$('#error').textContent=error.message;return;}
+ }
+ a.enabled=event.target.checked;persist();syncAnimation();preview();
+});
+$('#sweep-duration').addEventListener('input',event=>{const v=fmt3(event.target.value);state.animations.sweep.duration=v;$('#sweep-duration-value').value=v+' s';persist();});
+$('#sweep-epsilon-anim').addEventListener('input',event=>{const v=roundSig(event.target.value);state.animations.sweep.epsilon=v;$('#sweep-epsilon-anim-value').value=fmt3(v);persist();preview();});
 $('#name').addEventListener('keydown',e=>{if(e.key==='Enter' && !e.isComposing){e.preventDefault();$('#save').click();}});
 $('#name').addEventListener('input',e=>{state.draft.name=e.target.value;$('#heading').textContent=e.target.value||'New curve';persist();});
-$('#type').addEventListener('change',e=>{if(e.target.value==='analytic' && state.draft.expression===undefined)state.draft.expression='';if(e.target.value==='morph' && state.draft.morphFactor===undefined)state.draft.morphFactor='0';if(e.target.value==='concat' && state.draft.concatCount===undefined){state.draft.concatCount='';state.draft.concatSources=[];state.draft.concatFractions=[];}state.draft.type=e.target.value;persist();syncAnimation();fields();preview();});
+$('#type').addEventListener('change',e=>{if(e.target.value==='analytic' && state.draft.expression===undefined)state.draft.expression='';if(e.target.value==='morph' && state.draft.morphFactor===undefined)state.draft.morphFactor='0';if(e.target.value==='sweepMorph'){if(state.draft.sweepFactor===undefined)state.draft.sweepFactor='0';if(state.draft.epsilon===undefined||state.draft.epsilon==='0')state.draft.epsilon='0.1';}if(e.target.value==='concat' && state.draft.concatCount===undefined){state.draft.concatCount='';state.draft.concatSources=[];state.draft.concatFractions=[];}state.draft.type=e.target.value;persist();syncAnimation();fields();preview();});
 $('#new').onclick=()=>{state.editing=null;state.draft=fresh();state.dialog=null;persist();render();};
 $('#save').onclick=()=>{
  const name=state.draft.name.trim();if(!name){$('#error').textContent='Enter a curve name.';return;}if(state.curves.some(c=>c.name===name&&c.id!==state.draft.id)){$('#error').textContent='A curve with this name already exists.';return;}if(!preview())return;
  if((name==='Curve 1'||name==='Curve 2') && !state.curves.some(c=>c.id===state.draft.id&&c.name===name)){$('#error').textContent='“Curve 1” and “Curve 2” are reserved labels.';return;}
- if((state.draft.type==='morph' && state.animations.morph.enabled)||(state.draft.type==='successiveMorph' && state.animations.successive.enabled)){try{Curves.build(state.draft,id=>id===state.draft.id?state.draft:lookup(id));}catch(error){$('#error').textContent=error.message;return;}}
+ if((state.draft.type==='morph' && state.animations.morph.enabled)||(state.draft.type==='successiveMorph' && state.animations.successive.enabled)||(state.draft.type==='sweepMorph' && state.animations.sweep.enabled)){try{Curves.build(state.draft,id=>id===state.draft.id?state.draft:lookup(id));}catch(error){$('#error').textContent=error.message;return;}}
  if(state.draft.type==='concat' && state.draft.concatCount!==undefined){const n=Number(state.draft.concatCount);state.draft.concatSources=state.draft.concatSources.slice(0,n);state.draft.concatFractions=state.draft.concatFractions.slice(0,n-1);}
  state.draft.name=name;const i=state.curves.findIndex(c=>c.id===state.draft.id);if(i<0)state.curves.push(structuredClone(state.draft));else state.curves[i]=structuredClone(state.draft);state.editing=state.draft.id;persist();render();
 };

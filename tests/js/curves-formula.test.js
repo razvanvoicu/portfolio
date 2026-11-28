@@ -28,6 +28,7 @@ test('exported expressions reproduce each combination and preserve piece boundar
   {id:'c',type:'iterate',source1:'a',n:'4',alpha:'Math.PI/2',dx:'0',dy:'0'},
   {id:'c',type:'morph',source1:'a',source2:'b',morphFactor:'.4',morphShift:'.2'},
   {id:'c',type:'successiveMorph',source1:'a',source2:'b',successiveStart:'.8',successiveEnd:'.2',epsilon:'.3'},
+  {id:'c',type:'sweepMorph',source1:'a',source2:'b',sweepFactor:'.4',epsilon:'.2'},
   {id:'c',type:'splice',source1:'a',source2:'b',n:'4',epsilon:'.1',dropStart:'.05',dropEnd:'.05'},
   {id:'c',type:'splice',source1:'a',source2:'b',n:'4',epsilon:'.25',dropStart:'.1',dropEnd:'.15'}])compare(curve);
 });
@@ -78,4 +79,33 @@ test('successive morph export selects the source piece next to a transition',()=
  const expression=CurveFormula.successiveExpression(first,second,{s1:.501,s2:.8,e:.1});
  const pieces=CurveFormula.pieces(expression),t=.5005;
  assert.deepEqual(pieces.find(p=>p.a<=t&&t<p.b).point(t),[100,0]);
+});
+test('sweep morph expression carries p, e, and sw parameters and formats to 3 significant digits',()=>{
+ const sources=[Curves.build(base,lookup),Curves.build(other,lookup)];
+ const xys=CurveFormula.sweepCoordinates(...sources);
+ for(const coordinate of xys){const result=JsFormula.compile(coordinate);assert.ok(result.names.every(name=>['t','p','e','sw'].includes(name)));}
+ const fn=Function('t','p','e','sw',`return [${xys.join(',')}];`);
+ for(const [p,e,sw] of [[0,.2,0],[.1,.2,0],[.5,.2,0],[.9,.2,0],[1,.2,0],[.3,0,0],[.5,.2,1],[1,0,1]]){
+  const c={id:'c',type:'sweepMorph',source1:'a',source2:'b',sweepFactor:String(p),epsilon:String(e),sweepSwapped:Boolean(sw)},pieces=Curves.build(c,lookup);
+  for(const t of [0,.05,.25,.5,.75,.95,1]){
+   const pt=pieces.find((x,i)=>x.a<=t&&(t<x.b||(t===1&&i===pieces.length-1))).point(t), q=fn(t,p,e,sw);
+   pt.forEach((v,i)=>assert.ok(Math.abs(v-q[i])<1e-8,`p=${p} e=${e} sw=${sw} t=${t}: ${pt} != ${q}`));
+  }
+ }
+ const expression=CurveFormula.sweepExpression(...sources,{p:.123456,e:.234567,sw:0});
+ assert.match(expression,/p=0\.123,\s*e=0\.235/);
+ const parsed=CurveFormula.parse(expression);
+ assert.deepEqual(parsed.sweep,{p:.123,e:.235,sw:0});
+ const overridden=CurveFormula.pieces(expression,undefined,undefined,{p:.8,e:.1,sw:1});
+ const expected=fn(.5,.8,.1,1);
+ overridden[0].point(.5).forEach((v,i)=>assert.ok(Math.abs(v-expected[i])<1e-8));
+ // Closed curves include a closing segment in sweepExpression so start and end stay connected
+ const c1={id:'c1',type:'equation',mode:'polar',formulas:{r:formula('90'),theta:formula('(2*t+0.5)*Math.PI')}};
+ const c2={id:'c2',type:'equation',mode:'polar',formulas:{r:formula('80'),theta:formula('(2*t+0.5)*Math.PI')}};
+ const closedExpr=CurveFormula.sweepExpression(Curves.build(c1,()=>c1),Curves.build(c2,()=>c2),{p:.5,e:.1,sw:0});
+ for(const params of [{p:0,e:.1,sw:0},{p:.5,e:.1,sw:0},{p:.618,e:.977,sw:1},{p:1,e:.1,sw:0}]){
+  const pts=CurveFormula.pieces(closedExpr,undefined,params);
+  const start=pts[0].point(0),end=pts[pts.length-1].point(1);
+  assert.ok(Math.hypot(start[0]-end[0],start[1]-end[1])<1e-8,`open gap for ${JSON.stringify(params)}`);
+ }
 });

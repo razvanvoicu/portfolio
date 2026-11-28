@@ -140,7 +140,7 @@ test('Wheely rotates uniformly every nine seconds with 80% trails above the rod'
 
 test('curve screensavers are registered after the existing screensavers', () => {
   const source = require('node:fs').readFileSync(require('node:path').join(__dirname, '../../sites/screensavers/static/app.mjs'), 'utf8');
-  assert.match(source, /\[wheely, pillows, star, pentagram, sineflower, morph, pentagonWavy\]/);
+  assert.match(source, /\[wheely, pillows, star, pentagram, sineflower, morph, pentagonWavy, wavyHeptagonSweep\]/);
 });
 
 const distance = (a, b) => Math.hypot(a[0] - b[0], a[1] - b[1]);
@@ -266,4 +266,87 @@ test('morph screensaver follows the first curve at m=0 and the reversed, half-tu
   let previous = first(0);
   for (let i = 1; i <= 20000; i++) { const point = first(i / 20000); assert.ok(distance(previous, point) < 1, `jump near t=${i / 20000}`); previous = point; }
   for (const [phase, min, max] of [[0, 0, 1], [0.25, 0, 1], [0.11495795987551283, 0.2, 0.7]]) assert.equal(morphAt(phase, min, max), CurveAnimation.morphAt(phase, min, max));
+});
+
+test('sweep morph screensaver matches Curves app geometry and animation cycles', async () => {
+  const { sweepWeight, sweepPoint, advanceSweep, curveSaver } = await import('../../sites/screensavers/static/animations/curve-saver.mjs');
+  const CurveAnimation = require('../../sites/curves/static/animation.js');
+  const CurveFormula = require('../../sites/curves/static/curve-formula.js');
+  const [x] = CurveFormula.sweepCoordinates([{ a: 0, b: 1, expression: () => ['3', '5'] }], [{ a: 0, b: 1, expression: () => ['7', '11'] }]);
+  for (const [t, p, e, sw] of [[0, 0, 0.2, 0], [0.5, 0, 0.5, 0], [0.5, 1, 0.5, 0], [0.45, 0.5, 0.2, 0], [0.55, 0.5, 0.2, 0], [0.05, 0.1, 0.2, 0], [0.95, 0.9, 0.2, 0], [0.3, 0.4, 0, 0], [0.5, 0.5, 0.2, 1]]) {
+    const expected = (Function('t', 'p', 'e', 'sw', `return ${x};`)(t, p, e, sw) - 3) / 4;
+    assert.ok(Math.abs(sweepWeight(t, p, e, Boolean(sw)) - expected) < 1e-12);
+  }
+  const pieces = [{ end: 1, from: t => [0, 100 * t], to: t => [100, 100 * t] }];
+  const spec = {
+    name: 'Sweep Test',
+    mode: 'sweep',
+    pieces,
+    drawing: { startColor: '#74e1c1', endColor: '#74e1c1', thickness: '3' },
+    canvas: { startColor: '#090c12', endColor: '#090c12' },
+    animations: {
+      shift: { enabled: false, duration: '5', phase: 0 },
+      sweep: { enabled: true, duration: '2', phase: 0, swapped: false, epsilon: 0.2 },
+      rotation: { speed: 0, phase: 0 },
+    },
+  };
+  const saver = curveSaver(spec).create();
+  const ref = structuredClone(spec.animations.sweep);
+  for (let i = 0; i < 600; i++) {
+    if (i % 60 === 0) {
+      assert.deepEqual(saver.sweep, ref);
+      const fn = saver.curveFunction();
+      for (const t of [0, 0.25, 0.5, 0.75, 1]) {
+        assert.ok(distance(fn(t), sweepPoint(pieces, t, ref.phase, ref.epsilon, ref.swapped)) < 1e-12);
+      }
+    }
+    if (i === 360) assert.equal(saver.sweep.swapped, true); // 3s at 2s period = 1.5 cycles -> 1 flip
+    saver.update(1 / 120);
+    CurveAnimation.advanceSweep(ref, 1000 / 120);
+  }
+  assert.equal(saver.sweep.swapped, false); // 5s at 2s period = 2.5 cycles -> 2 flips
+  assert.deepEqual(saver.sweep, ref);
+  // Closed curves stay closed at t=0 and t=1 during sweep morph
+  const closedPieces = [{ end: 1, from: t => [90 * Math.cos((2 * t + 0.5) * Math.PI), 90 * Math.sin((2 * t + 0.5) * Math.PI)], to: t => [80 * Math.cos((2 * t + 0.5) * Math.PI), 80 * Math.sin((2 * t + 0.5) * Math.PI)] }];
+  for (const [p, e, sw] of [[0, 0.1, false], [0.5, 0.1, false], [0.618, 0.977, true], [1, 0.1, false]]) {
+    assert.ok(distance(sweepPoint(closedPieces, 0, p, e, sw), sweepPoint(closedPieces, 1, p, e, sw)) < 1e-9);
+  }
+  assert.ok(distance(sweepPoint(closedPieces, 0.9995, 0.5, 0.1, false), [0, 85]) < 1e-9);
+});
+
+test('wavy-heptagon-sweep reproduces the supplied export across segment boundaries and animated states', async () => {
+  const { wavyHeptagonSweep, wavyHeptagonSweepPieces, wavyHeptagonSweepAnimations } = await import('../../sites/screensavers/static/animations/curve-wavy-heptagon-sweep.mjs');
+  const { sweepPoint } = await import('../../sites/screensavers/static/animations/curve-saver.mjs');
+  const exported = require('../fixtures/screensavers/wavy-heptagon-sweep-animation.json');
+  const CurveAnimation = require('../../sites/curves/static/animation.js');
+  const reference = Function('t', 'p', 'e', 'sw', `return (${exported.curve.expression});`);
+  assert.deepEqual(wavyHeptagonSweepAnimations, exported.animations);
+  const saver = wavyHeptagonSweep.create();
+  saver.resize(1920, 1080);
+  assert.deepEqual(saver.spec.drawing, exported.drawing);
+  assert.deepEqual(saver.spec.canvas, exported.canvas);
+  const motion = structuredClone(exported.animations);
+  const boundaries = wavyHeptagonSweepPieces.map(p => p.end * 0.999).filter(Number.isFinite);
+  boundaries.push(0.999);
+  const parameters = [...Array.from({ length: 1001 }, (_, i) => i / 1000), ...boundaries.flatMap(t => [t - 1e-10, t, t + 1e-10]).filter(t => t >= 0 && t <= 1)];
+  for (let frame = 0; frame < 1440; frame++) {
+    if (frame % 120 === 0) {
+      const state = motion.sweep;
+      const actual = saver.curveFunction();
+      for (const t of parameters) {
+        const expected = reference(t, state.phase, state.epsilon, state.swapped ? 1 : 0);
+        assert.ok(distance(actual(t), expected) < 1e-6, `export mismatch at frame=${frame}, t=${t}: ${actual(t)} vs ${expected}`);
+      }
+      assert.deepEqual(saver.sweep, state);
+      assert.equal(saver.rotation.phase, motion.rotation.phase);
+      assert.equal(saver.shift.phase, motion.shift.phase);
+    }
+    saver.update(1 / 120);
+    CurveAnimation.advanceSweep(motion.sweep, 1000 / 120);
+    motion.rotation.phase = CurveAnimation.advanceRotation(motion.rotation.phase, 1000 / 120, motion.rotation.speed);
+    motion.shift.phase = CurveAnimation.advance(motion.shift.phase, 1000 / 120, Number(motion.shift.duration));
+  }
+  for (const [p, e, sw] of [[0, 0.248, false], [0.5, 0.248, false], [0.77, 0.248, true], [1, 0.248, true]]) {
+    assert.ok(distance(sweepPoint(wavyHeptagonSweepPieces, 0, p, e, sw), sweepPoint(wavyHeptagonSweepPieces, 1, p, e, sw)) < 1e-9);
+  }
 });
