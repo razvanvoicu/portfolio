@@ -27,11 +27,20 @@
     scheduleSave();
 
     if (!text.value.trim()) {
-      setStatus("", "Supported: numbers, variables, + - * / % **, comparisons, && || !, ? :, true and false, and Math functions and constants.");
+      setStatus("", "Supported: numbers, strings, dates/durations, lambda/mu, variables, + - * / % **, comparisons, && || !, ? :, true/false, and unqualified math/string/date functions.");
       return;
     }
     try {
-      const result = JsFormula.compile(text.value);
+      const forbidFreeVars = Boolean(editingVar);
+      const varTypes = {};
+      if (!forbidFreeVars) {
+        for (const v of variables) {
+          if (nameProblem(v)) continue;
+          const parsed = parseValue(v.text);
+          if (parsed.ok) varTypes[v.name] = parsed.inferredType;
+        }
+      }
+      const result = JsFormula.compile(text.value, { varTypes, forbidFreeVars });
       const fresh = result.names.filter((name) => !variables.some((variable) => variable.name === name));
       const unusable = fresh.find((name) => nameProblem({ name }));
       if (unusable) {
@@ -40,8 +49,9 @@
       }
       compiled = result;
       const blocks = `${result.blocks} block${result.blocks === 1 ? "" : "s"}`;
+      const target = editingVar ? "The variable formula" : "The main formula";
       const added = fresh.length ? ` It adds the variable${fresh.length === 1 ? "" : "s"} ${fresh.join(", ")}.` : "";
-      setStatus("ready", `Ready: ${blocks}. The main formula will be replaced.${added}`);
+      setStatus("ready", `Ready: ${blocks} (${result.typeString}). ${target} will be replaced.${added}`);
       convertButton.disabled = false;
     } catch (error) {
       if (!(error instanceof JsFormula.FormulaError)) throw error;

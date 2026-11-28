@@ -7,6 +7,7 @@
 // tested in Node; in the browser JsFormula comes from jsformula.js.
 const GraphJson = (() => {
   const formulaParser = typeof JsFormula !== "undefined" ? JsFormula : require("./jsformula.js");
+  const runtime = typeof FormulaRuntime !== "undefined" ? FormulaRuntime : require("./runtime.js");
 
   class GraphError extends Error {
     constructor(message) {
@@ -15,7 +16,7 @@ const GraphJson = (() => {
     }
   }
 
-  const RESERVED = new Set(["Math", "Infinity", "NaN", "undefined"]);
+  const RESERVED = runtime.RESERVED_NAMES;
 
   function nameProblem(name) {
     if (!/^[A-Za-z_$][A-Za-z0-9_$]*$/.test(name)) return "is not a valid variable name";

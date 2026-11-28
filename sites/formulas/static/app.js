@@ -1,7 +1,7 @@
 "use strict";
 
 const STORAGE_KEY = "formulas:state:v1";
-const RESERVED_NAMES = new Set(["Math", "Infinity", "NaN", "undefined"]);
+const RESERVED_NAMES = FormulaRuntime.RESERVED_NAMES;
 const NAME_PATTERN = /^[A-Za-z_$][A-Za-z0-9_$]*$/;
 const SUGGESTED_NAMES = ["x", "y", "z", "a", "b", "c", "d", "n", "m", "k", "t", "u", "v", "w"];
 const INPUT_VALUE = Blockly.ConnectionType.INPUT_VALUE;
@@ -20,6 +20,12 @@ const stashMenu = $("#stash-menu");
 const varsSection = $(".vars");
 const varsSheet = $("#vars-sheet");
 const varsSheetList = $("#vars-sheet-list");
+const workbenchSection = $(".workbench");
+const varEditBar = $("#var-edit-bar");
+const varEditLabel = $("#var-edit-label");
+const varEditDone = $("#var-edit-done");
+const varEditCancel = $("#var-edit-cancel");
+const graphOpenButton = $("#graph-open");
 
 let variables = [];
 let nextVarId = 1;
@@ -27,6 +33,8 @@ let stash = [];
 let nextStashId = 1;
 let workspace = null;
 let activeTab = "num";
+let editingVar = null; // { id, savedMainWorkspace, savedMainTab } while editing a variable in blocks
+const varEvalCache = new Map();
 // What the user last chose in the graph view: the variable's id and the range,
 // kept as typed so a half-edited value is not rewritten under the cursor.
 let graphSettings = { varId: null, from: "-10", to: "10" };
@@ -60,11 +68,28 @@ function nameProblem(variable) {
 }
 
 function parseValue(text) {
-  const trimmed = text.trim();
-  if (trimmed === "true") return { ok: true, value: true };
-  if (trimmed === "false") return { ok: true, value: false };
-  const number = trimmed === "" ? NaN : Number(trimmed);
-  return Number.isFinite(number) ? { ok: true, value: number } : { ok: false };
+  const trimmed = String(text ?? "").trim();
+  if (!trimmed) return { ok: false, error: "Enter a value or expression" };
+  const cacheable = !/\bnow\s*\(/.test(trimmed);
+  if (cacheable && varEvalCache.has(trimmed)) return varEvalCache.get(trimmed);
+  let result;
+  try {
+    const evaluated = JsFormula.evaluate(trimmed, {}, null, { forbidFreeVars: true });
+    result = {
+      ok: true,
+      value: evaluated.value,
+      inferredType: evaluated.inferredType,
+      type: evaluated.type,
+      typeString: evaluated.typeString,
+    };
+  } catch (error) {
+    result = { ok: false, error: String(error.message || error) };
+  }
+  if (cacheable) {
+    if (varEvalCache.size > 200) varEvalCache.clear();
+    varEvalCache.set(trimmed, result);
+  }
+  return result;
 }
 
 function variableById(id) {
@@ -80,8 +105,8 @@ function newVariableName() {
   return `v${n}`;
 }
 
-function addVariable(name = newVariableName(), text = "1") {
-  const variable = { id: `v${nextVarId}`, name, text };
+function addVariable(name = newVariableName(), text = "1", varWorkspace = null) {
+  const variable = { id: `v${nextVarId}`, name, text, workspace: varWorkspace };
   nextVarId += 1;
   variables.push(variable);
   return variable;
@@ -101,16 +126,120 @@ function makeInput(className, value, label, mode) {
   return input;
 }
 
+function openVarEditor(variable) {
+  if (!variable) return;
+  if (editingVar && editingVar.id === variable.id) return;
+  if (editingVar) cancelVarEditor();
+  if (!varsSheet.hidden) closeVarsSheet();
+
+  editingVar = {
+    id: variable.id,
+    savedMainWorkspace: Blockly.serialization.workspaces.save(workspace),
+    savedMainTab: activeTab,
+  };
+
+  if (activeTab === "vars") activeTab = "num";
+  varEditLabel.textContent = `Editing variable ${variable.name || "?"} (no other variables allowed)`;
+  varEditBar.hidden = false;
+  workbenchSection.classList.add("is-var-editing");
+
+  Blockly.Events.disable();
+  try {
+    workspace.clear();
+    let loaded = false;
+    if (variable.workspace) {
+      try {
+        Blockly.serialization.workspaces.load(variable.workspace, workspace);
+        loaded = Boolean(getRoot());
+      } catch {
+        workspace.clear();
+      }
+    }
+    if (!loaded) {
+      Blockly.serialization.blocks.append({ type: "f_root", x: 0, y: 0 }, workspace);
+      try {
+        const compiled = JsFormula.compile(variable.text, { forbidFreeVars: true });
+        const root = getRoot();
+        const block = Blockly.serialization.blocks.append(compiled.state, workspace, { recordUndo: false });
+        root.getInput("EXPR").connection.connect(block.outputConnection);
+      } catch {
+        // Leave empty root so user can build the expression graphically.
+      }
+    }
+  } finally {
+    Blockly.Events.enable();
+  }
+
+  renderVariables();
+  renderPalette();
+  scheduleUpdate();
+  setTimeout(fitView, 0);
+}
+
+function restoreMainWorkspace() {
+  const saved = editingVar;
+  editingVar = null;
+  varEditBar.hidden = true;
+  workbenchSection.classList.remove("is-var-editing");
+  activeTab = saved.savedMainTab;
+
+  Blockly.Events.disable();
+  try {
+    workspace.clear();
+    if (saved.savedMainWorkspace) {
+      Blockly.serialization.workspaces.load(saved.savedMainWorkspace, workspace);
+    }
+    if (!getRoot()) {
+      Blockly.serialization.blocks.append({ type: "f_root", x: 0, y: 0 }, workspace);
+    }
+  } finally {
+    Blockly.Events.enable();
+  }
+
+  renderVariables();
+  renderPalette();
+  scheduleUpdate();
+  scheduleSave();
+  setTimeout(fitView, 0);
+}
+
+function finishVarEditor() {
+  if (!editingVar) return;
+  const variable = variableById(editingVar.id);
+  if (!variable) {
+    restoreMainWorkspace();
+    return;
+  }
+  const result = evaluate();
+  if (result.state !== "ok") {
+    showToast(messageFor(result, "save this variable"), true);
+    return;
+  }
+  variable.text = result.code;
+  variable.workspace = Blockly.serialization.workspaces.save(workspace);
+  varEvalCache.clear();
+  restoreMainWorkspace();
+  showToast(`Updated variable ${variable.name}`);
+}
+
+function cancelVarEditor() {
+  if (!editingVar) return;
+  restoreMainWorkspace();
+}
+
 // One row per variable. The same rows are built for the strip on the page and
 // for the pop-up sheet that opens when the strip is too small to show them all.
 function buildVariableRows() {
   return variables.map((variable) => {
     const row = document.createElement("div");
-    row.className = "var-row";
+    row.className = "var-row" + (editingVar && editingVar.id === variable.id ? " is-editing" : "");
 
     const name = makeInput("var-input var-name", variable.name, "Variable name", "text");
     name.addEventListener("input", () => {
       variable.name = name.value.trim();
+      if (editingVar && editingVar.id === variable.id) {
+        varEditLabel.textContent = `Editing variable ${variable.name || "?"} (no other variables allowed)`;
+      }
       variablesChanged();
     });
 
@@ -119,9 +248,10 @@ function buildVariableRows() {
     equals.textContent = "=";
     equals.setAttribute("aria-hidden", "true");
 
-    const value = makeInput("var-input var-value", variable.text, "Variable value", "text");
+    const value = makeInput("var-input var-value", variable.text, "Variable expression", "text");
     value.addEventListener("input", () => {
       variable.text = value.value;
+      variable.workspace = null;
       variablesChanged();
     });
 
@@ -131,18 +261,27 @@ function buildVariableRows() {
       });
     }
 
+    const edit = document.createElement("button");
+    edit.type = "button";
+    edit.className = "var-edit";
+    edit.textContent = "✎";
+    edit.title = `Edit ${variable.name || "variable"} in graphic editor`;
+    edit.setAttribute("aria-label", `Edit variable ${variable.name} in graphic editor`);
+    edit.addEventListener("click", () => openVarEditor(variable));
+
     const remove = document.createElement("button");
     remove.type = "button";
     remove.className = "var-delete";
     remove.textContent = "✕";
     remove.setAttribute("aria-label", `Delete variable ${variable.name}`);
     remove.addEventListener("click", () => {
+      if (editingVar && editingVar.id === variable.id) cancelVarEditor();
       variables = variables.filter((other) => other !== variable);
       renderVariables();
       variablesChanged();
     });
 
-    row.append(name, equals, value, remove);
+    row.append(name, equals, value, edit, remove);
     row.dataset.id = variable.id;
     return row;
   });
@@ -167,7 +306,7 @@ function refreshValidity() {
     name.title = problem;
     valueInput.classList.toggle("is-invalid", !value.ok);
     valueInput.setAttribute("aria-invalid", value.ok ? "false" : "true");
-    valueInput.title = value.ok ? "" : "Enter a number, true or false";
+    valueInput.title = value.ok ? `Type: ${value.typeString}` : (value.error || "Invalid variable expression");
   }
 }
 
@@ -295,27 +434,23 @@ function variableBlocksIn(block, found = []) {
   return found;
 }
 
-function formatValue(value) {
-  if (typeof value === "number") {
-    return Number.isFinite(value) ? String(Number(value.toPrecision(15))) : String(value);
-  }
-  return String(value);
+function formatValue(value, typeLabel = "") {
+  return FormulaRuntime.formatDisplay(value, typeLabel);
 }
 
 function getRoot() {
   return workspace.getTopBlocks(false).find((block) => block.type === "f_root");
 }
 
-// Checks that the editor holds exactly one complete, valid formula and returns
-// its JavaScript expression. `ignoreValueOf` is a variable id whose value is not
-// needed (the graph substitutes its own), so a bad value there is not an error;
-// `true` ignores every variable's value (the expression alone is wanted).
+// Checks that the editor holds exactly one complete, valid, well-typed formula
+// and returns its expression, compiled AST, and inferred type.
+// `ignoreValueOf` is a variable id whose value is ignored (the graph varies it
+// as a number); `true` ignores all variable values.
 function analyze(ignoreValueOf = null) {
   const root = getRoot();
   const body = root.getInputTargetBlock("EXPR");
   const loose = workspace.getTopBlocks(false).filter((block) => block !== root).length;
 
-  // A result only makes sense when the editor holds exactly one formula.
   const formulas = (body ? 1 : 0) + loose;
   if (formulas > 1) return { state: "multiple", count: formulas };
   if (!body) return { state: loose ? "loose" : "empty" };
@@ -323,41 +458,123 @@ function analyze(ignoreValueOf = null) {
   const missing = emptyInputs(body).length;
   if (missing) return { state: "incomplete", missing };
 
+  const forbidFreeVars = Boolean(editingVar);
   const problems = [];
   const used = new Set();
-  for (const block of variableBlocksIn(body)) {
-    const variable = variableById(block.data);
-    if (!variable) {
-      problems.push(`"${block.getFieldValue("NAME")}" is not defined`);
-      continue;
-    }
-    used.add(variable.id);
-    if (nameProblem(variable)) {
-      problems.push(`Fix the name of variable "${variable.name}"`);
-    } else if (ignoreValueOf !== true && variable.id !== ignoreValueOf && !parseValue(variable.text).ok) {
-      problems.push(`Variable ${variable.name} needs a number, true or false`);
+  if (!forbidFreeVars) {
+    for (const block of variableBlocksIn(body)) {
+      const variable = variableById(block.data);
+      if (!variable) {
+        problems.push(`"${block.getFieldValue("NAME")}" is not defined`);
+        continue;
+      }
+      used.add(variable.id);
+      if (nameProblem(variable)) {
+        problems.push(`Fix the name of variable "${variable.name}"`);
+      } else if (ignoreValueOf !== true && variable.id !== ignoreValueOf) {
+        const parsed = parseValue(variable.text);
+        if (!parsed.ok) problems.push(`Variable ${variable.name}: ${parsed.error}`);
+      }
     }
   }
   if (problems.length) return { state: "error", message: [...new Set(problems)][0] };
 
   generator.init(workspace);
-  return { state: "ok", code: generator.valueToCode(root, "EXPR", O.NONE), used };
+  const code = generator.valueToCode(root, "EXPR", O.NONE);
+
+  // Build known variable type map for Hindley-Milner typechecking.
+  const varTypes = {};
+  if (!forbidFreeVars) {
+    for (const variable of variables) {
+      if (nameProblem(variable)) continue;
+      if (variable.id === ignoreValueOf) {
+        varTypes[variable.name] = JsFormula.TYPES.NUM;
+      } else if (ignoreValueOf !== true) {
+        const parsed = parseValue(variable.text);
+        if (parsed.ok) varTypes[variable.name] = parsed.inferredType;
+      }
+    }
+  }
+
+  let compiled;
+  try {
+    compiled = JsFormula.compile(code, { varTypes, forbidFreeVars });
+  } catch (error) {
+    return { state: "error", message: String(error.message || error) };
+  }
+
+  // Also capture any free variables referenced via f_param or untyped blocks.
+  if (!forbidFreeVars) {
+    for (const name of compiled.names) {
+      const variable = variables.find((v) => v.name === name);
+      if (!variable) {
+        return { state: "error", message: `"${name}" is not defined` };
+      }
+      used.add(variable.id);
+    }
+  }
+
+  return {
+    state: "ok",
+    code,
+    used,
+    compiled,
+    type: compiled.type,
+    inferredType: compiled.inferredType,
+    typeString: compiled.typeString,
+  };
 }
 
 function evaluate() {
   const analysis = analyze();
   if (analysis.state !== "ok") return analysis;
-  const usable = variables.filter((variable) => !nameProblem(variable) && parseValue(variable.text).ok);
-  try {
-    const compute = new Function(...usable.map((variable) => variable.name), `"use strict"; return (${analysis.code});`);
-    const value = compute(...usable.map((variable) => parseValue(variable.text).value));
-    if (typeof value !== "number" && typeof value !== "boolean") {
-      return { state: "error", message: "The formula does not produce a number or a truth value" };
+  const varValues = {};
+  if (!editingVar) {
+    for (const variable of variables) {
+      if (nameProblem(variable)) continue;
+      const parsed = parseValue(variable.text);
+      if (parsed.ok) varValues[variable.name] = parsed.value;
     }
-    return { state: "ok", code: analysis.code, value };
+  }
+  try {
+    const names = Object.keys(varValues);
+    const run = JsFormula.buildEvaluator(analysis.compiled, names);
+    const value = run(...names.map((n) => varValues[n]));
+    return {
+      state: "ok",
+      code: analysis.code,
+      value,
+      type: analysis.type,
+      inferredType: analysis.inferredType,
+      typeString: analysis.typeString,
+    };
   } catch (error) {
     return { state: "error", message: String(error.message || error) };
   }
+}
+
+function graphCapability(evalResult) {
+  if (editingVar) return { ok: false, reason: "Finish editing the variable first" };
+  if (evalResult.state === "ok") {
+    if (JsFormula.isNumberToNumberFn(evalResult.inferredType)) {
+      return { ok: true, mode: "fn" };
+    }
+    if (evalResult.type === "num" || evalResult.type === "any") {
+      const numericVars = variables.filter((v) => !nameProblem(v) && parseValue(v.text).type === "num");
+      if (numericVars.length > 0) return { ok: true, mode: "var" };
+      return { ok: false, reason: "Graphing requires a number → number function or a numeric variable" };
+    }
+    return { ok: false, reason: `Cannot graph ${evalResult.typeString} (only number → number functions can be graphed)` };
+  }
+  return { ok: false, reason: messageFor(evalResult, "graph it") };
+}
+
+function updateGraphButton(evalResult) {
+  if (!graphOpenButton) return;
+  const cap = graphCapability(evalResult);
+  graphOpenButton.disabled = !cap.ok;
+  graphOpenButton.title = cap.ok ? "Graph the formula" : cap.reason;
+  graphOpenButton.setAttribute("aria-label", cap.ok ? "Graph the formula" : cap.reason);
 }
 
 // The main formula as JavaScript text, without evaluating it. Returns
@@ -381,19 +598,24 @@ function messageFor(result, goal) {
 
 function renderResult(result) {
   resultLine.className = "result-line";
+  if (editingVar && varEditDone) {
+    varEditDone.disabled = result.state !== "ok";
+    varEditDone.title = result.state === "ok" ? "Save variable expression" : messageFor(result, "save this variable");
+  }
+  updateGraphButton(result);
   if (result.state === "ok") {
     const equals = document.createElement("span");
     equals.className = "result-equals";
     equals.textContent = "= ";
     const value = document.createElement("span");
     value.className = "result-value";
-    value.textContent = formatValue(result.value);
+    value.textContent = formatValue(result.value, result.typeString);
     resultLine.classList.add("is-value");
     resultLine.replaceChildren(equals, value);
     return;
   }
   resultLine.classList.add(result.state === "error" ? "is-error" : "is-muted");
-  resultLine.textContent = messageFor(result, "see the result");
+  resultLine.textContent = messageFor(result, editingVar ? "save this variable" : "see the result");
 }
 
 let toastTimers = [];
@@ -494,11 +716,11 @@ function saveState() {
       nextVarId,
       stash,
       nextStashId,
-      activeTab,
+      activeTab: editingVar ? editingVar.savedMainTab : activeTab,
       graphSettings,
       importDraft,
       graphImportDraft,
-      workspace: Blockly.serialization.workspaces.save(workspace),
+      workspace: editingVar ? editingVar.savedMainWorkspace : Blockly.serialization.workspaces.save(workspace),
     };
     if (window.location.pathname === "/editor.html" && window.parent !== window && window.parent.CurvesEditor) {
       window.parent.CurvesEditor.save(state, formulaCode("draw the curve"));
@@ -535,6 +757,7 @@ function selectedBlock() {
 function sameFormula(a, b) {
   if (a.type !== b.type || a.data !== b.data) return false;
   if (JSON.stringify(a.fields || {}) !== JSON.stringify(b.fields || {})) return false;
+  if (JSON.stringify(a.extraState || {}) !== JSON.stringify(b.extraState || {})) return false;
   const left = a.inputs || {};
   const right = b.inputs || {};
   const names = Object.keys(left);
@@ -605,6 +828,7 @@ function clearEditor() {
 // ------------------------------------------------------------------- palette
 
 function paletteCategories() {
+  if (editingVar) return [...FormulaBlocks.PALETTE];
   const named = variables.filter((variable) => variable.name && !nameProblem(variable));
   return [
     ...FormulaBlocks.PALETTE,
@@ -623,6 +847,7 @@ function stateFor(item) {
   if (item.type === "f_var") return { type: "f_var", data: item.varId, fields: { NAME: item.name } };
   const state = { type: item.type };
   if (item.fields) state.fields = { ...item.fields };
+  if (item.extraState) state.extraState = { ...item.extraState };
   return state;
 }
 
@@ -1147,7 +1372,7 @@ function init() {
   if (saved) {
     variables = saved.variables
       .filter((v) => v && typeof v.id === "string" && typeof v.name === "string" && typeof v.text === "string")
-      .map((v) => ({ id: v.id, name: v.name, text: v.text }));
+      .map((v) => ({ id: v.id, name: v.name, text: v.text, workspace: v.workspace || null }));
     nextVarId = Number.isInteger(saved.nextVarId) ? saved.nextVarId : variables.length + 1;
     if (Array.isArray(saved.stash)) {
       stash = saved.stash.filter((entry) => entry && typeof entry.id === "string" && entry.state && entry.state.type);
@@ -1188,6 +1413,8 @@ function init() {
   $("#redo").addEventListener("click", () => workspace.undo(true));
   $("#clear").addEventListener("click", clearEditor);
   $("#share").addEventListener("click", shareFormula);
+  if (varEditDone) varEditDone.addEventListener("click", finishVarEditor);
+  if (varEditCancel) varEditCancel.addEventListener("click", cancelVarEditor);
   // Keep the editor's selection when one of these buttons is pressed.
   for (const id of ["#undo", "#redo", "#clear", "#share", "#add-var", "#vars-sheet-add"]) {
     $(id).addEventListener("pointerdown", (event) => event.preventDefault());

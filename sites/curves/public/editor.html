@@ -17,9 +17,10 @@
     <script src="/formula/vendor/blockly_compressed.js"></script>
     <script src="/formula/vendor/blockly_msg_en.js"></script>
     <script src="/formula/vendor/javascript_compressed.js"></script>
+    <script src="/formula/runtime.js" defer></script>
     <script src="/formula/blocks.js" defer></script>
-    <script src="/formula/app.js" defer></script>
     <script src="/formula/jsformula.js" defer></script>
+    <script src="/formula/app.js" defer></script>
     <script src="/formula/importer.js" defer></script>
     <script src="/formula/graphjson.js" defer></script>
     <script src="/formula/graph.js" defer></script>
@@ -46,6 +47,11 @@
       </section>
 
       <section class="workbench" aria-label="Formula editor">
+        <div class="var-edit-bar" id="var-edit-bar" hidden>
+          <span class="var-edit-label" id="var-edit-label"></span>
+          <button class="tool tool-text" id="var-edit-cancel" type="button">Cancel</button>
+          <button class="tool tool-text var-edit-done" id="var-edit-done" type="button">Done</button>
+        </div>
         <div class="editor" id="editor">
           <div id="blockly"></div>
         </div>

@@ -34,10 +34,21 @@
     return new Set(body ? variableBlocksIn(body).map((block) => block.data) : []);
   }
 
-  // Lists the variables that can be plotted and picks one: the last choice if
-  // it still exists, otherwise the first variable the formula uses.
+  function isDirectFunction() {
+    const analysis = analyze();
+    return analysis.state === "ok" && JsFormula.isNumberToNumberFn(analysis.inferredType);
+  }
+
+  // Lists numeric variables that can be plotted and picks one: the last choice
+  // if it still exists, otherwise the first numeric variable the formula uses.
   function fillVariableSelect() {
-    const options = variables.filter((variable) => !nameProblem(variable));
+    if (isDirectFunction()) {
+      varSelect.replaceChildren(new Option("(function argument)", "__fn__"));
+      varSelect.value = "__fn__";
+      varSelect.disabled = true;
+      return;
+    }
+    const options = variables.filter((variable) => !nameProblem(variable) && parseValue(variable.text).type === "num");
     const used = usedVariableIds();
     const chosen = options.find((variable) => variable.id === graphSettings.varId)
       || options.find((variable) => used.has(variable.id))
@@ -49,6 +60,7 @@
   }
 
   function open() {
+    if (opener.disabled) return;
     fillVariableSelect();
     fromInput.value = graphSettings.from;
     toInput.value = graphSettings.to;
@@ -75,12 +87,10 @@
     return Number.isFinite(number) ? number : NaN;
   }
 
-  // Evaluates the formula at evenly spaced values of the chosen variable. The
-  // variable's own value is ignored; the others keep their current values.
+  // Evaluates the formula at evenly spaced values over [from, to]. Supports
+  // both top-level number -> number functions and numeric expressions over one
+  // chosen numeric variable.
   function buildPlot() {
-    const variable = variableById(varSelect.value);
-    if (!variable) return { error: "Add a variable to graph the formula." };
-
     const from = parseNumber(fromInput.value);
     const to = parseNumber(toInput.value);
     fromInput.classList.toggle("is-invalid", Number.isNaN(from));
@@ -88,25 +98,59 @@
     if (Number.isNaN(from) || Number.isNaN(to)) return { error: "Enter the range as two numbers." };
     if (from >= to) return { error: "The lower end of the range must be below the upper end." };
 
-    const analysis = analyze(variable.id);
-    if (analysis.state !== "ok") return { error: messageFor(analysis, "graph it") };
-
-    const others = variables.filter(
-      (other) => other !== variable && !nameProblem(other) && parseValue(other.text).ok
-    );
-    const fixed = others.map((other) => parseValue(other.text).value);
-    // The other variables the formula uses, so the graph can be read on its own.
-    const held = others.filter((other) => analysis.used.has(other.id));
-    const compute = new Function(variable.name, ...others.map((other) => other.name),
-      `"use strict"; return (${analysis.code});`);
-    const f = (x) => {
+    let f, plotName, code, held;
+    if (isDirectFunction()) {
+      const analysis = analyze();
+      if (analysis.state !== "ok") return { error: messageFor(analysis, "graph it") };
+      const usable = variables.filter((v) => !nameProblem(v) && parseValue(v.text).ok);
+      const run = JsFormula.buildEvaluator(analysis.compiled, usable.map((v) => v.name));
+      let fn;
       try {
-        const y = Number(compute(x, ...fixed)); // a truth value plots as 1 or 0
-        return Number.isFinite(y) ? y : NaN;
-      } catch {
-        return NaN;
+        fn = run(...usable.map((v) => parseValue(v.text).value));
+      } catch (error) {
+        return { error: String(error.message || error) };
       }
-    };
+      if (typeof fn !== "function") return { error: "The formula did not evaluate to a function." };
+      plotName = (fn.__params && fn.__params[0]) || "x";
+      code = analysis.code;
+      held = usable
+        .filter((other) => analysis.used.has(other.id))
+        .map((other) => `${other.name} = ${formatValue(parseValue(other.text).value, parseValue(other.text).typeString)}`);
+      f = (x) => {
+        try {
+          const y = fn(x);
+          return typeof y === "number" && Number.isFinite(y) ? y : NaN;
+        } catch {
+          return NaN;
+        }
+      };
+    } else {
+      const variable = variableById(varSelect.value);
+      if (!variable) return { error: "Add a numeric variable to graph the formula." };
+      const analysis = analyze(variable.id);
+      if (analysis.state !== "ok") return { error: messageFor(analysis, "graph it") };
+      if (analysis.type !== "num" && analysis.type !== "any") {
+        return { error: `Cannot graph ${analysis.typeString} (only number → number functions can be graphed).` };
+      }
+      const others = variables.filter(
+        (other) => other !== variable && !nameProblem(other) && parseValue(other.text).ok
+      );
+      const fixed = others.map((other) => parseValue(other.text).value);
+      const run = JsFormula.buildEvaluator(analysis.compiled, [variable.name, ...others.map((other) => other.name)]);
+      plotName = variable.name;
+      code = analysis.code;
+      held = others
+        .filter((other) => analysis.used.has(other.id))
+        .map((other) => `${other.name} = ${formatValue(parseValue(other.text).value, parseValue(other.text).typeString)}`);
+      f = (x) => {
+        try {
+          const y = run(x, ...fixed);
+          return typeof y === "number" && Number.isFinite(y) ? y : NaN;
+        } catch {
+          return NaN;
+        }
+      };
+    }
 
     const dpr = window.devicePixelRatio || 1;
     const count = Math.min(MAX_SAMPLES, Math.max(MIN_SAMPLES, Math.round((stage.clientWidth * dpr) / 2)));
@@ -121,7 +165,6 @@
     const finite = ys.filter(Number.isFinite).sort((p, q) => p - q);
     if (!finite.length) return { error: "The formula has no real values on this range." };
 
-    // Poles (such as tan) would flatten everything else, so ignore the extremes.
     let lo = finite[0];
     let hi = finite[finite.length - 1];
     if (finite.length > 40) {
@@ -135,8 +178,7 @@
     const pad = (hi - lo) * 0.08;
     return {
       a: from, b: to, lo: lo - pad, hi: hi + pad, xs, ys, f,
-      name: variable.name, code: analysis.code,
-      held: held.map((other) => `${other.name} = ${formatValue(parseValue(other.text).value)}`),
+      name: plotName, code, held,
     };
   }
 
@@ -336,7 +378,8 @@
         .filter((variable) => !nameProblem(variable))
         .map((variable) => {
           const parsed = parseValue(variable.text);
-          return { key: variable.name, value: parsed.ok ? parsed.value : null };
+          const serializable = parsed.ok && (typeof parsed.value === "boolean" || (typeof parsed.value === "number" && Number.isFinite(parsed.value)));
+          return { key: variable.name, value: serializable ? parsed.value : null };
         }),
     });
     try {

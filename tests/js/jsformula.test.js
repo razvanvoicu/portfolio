@@ -10,8 +10,11 @@ const JsFormula = require(path.join(__dirname, "..", "..", "sites", "formulas", 
 function show(state) {
   if (state.type === "f_num") return String(state.fields.NUM);
   if (state.type === "f_var") return state.fields.NAME;
+  if (state.type === "f_param") return `@${state.fields.NAME}`;
   if (state.type === "f_bool") return state.fields.V;
+  if (state.type === "f_str") return state.fields.TEXT;
   if (state.type === "f_const") return state.fields.C;
+  if (state.type === "f_lambda") return `f_lambda(${state.fields.PARAMS} => ${show(state.inputs.BODY.block)})`;
   const inputs = Object.values(state.inputs || {}).map((input) => show(input.block));
   return `${state.type}(${inputs.join(", ")})`;
 }
@@ -56,15 +59,29 @@ test("a negative base needs parentheses, as in JavaScript", () => {
 
 test("constants, including the ones the blocks print for themselves", () => {
   assert.equal(shape("Math.PI"), "PI");
+  assert.equal(shape("PI"), "PI");
   assert.equal(shape("Math.PI / 2"), "PI2");
+  assert.equal(shape("PI / 3"), "PI3");
+  assert.equal(shape("2 * PI / 3"), "TWO_PI3");
   assert.equal(shape("Math.PI / 4"), "PI4");
-  assert.equal(shape("Math.PI / 3"), "f_div(PI, 3)");
+  assert.equal(shape("PI / 5"), "PI5");
+  assert.equal(shape("2 * PI / 5"), "TWO_PI5");
+  assert.equal(shape("PI / 6"), "PI6");
+  assert.equal(shape("PI / 7"), "PI7");
+  assert.equal(shape("2 * PI / 7"), "TWO_PI7");
+  assert.equal(shape("3 * PI / 7"), "THREE_PI7");
+  assert.equal(shape("PI / 8"), "PI8");
+  assert.equal(shape("3 * PI / 8"), "THREE_PI8");
+  assert.equal(shape("Math.PI / 9"), "f_div(PI, 9)");
   assert.equal(shape("Math.E"), "E");
+  assert.equal(shape("E"), "E");
   assert.equal(shape("2 * Math.PI"), "TAU");
+  assert.equal(shape("2 * PI"), "TAU");
   assert.equal(shape("x * 2 * Math.PI"), "f_mul(f_mul(x, 2), PI)");
   assert.equal(shape("Math.SQRT2"), "SQRT2");
+  assert.equal(shape("SQRT2"), "SQRT2");
   assert.equal(shape("Math.sqrt(2)"), "SQRT2");
-  assert.equal(shape("Math.sqrt(3)"), "SQRT3");
+  assert.equal(shape("sqrt(3)"), "SQRT3");
   assert.equal(shape("Math.sqrt(5)"), "SQRT5");
   assert.equal(shape("Math.sqrt(7)"), "f_sqrt(7)");
   assert.equal(shape("Math.sqrt(x)"), "f_sqrt(x)");
@@ -130,13 +147,13 @@ test("the kind of value the formula gives", () => {
 });
 
 test("numbers and true/false values are not mixed up", () => {
-  assertFails("1 + (x < 2)", /true\/false value, but "\+" needs a number/);
-  assertFails("!3", /a number, but "!" needs a true\/false value/);
-  assertFails("3 ? 1 : 2", /condition/);
-  assertFails("(x < 2) && 5", /a number, but "&&" needs a true\/false/);
+  assertFails("1 + (x < 2)", /expected number, got boolean/);
+  assertFails("!3", /expected boolean, got number/);
+  assertFails("3 ? 1 : 2", /Condition/);
+  assertFails("(x < 2) && 5", /expected boolean, got number/);
   assertFails("Math.sin(x > 1)", /Math\.sin/);
-  // A variable may hold either, so it is accepted anywhere.
-  assert.equal(shape("!a && a + 1 > 2"), "f_and(f_not(a), f_gt(f_add(a, 1), 2))");
+  // Hindley-Milner catches inconsistent uses of the same variable across an expression.
+  assertFails("!a && a + 1 > 2", /expected number, got boolean/);
 });
 
 test("syntax errors say what is wrong and where", () => {
@@ -146,17 +163,16 @@ test("syntax errors say what is wrong and where", () => {
   assertFails("1 + 2)", /Unexpected "\)"/);
   assertFails("1 2", /Unexpected "2"/);
   assertFails("x = 2", /"=" is not supported/);
-  assertFails('"a"', /is not supported/);
+  assertFails('"unterminated', /Unterminated string/);
   assertFails("x[0]", /"\[" is not supported/);
   assertFails("a & b", /"&" is not supported/);
   assertFails("2x", /Unexpected "x" after a number/);
   assertFails("1.2.3", /after a number/);
   assertFails("a ? 1", /ends too soon/);
-  assertFails("foo(2)", /Only Math functions/);
   assertFails("Math.foo(2)", /Math\.foo is not supported/);
   assertFails("Math.LN2", /Math\.LN2 is not supported/);
-  assertFails("Math.sin()", /needs 1 value/);
-  assertFails("Math.min(1)", /needs 2 values/);
+  assertFails("Math.sin()", /needs 1 argument/);
+  assertFails("Math.min(1)", /needs 2 arguments/);
   assertFails("Math", /Math\.something/);
   assertFails("NaN", /not supported/);
   assertFails("1e999", /too large/);

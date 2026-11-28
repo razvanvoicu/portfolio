@@ -1,9 +1,12 @@
 /* Curve geometry. Each piece retains its own parameter interval so jumps are never joined. */
 const Curves = (() => {
+  const MATH_NAMES = ['PI','E','SQRT2','abs','acos','acosh','asin','asinh','atan','atan2','atanh','cbrt','ceil','cos','cosh','exp','floor','hypot','log','log10','log2','max','min','pow','round','sign','sin','sinh','sqrt','tan','tanh','trunc'];
+  const MATH_VALUES = MATH_NAMES.map(n => Math[n]);
+  const MATH_SET = new Set(MATH_NAMES);
   function constant(source) {
     const parsed = JsFormula.compile(String(source));
     if (parsed.names.length) throw new Error('Use a constant expression for transformation values.');
-    const value = Function('"use strict"; return (' + source + ')')();
+    const value = Function(...MATH_NAMES, '"use strict"; return (' + source + ')')(...MATH_VALUES);
     if (typeof value !== 'number' || !Number.isFinite(value)) throw new Error('Enter a finite number.');
     return value;
   }
@@ -17,9 +20,17 @@ const Curves = (() => {
       if (typeof value === 'number' && !Number.isFinite(value)) throw new Error('Check the formula’s variable values.');
       return value;
     });
-    const fn = Function(...names, '"use strict"; return (' + formula.code + ')');
-    const result=t => fn(...values.map((v, i) => names[i] === 't' ? t : v));
-    result.expression=t=>formula.code.replace(/[A-Za-z_$][A-Za-z0-9_$]*/g,(name,offset,source)=>{const i=names.indexOf(name);return i<0 || (offset>0 && source[offset-1]==='.') ? name : '('+(name==='t'?t:String(values[i]))+')';});
+    const extraNames = MATH_NAMES.filter(n => !names.includes(n));
+    const extraValues = extraNames.map(n => Math[n]);
+    const fn = Function(...extraNames, ...names, '"use strict"; return (' + formula.code + ')');
+    const result=t => fn(...extraValues, ...values.map((v, i) => names[i] === 't' ? t : v));
+    result.expression=t=>formula.code.replace(/[A-Za-z_$][A-Za-z0-9_$]*/g,(name,offset,source)=>{
+      if (offset > 0 && source[offset-1] === '.') return name;
+      const i = names.indexOf(name);
+      if (i >= 0) return '(' + (name === 't' ? t : String(values[i])) + ')';
+      if (MATH_SET.has(name)) return 'Math.' + name;
+      return name;
+    });
     return result;
   }
   const mapPieces = (pieces, scale, offset) => pieces.map(p => ({a: offset + scale*p.a, b: offset + scale*p.b, point: t => p.point((t-offset)/scale), expression:t=>p.expression(`((${t})-(${offset}))/(${scale})`)}));

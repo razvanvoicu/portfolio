@@ -17,9 +17,10 @@
     <script src="/vendor/blockly_compressed.js"></script>
     <script src="/vendor/blockly_msg_en.js"></script>
     <script src="/vendor/javascript_compressed.js"></script>
+    <script src="/runtime.js" defer></script>
     <script src="/blocks.js" defer></script>
-    <script src="/app.js" defer></script>
     <script src="/jsformula.js" defer></script>
+    <script src="/app.js" defer></script>
     <script src="/importer.js" defer></script>
     <script src="/graphjson.js" defer></script>
     <script src="/graph.js" defer></script>
@@ -46,6 +47,11 @@
       </section>
 
       <section class="workbench" aria-label="Formula editor">
+        <div class="var-edit-bar" id="var-edit-bar" hidden>
+          <span class="var-edit-label" id="var-edit-label"></span>
+          <button class="tool tool-text" id="var-edit-cancel" type="button">Cancel</button>
+          <button class="tool tool-text var-edit-done" id="var-edit-done" type="button">Done</button>
+        </div>
         <div class="editor" id="editor">
           <div id="blockly"></div>
         </div>
@@ -92,7 +98,7 @@
         class="import-text"
         id="import-text"
         aria-label="JavaScript formula"
-        placeholder="Type or paste a JavaScript formula, such as  x > 0 ? Math.sqrt(x) : -x"
+        placeholder='Type or paste a formula, such as  x > 0 ? sqrt(x) : -x  or  mu(lambda(f, x, x === 0 ? 1 : f(x - 1) * x))'
         autocomplete="off"
         autocapitalize="off"
         spellcheck="false"

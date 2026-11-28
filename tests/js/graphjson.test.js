@@ -81,7 +81,7 @@ test("the formula is checked", () => {
   assertFails(text({ ...exported, formula: "" }), /"formula" must be/);
   assertFails(text({ ...exported, formula: 3 }), /"formula" must be/);
   assertFails(text({ ...exported, formula: "x +" }), /The formula: .*ends too soon \(character 4\)/);
-  assertFails(text({ ...exported, formula: "foo(1)" }), /The formula: Only Math functions/);
+  assertFails(text({ ...exported, formula: "Math.foo(1)" }), /The formula: Math\.foo is not supported/);
   assertFails(text({ start: 0, end: 1, formula: "2 + 3" }), /"variable_symbol" is missing/);
 });
 
