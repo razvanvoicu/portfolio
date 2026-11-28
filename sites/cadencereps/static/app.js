@@ -1,5 +1,6 @@
 const REPS_KEY = "cadencereps:reps";
 const PERIOD_KEY = "cadencereps:period";
+const LEAD_TIME_KEY = "cadencereps:leadtime";
 const VOICE_KEY = "cadencereps:voice";
 
 const MIN_REPS = 1;
@@ -9,8 +10,9 @@ const MAX_REPS = 9999;
 const FLASH = 0.5;
 const MIN_PERIOD = 0.6;
 const MAX_PERIOD = 999.9;
-const START_WARMUP = 1;
-const RESUME_WARMUP = 5;
+const MIN_LEAD_TIME = 1;
+const MAX_LEAD_TIME = 999;
+const DEFAULT_LEAD_TIME = 10;
 // The speech engine takes a moment to start talking, so each spoken count
 // begins this many seconds before its flash.
 const SPEECH_LEAD = 0.2;
@@ -18,6 +20,7 @@ const SPEECH_LEAD = 0.2;
 const setupScreen = document.querySelector("#setup");
 const repsField = document.querySelector("#reps-field");
 const periodField = document.querySelector("#period-field");
+const leadField = document.querySelector("#lead-field");
 const startButton = document.querySelector("#start-button");
 
 const workoutScreen = document.querySelector("#workout");
@@ -54,6 +57,12 @@ function normalizePeriod(raw) {
   return (tenths / 10).toFixed(1);
 }
 
+function normalizeLeadTime(raw) {
+  const value = parseNumber(raw);
+  if (value === null) return "";
+  return String(Math.min(MAX_LEAD_TIME, Math.max(MIN_LEAD_TIME, Math.round(value))));
+}
+
 function store(key, value) {
   try {
     localStorage.setItem(key, value);
@@ -71,7 +80,10 @@ function recall(key) {
 }
 
 function updateStartButton() {
-  startButton.disabled = parseNumber(repsField.value) === null || parseNumber(periodField.value) === null;
+  startButton.disabled =
+    parseNumber(repsField.value) === null ||
+    parseNumber(periodField.value) === null ||
+    parseNumber(leadField.value) === null;
 }
 
 // The resolution is only enforced once the field loses focus, so typing
@@ -84,8 +96,10 @@ function commitField(field, normalize, key) {
 
 repsField.addEventListener("blur", () => commitField(repsField, normalizeReps, REPS_KEY));
 periodField.addEventListener("blur", () => commitField(periodField, normalizePeriod, PERIOD_KEY));
+leadField.addEventListener("blur", () => commitField(leadField, normalizeLeadTime, LEAD_TIME_KEY));
 repsField.addEventListener("input", updateStartButton);
 periodField.addEventListener("input", updateStartButton);
+leadField.addEventListener("input", updateStartButton);
 
 repsField.addEventListener("keydown", (event) => {
   if (event.key === "Enter") {
@@ -97,7 +111,14 @@ repsField.addEventListener("keydown", (event) => {
 periodField.addEventListener("keydown", (event) => {
   if (event.key === "Enter") {
     event.preventDefault();
-    periodField.blur();
+    leadField.focus();
+  }
+});
+
+leadField.addEventListener("keydown", (event) => {
+  if (event.key === "Enter") {
+    event.preventDefault();
+    leadField.blur();
     startWorkout();
   }
 });
@@ -118,6 +139,7 @@ function showSetup() {
 let mode = "ready";
 let targetReps = 0;
 let period = 0;
+let leadTime = DEFAULT_LEAD_TIME;
 let frame = 0;
 
 // The active timeline, in seconds on the performance.now() clock. A warm-up
@@ -141,13 +163,16 @@ function now() {
 function startWorkout() {
   repsField.value = normalizeReps(repsField.value);
   periodField.value = normalizePeriod(periodField.value);
+  leadField.value = normalizeLeadTime(leadField.value);
   store(REPS_KEY, repsField.value);
   store(PERIOD_KEY, periodField.value);
+  store(LEAD_TIME_KEY, leadField.value);
   updateStartButton();
   if (startButton.disabled) return;
 
   targetReps = parseInt(repsField.value, 10);
   period = parseFloat(periodField.value);
+  leadTime = parseInt(leadField.value, 10);
   mode = "ready";
   count = 0;
   elapsedBefore = 0;
@@ -288,11 +313,11 @@ function renderControls() {
   backButton.hidden = mode !== "ready" && mode !== "done";
 }
 
-playButton.addEventListener("click", () => beginActive(START_WARMUP, true));
+playButton.addEventListener("click", () => beginActive(leadTime, true));
 pauseButton.addEventListener("click", pause);
 resumeButton.addEventListener("click", () => {
   requestWakeLock();
-  beginActive(RESUME_WARMUP, false);
+  beginActive(leadTime, false);
 });
 
 // Leaving the workout always goes through history, so the phone's own back
@@ -364,17 +389,31 @@ function click(delay) {
   oscillator.stop(start + 0.05);
 }
 
-// Long numbers take too long to say to keep up, so only every tenth rep is
-// spoken, as the number of tens; hundreds and thousands are spoken in full.
-// Every other rep is a metronome tick.
+const HALF_HUNDREDS = {
+  50: "50",
+  150: "one fifty",
+  250: "two fifty",
+  350: "three fifty",
+  450: "four fifty",
+};
+
+function spokenCount(rep) {
+  if (rep % 100 === 0) return String(rep);
+  if (rep < 500 && rep in HALF_HUNDREDS) return HALF_HUNDREDS[rep];
+  return null;
+}
+
+// Voice notifications fire on multiples of 50 up to 500 (with 150..450 spoken
+// as "one fifty".."four fifty") and every 100 reps thereafter. Every other rep
+// is a metronome tick.
 function speakDue(t) {
   const beat = Math.floor((t + SPEECH_LEAD - anchor) / period);
   if (beat < 1 || beat <= spokenBeat) return;
   spokenBeat = beat;
   const rep = baseCount + beat;
   if (rep > targetReps) return;
-  if (rep % 100 === 0) say(String(rep));
-  else if (rep % 10 === 0) say(String(rep / 10));
+  const text = spokenCount(rep);
+  if (text !== null) say(text);
   else click(anchor + beat * period - t);
 }
 
@@ -427,6 +466,7 @@ if (history.state && history.state.workout) history.replaceState(null, "");
 
 repsField.value = normalizeReps(recall(REPS_KEY));
 periodField.value = normalizePeriod(recall(PERIOD_KEY));
+leadField.value = normalizeLeadTime(recall(LEAD_TIME_KEY)) || String(DEFAULT_LEAD_TIME);
 updateStartButton();
 
 if ("serviceWorker" in navigator) {

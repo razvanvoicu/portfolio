@@ -1,4 +1,4 @@
-const CACHE_NAME = "cadencereps-hourly-1";
+const CACHE_NAME = "cadencereps-hourly-2";
 const APP_SHELL = [
   "/",
   "/index.html",

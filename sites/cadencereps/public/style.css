@@ -46,10 +46,10 @@ h1 { margin: 0; font-weight: inherit; }
   height: 100dvh;
   display: grid;
   grid-template-columns: 1fr;
-  grid-template-rows: 1.2fr 1fr 1fr 0.9fr;
-  grid-template-areas: "title" "reps" "period" "start";
-  gap: 3vh;
-  padding: 5vh 6vw;
+  grid-template-rows: 1fr 1fr 1fr 1fr 0.9fr;
+  grid-template-areas: "title" "reps" "period" "lead" "start";
+  gap: 2.2vh;
+  padding: 4vh 6vw;
 }
 
 .setup-cell { container-type: size; min-width: 0; min-height: 0; }
@@ -70,6 +70,7 @@ h1 { margin: 0; font-weight: inherit; }
 }
 .field-reps { grid-area: reps; }
 .field-period { grid-area: period; }
+.field-lead { grid-area: lead; }
 
 .field-label {
   align-self: end;
@@ -113,10 +114,10 @@ h1 { margin: 0; font-weight: inherit; }
 
 @media (orientation: landscape) {
   .setup {
-    grid-template-columns: 1fr 1fr;
+    grid-template-columns: 1fr 1fr 1fr;
     grid-template-rows: 1fr 1.1fr 0.8fr;
-    grid-template-areas: "title title" "reps period" "start start";
-    gap: 5vh 4vw;
+    grid-template-areas: "title title title" "reps period lead" "start start start";
+    gap: 5vh 3vw;
     padding: 5vh 5vw;
   }
   .title span { font-size: min(75cqh, 13cqw); }
