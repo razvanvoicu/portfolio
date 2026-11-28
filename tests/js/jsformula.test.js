@@ -12,7 +12,7 @@ function show(state) {
   if (state.type === "f_var") return state.fields.NAME;
   if (state.type === "f_param") return `@${state.fields.NAME}`;
   if (state.type === "f_bool") return state.fields.V;
-  if (state.type === "f_str") return state.fields.TEXT;
+  if (state.type === "f_str") return JSON.stringify(state.fields.TEXT);
   if (state.type === "f_const") return state.fields.C;
   if (state.type === "f_lambda") return `f_lambda(${state.fields.PARAMS} => ${show(state.inputs.BODY.block)})`;
   const inputs = Object.values(state.inputs || {}).map((input) => show(input.block));
@@ -195,4 +195,11 @@ test("errors point at the right character", () => {
 test("a trailing semicolon and surrounding whitespace are fine", () => {
   assert.equal(shape("  x + 1 ;  "), "f_add(x, 1)");
   assert.equal(shape("x + 1;"), "f_add(x, 1)");
+});
+
+test("string blocks store unquoted text in their editable TEXT field", () => {
+  assert.equal(JsFormula.compile('"hello"').state.fields.TEXT, "hello");
+  assert.equal(JsFormula.compile('""').state.fields.TEXT, "");
+  assert.equal(JsFormula.compile('"\\2:\\1"').state.fields.TEXT, "\\2:\\1");
+  assert.equal(JsFormula.compile('"say \\"hi\\""').state.fields.TEXT, 'say "hi"');
 });

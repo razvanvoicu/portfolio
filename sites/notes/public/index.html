@@ -28,6 +28,32 @@
       <div class="nav-backdrop" id="nav-backdrop" hidden></div>
       <nav class="book-nav" id="book-nav" aria-label="Table of contents">
         <p class="nav-heading" id="nav-heading">Table of contents</p>
+        <div class="book" id="book-a-point-and-click-calculator">
+          <button class="book-toggle" id="book-toggle-a-point-and-click-calculator" type="button" aria-expanded="true" aria-controls="chapters-a-point-and-click-calculator">
+            <span class="book-title" id="book-title-a-point-and-click-calculator">A Point-And-Click Calculator</span><span class="chevron" aria-hidden="true"></span>
+          </button>
+          <div class="chapter-list" id="chapters-a-point-and-click-calculator">
+            <a
+              class="chapter-link is-active"
+              id="link-formula-builder"
+              href="#formula-builder"
+              aria-current="page">
+                Point-and-Click Basic Algebra
+            </a>
+            <a
+              class="chapter-link"
+              id="link-formula-strings-dates"
+              href="#formula-strings-dates">
+                Strings, Dates, and Type Checking
+            </a>
+            <a
+              class="chapter-link"
+              id="link-formula-lambda-mu"
+              href="#formula-lambda-mu">
+                Recursion with λ and μ
+            </a>
+          </div>
+        </div>
         <div class="book" id="book-a-lean-architecture">
           <button class="book-toggle" id="book-toggle-a-lean-architecture" type="button" aria-expanded="false" aria-controls="chapters-a-lean-architecture">
             <span class="book-title" id="book-title-a-lean-architecture">A Lean Architecture</span><span class="chevron" aria-hidden="true"></span>
@@ -67,15 +93,14 @@
           </div>
         </div>
         <div class="book" id="book-a-universal-calorie-burn-counter">
-          <button class="book-toggle" id="book-toggle-a-universal-calorie-burn-counter" type="button" aria-expanded="true" aria-controls="chapters-a-universal-calorie-burn-counter">
+          <button class="book-toggle" id="book-toggle-a-universal-calorie-burn-counter" type="button" aria-expanded="false" aria-controls="chapters-a-universal-calorie-burn-counter">
             <span class="book-title" id="book-title-a-universal-calorie-burn-counter">A Universal Calorie Burn Counter</span><span class="chevron" aria-hidden="true"></span>
           </button>
-          <div class="chapter-list" id="chapters-a-universal-calorie-burn-counter">
+          <div class="chapter-list" id="chapters-a-universal-calorie-burn-counter" hidden>
             <a
-              class="chapter-link is-active"
+              class="chapter-link"
               id="link-ai-in-the-browser"
-              href="#ai-in-the-browser"
-              aria-current="page">
+              href="#ai-in-the-browser">
                 AI in the Browser
             </a>
             <a
@@ -142,12 +167,6 @@
             </a>
             <a
               class="chapter-link"
-              id="link-formula-builder"
-              href="#formula-builder">
-                Point-and-Click Basic Algebra 
-            </a>
-            <a
-              class="chapter-link"
               id="link-speed-limit-warning"
               href="#speed-limit-warning">
                 A Speed Limit Warning App for Singapore
@@ -162,13 +181,13 @@
           <img src="/pigasus.svg" alt="" />
         </button>
         <span class="pigasus-hint" id="pigasus-hint" role="tooltip">
-          What can I say... I'm a Steinbeck fan.
+          And now that you don't have to be perfect, you can be good.
         </span>
         <figcaption class="pigasus-caption"><span>Ad astra per alia porci...</span></figcaption>
       </figure>
 
       <main class="reading-pane" id="reading-pane">
-        <article class="chapter" id="article-ai-in-the-browser" data-chapter="ai-in-the-browser">
+        <article class="chapter" id="article-ai-in-the-browser" data-chapter="ai-in-the-browser" hidden>
           <div class="chapter-heading" id="heading-ai-in-the-browser">
             <span class="chapter-book-title" id="chapter-book-ai-in-the-browser">A Universal Calorie Burn Counter</span>
             <span class="chapter-date" id="date-ai-in-the-browser">October 14<sup>th</sup>, 2026</span>
@@ -3084,9 +3103,9 @@
               </section>
           </div>
         </article>
-        <article class="chapter" id="article-formula-builder" data-chapter="formula-builder" hidden>
+        <article class="chapter" id="article-formula-builder" data-chapter="formula-builder">
           <div class="chapter-heading" id="heading-formula-builder">
-            <span class="chapter-book-title" id="chapter-book-formula-builder">Freebies</span>
+            <span class="chapter-book-title" id="chapter-book-formula-builder">A Point-And-Click Calculator</span>
             <span class="chapter-date" id="date-formula-builder">October 10<sup>th</sup>, 2026</span>
           </div>
           <div class="chapter-content" id="content-formula-builder">
@@ -3221,6 +3240,260 @@
               nothing to sign up for, and everything happens on your device. If you find a
               curve you like, or something breaks, find me on
               <a class="reference external" href="https://www.linkedin.com/in/razvan-voicu-89061711/">LinkedIn</a>.</p>
+              </section>
+              </section>
+          </div>
+        </article>
+        <article class="chapter" id="article-formula-strings-dates" data-chapter="formula-strings-dates" hidden>
+          <div class="chapter-heading" id="heading-formula-strings-dates">
+            <span class="chapter-book-title" id="chapter-book-formula-strings-dates">A Point-And-Click Calculator</span>
+            <span class="chapter-date" id="date-formula-strings-dates">November 29<sup>th</sup>, 2026</span>
+          </div>
+          <div class="chapter-content" id="content-formula-strings-dates">
+            <!-- ||formula-strings-dates.rst|| -->
+              <section id="strings-dates-and-type-checking">
+              <h2>Strings, Dates, and Type Checking</h2>
+              <p>A calculator that only knows numbers is fine for plotting sine waves, but real
+              scratchpad questions rarely stay numeric for long. How many days until a
+              deadline? What timestamp is 36 hours after a release window? How do you pull an
+              order number out of a log line or reformat a date string?</p>
+              <p>The Formula Builder now speaks <strong>strings</strong>, <strong>UTC dates</strong>, and <strong>durations</strong>,
+              backed by a Hindley-Milner type checker and an expression-aware variable editor.</p>
+              <section id="strings-and-regular-expressions">
+              <h3>Strings and regular expressions</h3>
+              <p>The <strong>Strings</strong> tab starts with a string constant block whose double quotes sit
+              outside the editable text box, so you type the raw text directly without
+              fighting quote marks. Next to it are the usual text primitives:</p>
+              <ul class="simple">
+              <li><p><span class="docutils literal">length(s)</span>, <span class="docutils literal">trim(s)</span>, <span class="docutils literal">capitalize(s)</span>, <span class="docutils literal">toUpper(s)</span>, <span class="docutils literal">toLower(s)</span></p></li>
+              <li><p><span class="docutils literal">substring(s, offset, len)</span>, <span class="docutils literal">append(a, b)</span>, <span class="docutils literal">times(s, count)</span></p></li>
+              <li><p><span class="docutils literal">toString(x)</span> and <span class="docutils literal">toNumber(s)</span> for converting across types</p></li>
+              <li><p><span class="docutils literal">find(s, regexp)</span> returning the zero-based index of the first match, or
+              <span class="docutils literal"><span class="pre">-1</span></span> if nothing matches</p></li>
+              <li><p><span class="docutils literal">replace(s, regexp, replacement)</span> and the four-argument
+              <span class="docutils literal">replace(s, regexp, replacement, flags)</span></p></li>
+              </ul>
+              <p>A few quick examples you can paste straight into the <strong>Import</strong> dialog:</p>
+              <pre class="literal-block">capitalize(trim(&quot;  hello world  &quot;))
+// =&gt; &quot;Hello world&quot;
+
+append(times(&quot;ha&quot;, 3), &quot;!&quot;)
+// =&gt; &quot;hahaha!&quot;
+
+find(&quot;Order #4821 shipped&quot;, &quot;[0-9]+&quot;)
+// =&gt; 7
+
+substring(&quot;Order #4821 shipped&quot;, 7, 4)
+// =&gt; &quot;4821&quot;</pre>
+              <p><span class="docutils literal">replace</span> supports backreferences in the replacement string: <span class="docutils literal">\1</span>
+              through <span class="docutils literal">\9</span> expand to capture groups, and <span class="docutils literal">&amp;</span> expands to the entire match.
+              An optional fourth argument supplies regex flags such as <span class="docutils literal">&quot;g&quot;</span> (global) or
+              <span class="docutils literal">&quot;gi&quot;</span> (global, case-insensitive):</p>
+              <pre class="literal-block">replace(&quot;2026-11-29&quot;, &quot;([0-9]{4})-([0-9]{2})-([0-9]{2})&quot;, &quot;\3/\2/\1&quot;)
+// =&gt; &quot;29/11/2026&quot;
+
+replace(&quot;a=12, b=345&quot;, &quot;[0-9]+&quot;, &quot;[&amp;]&quot;, &quot;g&quot;)
+// =&gt; &quot;a=[12], b=[345]&quot;
+
+replace(&quot;Hello hello HELLO&quot;, &quot;hello&quot;, &quot;hi&quot;, &quot;gi&quot;)
+// =&gt; &quot;hi hi hi&quot;</pre>
+              </section>
+              <section id="dates-and-durations">
+              <h3>Dates and durations</h3>
+              <p>The <strong>Dates</strong> tab keeps dates and durations as distinct types, all anchored in
+              UTC so results do not shift depending on which browser timezone opens them.</p>
+              <p>Dates are built with <span class="docutils literal"><span class="pre">from(...)</span></span>, <span class="docutils literal">dateOf(y, m, d)</span>,
+              <span class="docutils literal">dateTimeOf(y, m, d, h, min, s)</span>, or <span class="docutils literal">now()</span>. <span class="docutils literal">from</span> accepts ISO-8601
+              strings, common human-readable date formats, or an integer millisecond epoch
+              (as either a number or a digit string). Invalid calendar dates such as
+              <span class="docutils literal"><span class="pre">from(&quot;2026-02-30&quot;)</span></span> are rejected outright rather than silently rolling over
+              into March:</p>
+              <pre class="literal-block">formatDate(from(&quot;2026-11-29&quot;))
+// =&gt; &quot;2026-11-29T00:00:00.000Z&quot;
+
+formatDate(from(&quot;Nov 29, 2026&quot;))
+// =&gt; &quot;2026-11-29T00:00:00.000Z&quot;
+
+formatDate(from(0))
+// =&gt; &quot;1970-01-01T00:00:00.000Z&quot;</pre>
+              <p>Subtracting two dates with <span class="docutils literal">dateDiff(a, b)</span> produces a (possibly negative)
+              duration, and adding or subtracting a duration with <span class="docutils literal">dateAdd(d, dur)</span> or
+              <span class="docutils literal">dateSub(d, dur)</span> yields another date. Durations can be constructed with
+              <span class="docutils literal">days</span>, <span class="docutils literal">hours</span>, <span class="docutils literal">minutes</span>, <span class="docutils literal">seconds</span>, <span class="docutils literal">millis</span>,
+              <span class="docutils literal">duration(d, h, m, s, ms)</span>, or <span class="docutils literal">parseDuration(s)</span>, combined with
+              <span class="docutils literal">durAdd</span> / <span class="docutils literal">durSub</span> / <span class="docutils literal">durScale</span> / <span class="docutils literal">durDiv</span> / <span class="docutils literal">durAbs</span>,
+              and converted to numbers with <span class="docutils literal">toDays</span> through <span class="docutils literal">toMillis</span>:</p>
+              <pre class="literal-block">formatDuration(dateDiff(from(&quot;2026-12-25&quot;), from(&quot;2026-11-29&quot;)))
+// =&gt; &quot;26:00:00:00:000&quot;
+
+formatDuration(dateDiff(from(&quot;2026-11-29&quot;), from(&quot;2026-12-25&quot;)))
+// =&gt; &quot;-26:00:00:00:000&quot;
+
+formatDate(dateAdd(from(&quot;2026-11-29T09:30:00Z&quot;), duration(2, 5, 45, 0, 0)))
+// =&gt; &quot;2026-12-01T15:15:00.000Z&quot;
+
+durDiv(days(7), hours(8))
+// =&gt; 21
+
+formatDuration(durScale(minutes(45), 4))
+// =&gt; &quot;0:03:00:00:000&quot;</pre>
+              <p>When displayed without an explicit format, dates print as ISO-8601 strings and
+              durations print in colon-separated <span class="docutils literal">d:hh:mm:ss:SSS</span> form. Both
+              <span class="docutils literal">formatDate</span> and <span class="docutils literal">formatDuration</span> also accept a Unicode token pattern (with
+              literal text wrapped in single quotes <span class="docutils literal"><span class="pre">'...'</span></span>):</p>
+              <pre class="literal-block">formatDate(dateAdd(from(&quot;2026-11-29T09:30:00Z&quot;), hours(36)), &quot;yyyy-MM-dd HH:mm&quot;)
+// =&gt; &quot;2026-11-30 21:30&quot;
+
+formatDate(from(&quot;2026-11-29&quot;), &quot;cccc, LLLL d, yyyy&quot;)
+// =&gt; &quot;Sunday, November 29, 2026&quot;
+
+formatDuration(
+  dateDiff(from(&quot;2026-12-25T12:00:00Z&quot;), from(&quot;2026-11-29T09:30:00Z&quot;)),
+  &quot;d'd' hh'h' mm'm'&quot;
+)
+// =&gt; &quot;26d 02h 30m&quot;</pre>
+              <p>Individual components can be pulled out directly with <span class="docutils literal">year</span>, <span class="docutils literal">month</span>,
+              <span class="docutils literal">day</span>, <span class="docutils literal">weekday</span>, <span class="docutils literal">hour</span>, <span class="docutils literal">minute</span>, <span class="docutils literal">second</span>, <span class="docutils literal">millisecond</span>, and
+              <span class="docutils literal">toEpoch</span>. Dates and durations also support value equality (<span class="docutils literal">===</span>, <span class="docutils literal">!==</span>)
+              and ordering (<span class="docutils literal">&lt;</span>, <span class="docutils literal">&lt;=</span>, <span class="docutils literal">&gt;</span>, <span class="docutils literal">&gt;=</span>).</p>
+              </section>
+              <section id="variables-as-expressions-and-strict-type-checking">
+              <h3>Variables as expressions and strict type checking</h3>
+              <p>Variables are no longer restricted to bare numbers. Any variable can hold a full
+              expression — a parsed date like <span class="docutils literal"><span class="pre">from(&quot;2026-12-31T23:59:59Z&quot;)</span></span>, a string, a
+              duration, or even a function — and every variable row has an edit button (<span class="docutils literal">✎</span>)
+              that opens the block workspace for that variable. To keep dependency tracking
+              simple, variable definitions cannot reference other variables.</p>
+              <p>Behind the scenes, every formula and variable is checked by a Hindley-Milner
+              type inference engine before it runs. Arithmetic operators require numbers,
+              comparisons require matching orderable types, both branches of <span class="docutils literal">if/else</span> must
+              agree on a type, and function calls check both arity and argument types. Trying
+              to evaluate <span class="docutils literal">&quot;hello&quot; + 1</span> or <span class="docutils literal"><span class="pre">from(&quot;2026-11-29&quot;)</span> + days(1)</span> reports the
+              exact mismatch instead of falling back to JavaScript coercion.</p>
+              <p>The graph button respects those inferred types too: it stays enabled only when
+              the formula represents a <span class="docutils literal">number → number</span> mapping, and disables itself for
+              strings, dates, booleans, or multi-argument functions.</p>
+              <p>Try any of the expressions above at <a class="reference external" href="https://formulas.raz.sg">formulas.raz.sg</a>
+              by opening <strong>Import</strong> and pasting them in.</p>
+              </section>
+              </section>
+          </div>
+        </article>
+        <article class="chapter" id="article-formula-lambda-mu" data-chapter="formula-lambda-mu" hidden>
+          <div class="chapter-heading" id="heading-formula-lambda-mu">
+            <span class="chapter-book-title" id="chapter-book-formula-lambda-mu">A Point-And-Click Calculator</span>
+            <span class="chapter-date" id="date-formula-lambda-mu">November 29<sup>th</sup>, 2026</span>
+          </div>
+          <div class="chapter-content" id="content-formula-lambda-mu">
+            <!-- ||formula-lambda-mu.rst|| -->
+              <section id="recursion-with-and">
+              <h2>Recursion with λ and μ</h2>
+              <p>Once a calculator has conditional expressions, anonymous functions, and a
+              fixed-point operator, it stops being just an expression evaluator and becomes a
+              small functional programming language — without adding loops, mutable state, or
+              statements.</p>
+              <p>The <strong>λ/μ</strong> tab adds four building blocks to the Formula Builder:</p>
+              <ul class="simple">
+              <li><p><span class="docutils literal">lambda(x, body)</span> (or <span class="docutils literal">lambda(a, b, body)</span> for multiple parameters) builds
+              an anonymous function.</p></li>
+              <li><p><span class="docutils literal">mu(fn)</span> computes the fixed point of a function whose first parameter is a
+              reference to itself, enabling recursion.</p></li>
+              <li><p><span class="docutils literal">param</span> refers to a bound lambda parameter (kept distinct from global
+              variables).</p></li>
+              <li><p><span class="docutils literal">f(x)</span>, <span class="docutils literal">f(x, y)</span>, and <span class="docutils literal">f(x, y, z)</span> apply a function value to arguments.</p></li>
+              </ul>
+              <p>Because lambdas and <span class="docutils literal">mu</span> are first-class values, they work identically over
+              numbers, booleans, strings, and dates, and they can be stored in variables via
+              either the text box or the graphic block editor.</p>
+              <section id="factorial-with-and">
+              <h3>Factorial with μ and λ</h3>
+              <p>Start with the textbook recursive function:</p>
+              <pre class="code javascript literal-block"><code><span class="name other">mu</span><span class="punctuation">(</span><span class="name other">lambda</span><span class="punctuation">(</span><span class="name other">f</span><span class="punctuation">,</span><span class="whitespace"> </span><span class="name other">x</span><span class="punctuation">,</span><span class="whitespace"> </span><span class="name other">x</span><span class="whitespace"> </span><span class="operator">&lt;=</span><span class="whitespace"> </span><span class="literal number float">0</span><span class="whitespace"> </span><span class="operator">?</span><span class="whitespace"> </span><span class="literal number float">1</span><span class="whitespace"> </span><span class="operator">:</span><span class="whitespace"> </span><span class="name other">x</span><span class="whitespace"> </span><span class="operator">*</span><span class="whitespace"> </span><span class="name other">f</span><span class="punctuation">(</span><span class="name other">x</span><span class="whitespace"> </span><span class="operator">-</span><span class="whitespace"> </span><span class="literal number float">1</span><span class="punctuation">)))</span></code></pre>
+              <p>Read it from the inside out:</p>
+              <ol class="arabic simple">
+              <li><p><span class="docutils literal">lambda(f, x, <span class="pre">...)</span></span> defines a two-argument function that takes <em>the
+              recursive function itself</em> as <span class="docutils literal">f</span> and the input number as <span class="docutils literal">x</span>.</p></li>
+              <li><p>When <span class="docutils literal">x &lt;= 0</span>, it returns the base case <span class="docutils literal">1</span>; otherwise it multiplies
+              <span class="docutils literal">x</span> by <span class="docutils literal">f(x - 1)</span>.</p></li>
+              <li><p>Wrapping that lambda in <span class="docutils literal"><span class="pre">mu(...)</span></span> ties the knot: <span class="docutils literal">mu</span> hands back a
+              one-argument function of type <span class="docutils literal">number → number</span> where every call to <span class="docutils literal">f</span>
+              re-enters the same function.</p></li>
+              </ol>
+              <p>You can invoke it directly:</p>
+              <pre class="literal-block">(mu(lambda(f, x, x &lt;= 0 ? 1 : x * f(x - 1))))(6)
+// =&gt; 720</pre>
+              <p>Or store <span class="docutils literal">mu(lambda(f, x, x &lt;= 0 ? 1 : x * f(x - <span class="pre">1)))</span></span> in a variable named
+              <span class="docutils literal">fact</span> and call <span class="docutils literal">fact(10)</span> (<span class="docutils literal">3628800</span>) in the main formula. Because the
+              inferred type of <span class="docutils literal">fact</span> is <span class="docutils literal">number → number</span>, the <strong>Graph</strong> button stays
+              active if you want to plot <span class="docutils literal">fact(x)</span> over small values of <span class="docutils literal">x</span>. (A recursion
+              depth guard stops runaway recursion cleanly if a base case is missed.)</p>
+              </section>
+              <section id="testing-primality-with-a-recursive-helper">
+              <h3>Testing primality with a recursive helper</h3>
+              <p>You can nest <span class="docutils literal">mu</span> inside an outer <span class="docutils literal">lambda</span> to hide internal loop state. A
+              trial-division primality test checks the edge cases up front (anything less than
+              2, non-integers, 2, and even numbers), then hands off to a recursive helper that
+              walks odd divisors <span class="docutils literal">3, 5, 7, ...</span> until <span class="docutils literal">d * d &gt; n</span>:</p>
+              <pre class="code javascript literal-block"><code><span class="name other">lambda</span><span class="punctuation">(</span><span class="name other">n</span><span class="punctuation">,</span><span class="whitespace">
+  </span><span class="name other">n</span><span class="whitespace"> </span><span class="operator">&lt;</span><span class="whitespace"> </span><span class="literal number float">2</span><span class="whitespace"> </span><span class="operator">||</span><span class="whitespace"> </span><span class="name other">n</span><span class="whitespace"> </span><span class="operator">!==</span><span class="whitespace"> </span><span class="name other">floor</span><span class="punctuation">(</span><span class="name other">n</span><span class="punctuation">)</span><span class="whitespace"> </span><span class="operator">?</span><span class="whitespace"> </span><span class="keyword constant">false</span><span class="whitespace"> </span><span class="operator">:</span><span class="whitespace">
+  </span><span class="name other">n</span><span class="whitespace"> </span><span class="operator">===</span><span class="whitespace"> </span><span class="literal number float">2</span><span class="whitespace"> </span><span class="operator">?</span><span class="whitespace"> </span><span class="keyword constant">true</span><span class="whitespace"> </span><span class="operator">:</span><span class="whitespace">
+  </span><span class="name other">n</span><span class="whitespace"> </span><span class="operator">%</span><span class="whitespace"> </span><span class="literal number float">2</span><span class="whitespace"> </span><span class="operator">===</span><span class="whitespace"> </span><span class="literal number float">0</span><span class="whitespace"> </span><span class="operator">?</span><span class="whitespace"> </span><span class="keyword constant">false</span><span class="whitespace"> </span><span class="operator">:</span><span class="whitespace">
+  </span><span class="name other">mu</span><span class="punctuation">(</span><span class="name other">lambda</span><span class="punctuation">(</span><span class="name other">check</span><span class="punctuation">,</span><span class="whitespace"> </span><span class="name other">d</span><span class="punctuation">,</span><span class="whitespace">
+    </span><span class="name other">d</span><span class="whitespace"> </span><span class="operator">*</span><span class="whitespace"> </span><span class="name other">d</span><span class="whitespace"> </span><span class="operator">&gt;</span><span class="whitespace"> </span><span class="name other">n</span><span class="whitespace"> </span><span class="operator">?</span><span class="whitespace"> </span><span class="keyword constant">true</span><span class="whitespace"> </span><span class="operator">:</span><span class="whitespace">
+    </span><span class="name other">n</span><span class="whitespace"> </span><span class="operator">%</span><span class="whitespace"> </span><span class="name other">d</span><span class="whitespace"> </span><span class="operator">===</span><span class="whitespace"> </span><span class="literal number float">0</span><span class="whitespace"> </span><span class="operator">?</span><span class="whitespace"> </span><span class="keyword constant">false</span><span class="whitespace"> </span><span class="operator">:</span><span class="whitespace">
+    </span><span class="name other">check</span><span class="punctuation">(</span><span class="name other">d</span><span class="whitespace"> </span><span class="operator">+</span><span class="whitespace"> </span><span class="literal number float">2</span><span class="punctuation">)</span><span class="whitespace">
+  </span><span class="punctuation">))(</span><span class="literal number float">3</span><span class="punctuation">)</span><span class="whitespace">
+</span><span class="punctuation">)</span></code></pre>
+              <p>Store that expression in a variable <span class="docutils literal">isPrime</span>. The type checker infers
+              <span class="docutils literal">number → boolean</span> (and automatically disables the Graph button, since the
+              result is a boolean rather than a number). Calling <span class="docutils literal">isPrime(N)</span> gives:</p>
+              <pre class="literal-block">isPrime(1)   // =&gt; false
+isPrime(2)   // =&gt; true
+isPrime(97)  // =&gt; true
+isPrime(99)  // =&gt; false
+isPrime(997) // =&gt; true</pre>
+              </section>
+              <section id="counting-change-in-singapore-coins-using-a-string-as-an-array">
+              <h3>Counting change in Singapore coins (using a string as an array)</h3>
+              <p>The Formula Builder deliberately has no list or array type — only numbers,
+              booleans, strings, dates, durations, and functions. Yet strings plus <span class="docutils literal">find</span>,
+              <span class="docutils literal">substring</span>, <span class="docutils literal">length</span>, and <span class="docutils literal">toNumber</span> are all you need to represent a
+              list of numbers as a comma-separated string such as <span class="docutils literal">&quot;50,20,10,5&quot;</span> (the four
+              circulating Singapore coin denominations in cents: 50¢, 20¢, 10¢, and 5¢).</p>
+              <p>Given a non-empty string <span class="docutils literal">coins</span>:</p>
+              <ul class="simple">
+              <li><p>Find the first separator with <span class="docutils literal">comma = find(coins, <span class="pre">&quot;,&quot;)</span></span>.</p></li>
+              <li><p>The <strong>head</strong> coin is <span class="docutils literal">toNumber(comma === <span class="pre">-1</span> ? coins : substring(coins, 0, comma))</span>.</p></li>
+              <li><p>The <strong>tail</strong> of remaining coins is
+              <span class="docutils literal">comma === <span class="pre">-1</span> ? &quot;&quot; : substring(coins, comma + 1, length(coins) - comma - 1)</span>.</p></li>
+              </ul>
+              <p>To avoid computing <span class="docutils literal">find(coins, <span class="pre">&quot;,&quot;)</span></span> four times per step, we bind it once
+              with an immediately invoked <span class="docutils literal">lambda(comma, <span class="pre">...)(find(coins,</span> <span class="pre">&quot;,&quot;))</span></span> — the
+              standard lambda-calculus encoding of a <span class="docutils literal">let</span> binding.</p>
+              <p>That gives the classic recursive Count Change recurrence — the number of ways to
+              make <span class="docutils literal">amount</span> using <span class="docutils literal">coins</span> equals the ways that use at least one of the
+              first coin plus the ways that skip the first coin altogether:</p>
+              <pre class="code javascript literal-block"><code><span class="name other">mu</span><span class="punctuation">(</span><span class="name other">lambda</span><span class="punctuation">(</span><span class="name other">cc</span><span class="punctuation">,</span><span class="whitespace"> </span><span class="name other">amount</span><span class="punctuation">,</span><span class="whitespace"> </span><span class="name other">coins</span><span class="punctuation">,</span><span class="whitespace">
+  </span><span class="name other">amount</span><span class="whitespace"> </span><span class="operator">===</span><span class="whitespace"> </span><span class="literal number float">0</span><span class="whitespace"> </span><span class="operator">?</span><span class="whitespace"> </span><span class="literal number float">1</span><span class="whitespace"> </span><span class="operator">:</span><span class="whitespace">
+  </span><span class="name other">amount</span><span class="whitespace"> </span><span class="operator">&lt;</span><span class="whitespace"> </span><span class="literal number float">0</span><span class="whitespace"> </span><span class="operator">||</span><span class="whitespace"> </span><span class="name other">length</span><span class="punctuation">(</span><span class="name other">coins</span><span class="punctuation">)</span><span class="whitespace"> </span><span class="operator">===</span><span class="whitespace"> </span><span class="literal number float">0</span><span class="whitespace"> </span><span class="operator">?</span><span class="whitespace"> </span><span class="literal number float">0</span><span class="whitespace"> </span><span class="operator">:</span><span class="whitespace">
+  </span><span class="name other">lambda</span><span class="punctuation">(</span><span class="name other">comma</span><span class="punctuation">,</span><span class="whitespace">
+    </span><span class="name other">cc</span><span class="punctuation">(</span><span class="name other">amount</span><span class="whitespace"> </span><span class="operator">-</span><span class="whitespace"> </span><span class="name other">toNumber</span><span class="punctuation">(</span><span class="name other">comma</span><span class="whitespace"> </span><span class="operator">===</span><span class="whitespace"> </span><span class="operator">-</span><span class="literal number float">1</span><span class="whitespace"> </span><span class="operator">?</span><span class="whitespace"> </span><span class="name other">coins</span><span class="whitespace"> </span><span class="operator">:</span><span class="whitespace"> </span><span class="name other">substring</span><span class="punctuation">(</span><span class="name other">coins</span><span class="punctuation">,</span><span class="whitespace"> </span><span class="literal number float">0</span><span class="punctuation">,</span><span class="whitespace"> </span><span class="name other">comma</span><span class="punctuation">)),</span><span class="whitespace"> </span><span class="name other">coins</span><span class="punctuation">)</span><span class="whitespace">
+    </span><span class="operator">+</span><span class="whitespace"> </span><span class="name other">cc</span><span class="punctuation">(</span><span class="name other">amount</span><span class="punctuation">,</span><span class="whitespace"> </span><span class="name other">comma</span><span class="whitespace"> </span><span class="operator">===</span><span class="whitespace"> </span><span class="operator">-</span><span class="literal number float">1</span><span class="whitespace"> </span><span class="operator">?</span><span class="whitespace"> </span><span class="literal string double">&quot;&quot;</span><span class="whitespace"> </span><span class="operator">:</span><span class="whitespace"> </span><span class="name other">substring</span><span class="punctuation">(</span><span class="name other">coins</span><span class="punctuation">,</span><span class="whitespace"> </span><span class="name other">comma</span><span class="whitespace"> </span><span class="operator">+</span><span class="whitespace"> </span><span class="literal number float">1</span><span class="punctuation">,</span><span class="whitespace"> </span><span class="name other">length</span><span class="punctuation">(</span><span class="name other">coins</span><span class="punctuation">)</span><span class="whitespace"> </span><span class="operator">-</span><span class="whitespace"> </span><span class="name other">comma</span><span class="whitespace"> </span><span class="operator">-</span><span class="whitespace"> </span><span class="literal number float">1</span><span class="punctuation">))</span><span class="whitespace">
+  </span><span class="punctuation">)(</span><span class="name other">find</span><span class="punctuation">(</span><span class="name other">coins</span><span class="punctuation">,</span><span class="whitespace"> </span><span class="literal string double">&quot;,&quot;</span><span class="punctuation">))</span><span class="whitespace">
+</span><span class="punctuation">))</span></code></pre>
+              <p>The type checker infers <span class="docutils literal">(number, string) → number</span>. Save it in a variable
+              <span class="docutils literal">cc</span> and evaluate it on Singapore's <span class="docutils literal">&quot;50,20,10,5&quot;</span> denominations:</p>
+              <pre class="literal-block">cc(10, &quot;50,20,10,5&quot;)  // =&gt; 2   (10; 5+5)
+cc(20, &quot;50,20,10,5&quot;)  // =&gt; 4   (20; 10+10; 10+5+5; 5+5+5+5)
+cc(50, &quot;50,20,10,5&quot;)  // =&gt; 13
+cc(100, &quot;50,20,10,5&quot;) // =&gt; 49  ways to make $1.00
+cc(200, &quot;50,20,10,5&quot;) // =&gt; 242 ways to make $2.00</pre>
+              <p>Because the denominations live in a plain string, changing the coin set is a
+              single edit to the argument — no new syntax, no array type, just strings and
+              recursion.</p>
+              <p>Try pasting any of these into <strong>Import</strong> at
+              <a class="reference external" href="https://formulas.raz.sg">formulas.raz.sg</a> to watch them expand into blocks
+              and evaluate live.</p>
               </section>
               </section>
           </div>

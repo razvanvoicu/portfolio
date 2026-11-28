@@ -29,3 +29,19 @@ def test_insert_only_changes_matching_marker() -> None:
 
     assert count == 0
     assert updated == html
+
+
+def test_insert_preserves_pre_indentation_and_replaces_idempotently() -> None:
+    html = """<div>
+  <!-- ||code.rst|| -->
+</div>
+"""
+    fragment = '<pre class="literal-block">line1\n  line2\nline3</pre>\n<p>after</p>'
+
+    first, count1 = insert_fragment(html, "code.rst", fragment)
+    assert count1 == 1
+    assert '    <pre class="literal-block">line1\n  line2\nline3</pre>\n    <p>after</p>' in first
+
+    second, count2 = insert_fragment(first, "code.rst", fragment)
+    assert count2 == 1
+    assert second == first

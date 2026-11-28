@@ -28,6 +28,32 @@
       <div class="nav-backdrop" id="nav-backdrop" hidden></div>
       <nav class="book-nav" id="book-nav" aria-label="Table of contents">
         <p class="nav-heading" id="nav-heading">Table of contents</p>
+        <div class="book" id="book-a-point-and-click-calculator">
+          <button class="book-toggle" id="book-toggle-a-point-and-click-calculator" type="button" aria-expanded="true" aria-controls="chapters-a-point-and-click-calculator">
+            <span class="book-title" id="book-title-a-point-and-click-calculator">A Point-And-Click Calculator</span><span class="chevron" aria-hidden="true"></span>
+          </button>
+          <div class="chapter-list" id="chapters-a-point-and-click-calculator">
+            <a
+              class="chapter-link is-active"
+              id="link-formula-builder"
+              href="#formula-builder"
+              aria-current="page">
+                Point-and-Click Basic Algebra
+            </a>
+            <a
+              class="chapter-link"
+              id="link-formula-strings-dates"
+              href="#formula-strings-dates">
+                Strings, Dates, and Type Checking
+            </a>
+            <a
+              class="chapter-link"
+              id="link-formula-lambda-mu"
+              href="#formula-lambda-mu">
+                Recursion with λ and μ
+            </a>
+          </div>
+        </div>
         <div class="book" id="book-a-lean-architecture">
           <button class="book-toggle" id="book-toggle-a-lean-architecture" type="button" aria-expanded="false" aria-controls="chapters-a-lean-architecture">
             <span class="book-title" id="book-title-a-lean-architecture">A Lean Architecture</span><span class="chevron" aria-hidden="true"></span>
@@ -67,15 +93,14 @@
           </div>
         </div>
         <div class="book" id="book-a-universal-calorie-burn-counter">
-          <button class="book-toggle" id="book-toggle-a-universal-calorie-burn-counter" type="button" aria-expanded="true" aria-controls="chapters-a-universal-calorie-burn-counter">
+          <button class="book-toggle" id="book-toggle-a-universal-calorie-burn-counter" type="button" aria-expanded="false" aria-controls="chapters-a-universal-calorie-burn-counter">
             <span class="book-title" id="book-title-a-universal-calorie-burn-counter">A Universal Calorie Burn Counter</span><span class="chevron" aria-hidden="true"></span>
           </button>
-          <div class="chapter-list" id="chapters-a-universal-calorie-burn-counter">
+          <div class="chapter-list" id="chapters-a-universal-calorie-burn-counter" hidden>
             <a
-              class="chapter-link is-active"
+              class="chapter-link"
               id="link-ai-in-the-browser"
-              href="#ai-in-the-browser"
-              aria-current="page">
+              href="#ai-in-the-browser">
                 AI in the Browser
             </a>
             <a
@@ -142,12 +167,6 @@
             </a>
             <a
               class="chapter-link"
-              id="link-formula-builder"
-              href="#formula-builder">
-                Point-and-Click Basic Algebra 
-            </a>
-            <a
-              class="chapter-link"
               id="link-speed-limit-warning"
               href="#speed-limit-warning">
                 A Speed Limit Warning App for Singapore
@@ -162,13 +181,13 @@
           <img src="/pigasus.svg" alt="" />
         </button>
         <span class="pigasus-hint" id="pigasus-hint" role="tooltip">
-          What can I say... I'm a Steinbeck fan.
+          And now that you don't have to be perfect, you can be good.
         </span>
         <figcaption class="pigasus-caption"><span>Ad astra per alia porci...</span></figcaption>
       </figure>
 
       <main class="reading-pane" id="reading-pane">
-        <article class="chapter" id="article-ai-in-the-browser" data-chapter="ai-in-the-browser">
+        <article class="chapter" id="article-ai-in-the-browser" data-chapter="ai-in-the-browser" hidden>
           <div class="chapter-heading" id="heading-ai-in-the-browser">
             <span class="chapter-book-title" id="chapter-book-ai-in-the-browser">A Universal Calorie Burn Counter</span>
             <span class="chapter-date" id="date-ai-in-the-browser">October 14<sup>th</sup>, 2026</span>
@@ -267,13 +286,31 @@
             <!-- ||free-qr-gen.rst|| -->
           </div>
         </article>
-        <article class="chapter" id="article-formula-builder" data-chapter="formula-builder" hidden>
+        <article class="chapter" id="article-formula-builder" data-chapter="formula-builder">
           <div class="chapter-heading" id="heading-formula-builder">
-            <span class="chapter-book-title" id="chapter-book-formula-builder">Freebies</span>
+            <span class="chapter-book-title" id="chapter-book-formula-builder">A Point-And-Click Calculator</span>
             <span class="chapter-date" id="date-formula-builder">October 10<sup>th</sup>, 2026</span>
           </div>
           <div class="chapter-content" id="content-formula-builder">
             <!-- ||formula-builder.rst|| -->
+          </div>
+        </article>
+        <article class="chapter" id="article-formula-strings-dates" data-chapter="formula-strings-dates" hidden>
+          <div class="chapter-heading" id="heading-formula-strings-dates">
+            <span class="chapter-book-title" id="chapter-book-formula-strings-dates">A Point-And-Click Calculator</span>
+            <span class="chapter-date" id="date-formula-strings-dates">November 29<sup>th</sup>, 2026</span>
+          </div>
+          <div class="chapter-content" id="content-formula-strings-dates">
+            <!-- ||formula-strings-dates.rst|| -->
+          </div>
+        </article>
+        <article class="chapter" id="article-formula-lambda-mu" data-chapter="formula-lambda-mu" hidden>
+          <div class="chapter-heading" id="heading-formula-lambda-mu">
+            <span class="chapter-book-title" id="chapter-book-formula-lambda-mu">A Point-And-Click Calculator</span>
+            <span class="chapter-date" id="date-formula-lambda-mu">November 29<sup>th</sup>, 2026</span>
+          </div>
+          <div class="chapter-content" id="content-formula-lambda-mu">
+            <!-- ||formula-lambda-mu.rst|| -->
           </div>
         </article>
         <article class="chapter" id="article-speed-limit-warning" data-chapter="speed-limit-warning" hidden>

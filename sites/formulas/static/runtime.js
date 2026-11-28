@@ -5,40 +5,21 @@
 // browser and Node tests.
 const FormulaRuntime = (() => {
   const MAX_RECURSION = 2000;
-  const MAX_DATE_MS = 8.64e15;
 
-  const MS_SEC = 1000;
-  const MS_MIN = 60 * MS_SEC;
-  const MS_HOUR = 60 * MS_MIN;
-  const MS_DAY = 24 * MS_HOUR;
-
-  const pad = (n, width = 2) => String(Math.trunc(Math.abs(n))).padStart(width, "0");
-
-  class FormulaDate {
-    constructor(ms) {
-      if (typeof ms !== "number" || !Number.isFinite(ms) || Math.abs(ms) > MAX_DATE_MS) {
-        throw new Error("Date is out of valid range");
-      }
-      this.ms = Math.trunc(ms);
+  const Luxon = (() => {
+    if (typeof luxon !== "undefined") return luxon;
+    if (typeof require === "function") {
+      const fs = require("node:fs");
+      const path = require("node:path");
+      const code = fs.readFileSync(path.join(__dirname, "vendor", "luxon.min.js"), "utf8");
+      return new Function(`${code}\nreturn luxon;`)();
     }
-    valueOf() { return this.ms; }
-    toISOString() { return new Date(this.ms).toISOString(); }
-    toString() { return this.toISOString(); }
-  }
+    throw new Error("Luxon is required for date and duration functions");
+  })();
+  const { DateTime, Duration } = Luxon;
 
-  class FormulaDuration {
-    constructor(ms) {
-      if (typeof ms !== "number" || !Number.isFinite(ms)) {
-        throw new Error("Duration must be finite");
-      }
-      this.ms = Math.round(ms);
-    }
-    valueOf() { return this.ms; }
-    toString() { return formatDuration(this); }
-  }
-
-  const isDate = (v) => v instanceof FormulaDate;
-  const isDuration = (v) => v instanceof FormulaDuration;
+  const isDate = (v) => DateTime.isDateTime(v);
+  const isDuration = (v) => Duration.isDuration(v);
 
   function requireType(value, check, expected, fnName) {
     if (!check(value)) throw new Error(`${fnName}: expected ${expected}`);
@@ -140,7 +121,7 @@ const FormulaRuntime = (() => {
   function toStringVal(v) {
     if (typeof v === "function") throw new Error("toString: cannot convert a function to a string");
     if (typeof v === "number") return Number.isFinite(v) ? String(Number(v.toPrecision(15))) : String(v);
-    if (isDate(v)) return v.toISOString();
+    if (isDate(v)) return formatDate(v);
     if (isDuration(v)) return formatDuration(v);
     return String(v);
   }
@@ -154,52 +135,32 @@ const FormulaRuntime = (() => {
 
   // ------------------------------------------------------- dates & durations
 
-  function daysInMonth(year, month) {
-    return new Date(Date.UTC(year, month, 0)).getUTCDate();
+  const UTC = { zone: "utc" };
+  const EXTRA_DATE_FORMATS = [
+    "LLL d, yyyy", "LLLL d, yyyy", "LLL d yyyy", "LLLL d yyyy",
+    "LLL d, yyyy H:mm", "LLLL d, yyyy H:mm", "LLL d, yyyy H:mm:ss", "LLLL d, yyyy H:mm:ss",
+    "d LLL yyyy", "d LLLL yyyy", "d-LLL-yyyy", "d-LLLL-yyyy",
+    "d LLL yyyy H:mm", "d LLLL yyyy H:mm", "d LLL yyyy H:mm:ss", "d LLLL yyyy H:mm:ss",
+    "yyyy/M/d", "yyyy/M/d H:mm", "yyyy/M/d H:mm:ss", "yyyy/M/d H:mm:ss.SSS",
+    "M/d/yyyy", "M/d/yyyy H:mm", "M/d/yyyy H:mm:ss",
+  ];
+
+  function ensureValidDate(dt, fnName) {
+    if (!dt.isValid) throw new Error(`${fnName}: ${dt.invalidExplanation || dt.invalidReason || "invalid date"}`);
+    return dt.toUTC();
   }
 
-  function buildUtcDate(year, month, day, hour = 0, minute = 0, second = 0, ms = 0, offsetMinutes = 0) {
-    for (const [label, v] of [["year", year], ["month", month], ["day", day], ["hour", hour], ["minute", minute], ["second", second], ["millisecond", ms]]) {
-      if (!Number.isInteger(v)) throw new Error(`Invalid date ${label}: ${v}`);
+  function ensureValidDuration(dur, fnName) {
+    if (!dur.isValid || !Number.isFinite(dur.as("milliseconds"))) {
+      throw new Error(`${fnName}: ${dur.invalidExplanation || dur.invalidReason || "invalid duration"}`);
     }
-    if (month < 1 || month > 12) throw new Error(`Invalid month: ${month} (expected 1–12)`);
-    const maxDay = daysInMonth(year, month);
-    if (day < 1 || day > maxDay) throw new Error(`Invalid day: ${day} for ${year}-${pad(month)} (expected 1–${maxDay})`);
-    if (hour < 0 || hour > 23) throw new Error(`Invalid hour: ${hour} (expected 0–23)`);
-    if (minute < 0 || minute > 59) throw new Error(`Invalid minute: ${minute} (expected 0–59)`);
-    if (second < 0 || second > 59) throw new Error(`Invalid second: ${second} (expected 0–59)`);
-    if (ms < 0 || ms > 999) throw new Error(`Invalid millisecond: ${ms} (expected 0–999)`);
-    const d = new Date(0);
-    d.setUTCFullYear(year, month - 1, day);
-    d.setUTCHours(hour, minute, second, ms);
-    return new FormulaDate(d.getTime() - offsetMinutes * MS_MIN);
-  }
-
-  const MONTHS = {
-    jan: 1, january: 1, feb: 2, february: 2, mar: 3, march: 3, apr: 4, april: 4,
-    may: 5, jun: 6, june: 6, jul: 7, july: 7, aug: 8, august: 8,
-    sep: 9, sept: 9, september: 9, oct: 10, october: 10, nov: 11, november: 11, dec: 12, december: 12,
-  };
-
-  function parseTimezone(tz) {
-    if (!tz || tz === "Z" || tz === "z" || tz === "UTC" || tz === "GMT") return 0;
-    const m = /^([+-])(\d{2}):?(\d{2})$/.exec(tz);
-    if (!m) throw new Error(`Invalid timezone offset: "${tz}"`);
-    const sign = m[1] === "+" ? 1 : -1;
-    const h = Number(m[2]), min = Number(m[3]);
-    if (h > 23 || min > 59) throw new Error(`Invalid timezone offset: "${tz}"`);
-    return sign * (h * 60 + min);
-  }
-
-  function parseTimeParts(h, min, sec, frac) {
-    const ms = frac ? Number(frac.padEnd(3, "0").slice(0, 3)) : 0;
-    return [Number(h || 0), Number(min || 0), Number(sec || 0), ms];
+    return dur;
   }
 
   function from(input) {
     if (typeof input === "number") {
       if (!Number.isInteger(input)) throw new Error(`from: epoch must be an integer, got ${input}`);
-      return new FormulaDate(input);
+      return ensureValidDate(DateTime.fromMillis(input, UTC), "from");
     }
     if (typeof input !== "string") {
       throw new Error("from: expected a date string or integer epoch");
@@ -207,158 +168,124 @@ const FormulaRuntime = (() => {
     const text = input.trim();
     if (!text) throw new Error("from: date string cannot be empty");
 
-    // A single integer is considered a Unix epoch in milliseconds.
     if (/^[+-]?\d+$/.test(text)) {
       const epoch = Number(text);
       if (!Number.isSafeInteger(epoch)) throw new Error(`from: epoch "${text}" is out of range`);
-      return new FormulaDate(epoch);
+      return ensureValidDate(DateTime.fromMillis(epoch, UTC), "from");
     }
 
-    // ISO-like: YYYY-MM-DD or YYYY/MM/DD with optional time and timezone.
-    let m = /^(\d{4})[-/](\d{1,2})[-/](\d{1,2})(?:[T\s](\d{1,2}):(\d{2})(?::(\d{2})(?:\.(\d+))?)?(?:\s*(Z|z|UTC|GMT|[+-]\d{2}:?\d{2}))?)?$/.exec(text);
-    if (m) {
-      const [h, min, s, ms] = parseTimeParts(m[4], m[5], m[6], m[7]);
-      return buildUtcDate(Number(m[1]), Number(m[2]), Number(m[3]), h, min, s, ms, parseTimezone(m[8]));
+    for (const candidate of [
+      DateTime.fromISO(text, UTC),
+      DateTime.fromSQL(text, UTC),
+      DateTime.fromRFC2822(text, UTC),
+      DateTime.fromHTTP(text, UTC),
+    ]) {
+      if (candidate.isValid) return candidate.toUTC();
+      if (candidate.invalidReason === "unit out of range") {
+        throw new Error(`from: ${candidate.invalidExplanation}`);
+      }
     }
 
-    // Month-name first: "May 1, 2024" / "May 1 2024 12:30:00Z"
-    m = /^([A-Za-z]+)\s+(\d{1,2}),?\s+(\d{4})(?:\s+(\d{1,2}):(\d{2})(?::(\d{2})(?:\.(\d+))?)?(?:\s*(Z|z|UTC|GMT|[+-]\d{2}:?\d{2}))?)?$/.exec(text);
-    if (m && MONTHS[m[1].toLowerCase()]) {
-      const [h, min, s, ms] = parseTimeParts(m[4], m[5], m[6], m[7]);
-      return buildUtcDate(Number(m[3]), MONTHS[m[1].toLowerCase()], Number(m[2]), h, min, s, ms, parseTimezone(m[8]));
-    }
-
-    // Day first with month name (including RFC 2822 optional weekday): "1 May 2024" / "Wed, 01 May 2024 12:30:00 GMT"
-    m = /^(?:[A-Za-z]{3,9},?\s+)?(\d{1,2})[\s-]([A-Za-z]+)[\s-](\d{4})(?:\s+(\d{1,2}):(\d{2})(?::(\d{2})(?:\.(\d+))?)?(?:\s*(Z|z|UTC|GMT|[+-]\d{2}:?\d{2}))?)?$/.exec(text);
-    if (m && MONTHS[m[2].toLowerCase()]) {
-      const [h, min, s, ms] = parseTimeParts(m[4], m[5], m[6], m[7]);
-      return buildUtcDate(Number(m[3]), MONTHS[m[2].toLowerCase()], Number(m[1]), h, min, s, ms, parseTimezone(m[8]));
-    }
-
-    // US slash format: MM/DD/YYYY (with optional time)
-    m = /^(\d{1,2})\/(\d{1,2})\/(\d{4})(?:\s+(\d{1,2}):(\d{2})(?::(\d{2})(?:\.(\d+))?)?(?:\s*(Z|z|UTC|GMT|[+-]\d{2}:?\d{2}))?)?$/.exec(text);
-    if (m) {
-      const [h, min, s, ms] = parseTimeParts(m[4], m[5], m[6], m[7]);
-      return buildUtcDate(Number(m[3]), Number(m[1]), Number(m[2]), h, min, s, ms, parseTimezone(m[8]));
+    for (const fmt of EXTRA_DATE_FORMATS) {
+      const candidate = DateTime.fromFormat(text, fmt, UTC);
+      if (candidate.isValid) return candidate.toUTC();
+      if (candidate.invalidReason === "unit out of range") {
+        throw new Error(`from: ${candidate.invalidExplanation}`);
+      }
     }
 
     throw new Error(`from: could not parse "${input}" as a valid date`);
   }
 
-  function now() { return new FormulaDate(Date.now()); }
+  function now() { return DateTime.utc(); }
   function dateOf(y, m, d) {
-    return buildUtcDate(reqNum(y, "dateOf"), reqNum(m, "dateOf"), reqNum(d, "dateOf"));
+    return ensureValidDate(DateTime.utc(reqNum(y, "dateOf"), reqNum(m, "dateOf"), reqNum(d, "dateOf")), "dateOf");
   }
   function dateTimeOf(y, m, d, h, min, s) {
-    return buildUtcDate(
+    return ensureValidDate(DateTime.utc(
       reqNum(y, "dateTimeOf"), reqNum(m, "dateTimeOf"), reqNum(d, "dateTimeOf"),
       reqNum(h, "dateTimeOf"), reqNum(min, "dateTimeOf"), reqNum(s, "dateTimeOf")
-    );
+    ), "dateTimeOf");
   }
 
-  function days(n) { return new FormulaDuration(reqNum(n, "days") * MS_DAY); }
-  function hours(n) { return new FormulaDuration(reqNum(n, "hours") * MS_HOUR); }
-  function minutes(n) { return new FormulaDuration(reqNum(n, "minutes") * MS_MIN); }
-  function seconds(n) { return new FormulaDuration(reqNum(n, "seconds") * MS_SEC); }
-  function millis(n) { return new FormulaDuration(reqNum(n, "millis")); }
+  function days(n) { return ensureValidDuration(Duration.fromObject({ days: reqNum(n, "days") }), "days"); }
+  function hours(n) { return ensureValidDuration(Duration.fromObject({ hours: reqNum(n, "hours") }), "hours"); }
+  function minutes(n) { return ensureValidDuration(Duration.fromObject({ minutes: reqNum(n, "minutes") }), "minutes"); }
+  function seconds(n) { return ensureValidDuration(Duration.fromObject({ seconds: reqNum(n, "seconds") }), "seconds"); }
+  function millis(n) { return ensureValidDuration(Duration.fromMillis(reqNum(n, "millis")), "millis"); }
   function duration(d, h, m, s, ms) {
-    return new FormulaDuration(
-      reqNum(d, "duration") * MS_DAY
-      + reqNum(h, "duration") * MS_HOUR
-      + reqNum(m, "duration") * MS_MIN
-      + reqNum(s, "duration") * MS_SEC
-      + reqNum(ms, "duration")
-    );
+    return ensureValidDuration(Duration.fromObject({
+      days: reqNum(d, "duration"),
+      hours: reqNum(h, "duration"),
+      minutes: reqNum(m, "duration"),
+      seconds: reqNum(s, "duration"),
+      milliseconds: reqNum(ms, "duration"),
+    }), "duration");
   }
   function parseDuration(input) {
     reqStr(input, "parseDuration");
     const text = input.trim();
-    // Matches [-]d:hh:mm:ss:sss or [-]d:hh:mm:ss.sss or [-]hh:mm:ss(:sss|.sss)
+    const iso = Duration.fromISO(text);
+    if (iso.isValid) return iso;
     const m = /^([+-])?(?:(\d+):)?(\d+):(\d{1,2}):(\d{1,2})(?:[:.](\d{1,3}))?$/.exec(text);
-    if (!m) throw new Error(`parseDuration: could not parse "${input}" (use D:HH:mm:ss:SSS or HH:mm:ss)`);
+    if (!m) throw new Error(`parseDuration: could not parse "${input}" (use ISO-8601 duration or d:hh:mm:ss:SSS)`);
     const sign = m[1] === "-" ? -1 : 1;
-    const d = Number(m[2] || 0), h = Number(m[3]), min = Number(m[4]), sec = Number(m[5]);
-    const ms = m[6] ? Number(m[6].padEnd(3, "0")) : 0;
-    return new FormulaDuration(sign * (d * MS_DAY + h * MS_HOUR + min * MS_MIN + sec * MS_SEC + ms));
+    const dur = Duration.fromObject({
+      days: Number(m[2] || 0),
+      hours: Number(m[3]),
+      minutes: Number(m[4]),
+      seconds: Number(m[5]),
+      milliseconds: m[6] ? Number(m[6].padEnd(3, "0")) : 0,
+    });
+    return ensureValidDuration(sign < 0 ? dur.negate() : dur, "parseDuration");
   }
 
-  function dateDiff(a, b) { return new FormulaDuration(reqDate(a, "dateDiff").ms - reqDate(b, "dateDiff").ms); }
-  function dateAdd(d, dur) { return new FormulaDate(reqDate(d, "dateAdd").ms + reqDur(dur, "dateAdd").ms); }
-  function dateSub(d, dur) { return new FormulaDate(reqDate(d, "dateSub").ms - reqDur(dur, "dateSub").ms); }
-  function durAdd(a, b) { return new FormulaDuration(reqDur(a, "durAdd").ms + reqDur(b, "durAdd").ms); }
-  function durSub(a, b) { return new FormulaDuration(reqDur(a, "durSub").ms - reqDur(b, "durSub").ms); }
-  function durScale(dur, factor) { return new FormulaDuration(reqDur(dur, "durScale").ms * reqNum(factor, "durScale")); }
-  function durDiv(a, b) { return reqDur(a, "durDiv").ms / reqDur(b, "durDiv").ms; }
-  function durNeg(dur) { return new FormulaDuration(-reqDur(dur, "durNeg").ms); }
-  function durAbs(dur) { return new FormulaDuration(Math.abs(reqDur(dur, "durAbs").ms)); }
+  function dateDiff(a, b) { return reqDate(a, "dateDiff").diff(reqDate(b, "dateDiff")); }
+  function dateAdd(d, dur) { return ensureValidDate(reqDate(d, "dateAdd").plus(reqDur(dur, "dateAdd")), "dateAdd"); }
+  function dateSub(d, dur) { return ensureValidDate(reqDate(d, "dateSub").minus(reqDur(dur, "dateSub")), "dateSub"); }
+  function durAdd(a, b) { return ensureValidDuration(reqDur(a, "durAdd").plus(reqDur(b, "durAdd")), "durAdd"); }
+  function durSub(a, b) { return ensureValidDuration(reqDur(a, "durSub").minus(reqDur(b, "durSub")), "durSub"); }
+  function durScale(dur, factor) {
+    const k = reqNum(factor, "durScale");
+    return ensureValidDuration(Duration.fromMillis(reqDur(dur, "durScale").as("milliseconds") * k), "durScale");
+  }
+  function durDiv(a, b) { return reqDur(a, "durDiv").as("milliseconds") / reqDur(b, "durDiv").as("milliseconds"); }
+  function durNeg(dur) { return reqDur(dur, "durNeg").negate(); }
+  function durAbs(dur) { return Duration.fromMillis(Math.abs(reqDur(dur, "durAbs").as("milliseconds"))); }
 
-  function year(d) { return new Date(reqDate(d, "year").ms).getUTCFullYear(); }
-  function month(d) { return new Date(reqDate(d, "month").ms).getUTCMonth() + 1; }
-  function day(d) { return new Date(reqDate(d, "day").ms).getUTCDate(); }
-  function weekday(d) { return new Date(reqDate(d, "weekday").ms).getUTCDay(); }
-  function hour(d) { return new Date(reqDate(d, "hour").ms).getUTCHours(); }
-  function minute(d) { return new Date(reqDate(d, "minute").ms).getUTCMinutes(); }
-  function second(d) { return new Date(reqDate(d, "second").ms).getUTCSeconds(); }
-  function millisecond(d) { return new Date(reqDate(d, "millisecond").ms).getUTCMilliseconds(); }
-  function toEpoch(d) { return reqDate(d, "toEpoch").ms; }
+  function year(d) { return reqDate(d, "year").toUTC().year; }
+  function month(d) { return reqDate(d, "month").toUTC().month; }
+  function day(d) { return reqDate(d, "day").toUTC().day; }
+  function weekday(d) { return reqDate(d, "weekday").toUTC().weekday % 7; }
+  function hour(d) { return reqDate(d, "hour").toUTC().hour; }
+  function minute(d) { return reqDate(d, "minute").toUTC().minute; }
+  function second(d) { return reqDate(d, "second").toUTC().second; }
+  function millisecond(d) { return reqDate(d, "millisecond").toUTC().millisecond; }
+  function toEpoch(d) { return reqDate(d, "toEpoch").toMillis(); }
 
-  function toDays(dur) { return reqDur(dur, "toDays").ms / MS_DAY; }
-  function toHours(dur) { return reqDur(dur, "toHours").ms / MS_HOUR; }
-  function toMinutes(dur) { return reqDur(dur, "toMinutes").ms / MS_MIN; }
-  function toSeconds(dur) { return reqDur(dur, "toSeconds").ms / MS_SEC; }
-  function toMillis(dur) { return reqDur(dur, "toMillis").ms; }
+  function toDays(dur) { return reqDur(dur, "toDays").as("days"); }
+  function toHours(dur) { return reqDur(dur, "toHours").as("hours"); }
+  function toMinutes(dur) { return reqDur(dur, "toMinutes").as("minutes"); }
+  function toSeconds(dur) { return reqDur(dur, "toSeconds").as("seconds"); }
+  function toMillis(dur) { return reqDur(dur, "toMillis").as("milliseconds"); }
 
-  const DATE_TOKEN = /\[([^\]]*)\]|YYYY|YY|MM|M|DD|D|HH|H|mm|m|ss|s|SSS/g;
   function formatDate(d, fmt) {
-    reqDate(d, "formatDate");
-    if (fmt === undefined || fmt === "") return d.toISOString();
+    const dt = reqDate(d, "formatDate").toUTC();
+    if (fmt === undefined || fmt === "") return dt.toISO();
     reqStr(fmt, "formatDate");
-    const dt = new Date(d.ms);
-    const tokens = {
-      YYYY: String(dt.getUTCFullYear()).padStart(4, "0"),
-      YY: String(dt.getUTCFullYear()).slice(-2).padStart(2, "0"),
-      MM: pad(dt.getUTCMonth() + 1, 2),
-      M: String(dt.getUTCMonth() + 1),
-      DD: pad(dt.getUTCDate(), 2),
-      D: String(dt.getUTCDate()),
-      HH: pad(dt.getUTCHours(), 2),
-      H: String(dt.getUTCHours()),
-      mm: pad(dt.getUTCMinutes(), 2),
-      m: String(dt.getUTCMinutes()),
-      ss: pad(dt.getUTCSeconds(), 2),
-      s: String(dt.getUTCSeconds()),
-      SSS: pad(dt.getUTCMilliseconds(), 3),
-    };
-    return fmt.replace(DATE_TOKEN, (match, escaped) => (escaped !== undefined ? escaped : tokens[match]));
+    return dt.toFormat(fmt);
   }
 
-  const DUR_TOKEN = /\[([^\]]*)\]|DD|D|HH|H|mm|m|ss|s|SSS/g;
   function formatDuration(dur, fmt) {
-    reqDur(dur, "formatDuration");
-    const negative = dur.ms < 0;
-    let rem = Math.abs(dur.ms);
-    const d = Math.floor(rem / MS_DAY); rem -= d * MS_DAY;
-    const h = Math.floor(rem / MS_HOUR); rem -= h * MS_HOUR;
-    const min = Math.floor(rem / MS_MIN); rem -= min * MS_MIN;
-    const sec = Math.floor(rem / MS_SEC); rem -= sec * MS_SEC;
-    const ms = Math.round(rem);
-    const sign = negative ? "-" : "";
+    const raw = reqDur(dur, "formatDuration");
+    const ms = raw.as("milliseconds");
+    const sign = ms < 0 ? "-" : "";
+    const absDur = Duration.fromMillis(Math.abs(ms));
     if (fmt === undefined || fmt === "") {
-      return `${sign}${d}:${pad(h, 2)}:${pad(min, 2)}:${pad(sec, 2)}:${pad(ms, 3)}`;
+      return sign + absDur.toFormat("d:hh:mm:ss:SSS");
     }
     reqStr(fmt, "formatDuration");
-    const tokens = {
-      DD: pad(d, 2),
-      D: String(d),
-      HH: pad(h, 2),
-      H: String(h),
-      mm: pad(min, 2),
-      m: String(min),
-      ss: pad(sec, 2),
-      s: String(sec),
-      SSS: pad(ms, 3),
-    };
-    return sign + fmt.replace(DUR_TOKEN, (match, escaped) => (escaped !== undefined ? escaped : tokens[match]));
+    return sign + absDur.toFormat(fmt);
   }
 
   // --------------------------------------------------------------- functions
@@ -419,15 +346,21 @@ const FormulaRuntime = (() => {
     throw new Error("mu: function must take at least one parameter");
   }
 
+  function numericValue(v) {
+    if (isDate(v)) return v.toMillis();
+    if (isDuration(v)) return v.as("milliseconds");
+    return v;
+  }
+
   function eq(a, b) {
-    if (isDate(a) && isDate(b)) return a.ms === b.ms;
-    if (isDuration(a) && isDuration(b)) return a.ms === b.ms;
+    if (isDate(a) && isDate(b)) return a.toMillis() === b.toMillis();
+    if (isDuration(a) && isDuration(b)) return a.as("milliseconds") === b.as("milliseconds");
     return a === b;
   }
 
   function cmp(a, b, op) {
-    const lv = (isDate(a) || isDuration(a)) ? a.ms : a;
-    const rv = (isDate(b) || isDuration(b)) ? b.ms : b;
+    const lv = numericValue(a);
+    const rv = numericValue(b);
     switch (op) {
       case "<": return lv < rv;
       case "<=": return lv <= rv;
@@ -443,7 +376,7 @@ const FormulaRuntime = (() => {
     }
     if (typeof value === "string") return JSON.stringify(value);
     if (typeof value === "boolean") return String(value);
-    if (isDate(value)) return value.toISOString();
+    if (isDate(value)) return formatDate(value);
     if (isDuration(value)) return formatDuration(value);
     if (typeof value === "function") {
       const params = value.__params ? value.__params.join(", ") : "…";
@@ -499,8 +432,8 @@ const FormulaRuntime = (() => {
   ]);
 
   return {
-    FormulaDate,
-    FormulaDuration,
+    DateTime,
+    Duration,
     isDate,
     isDuration,
     ENV,

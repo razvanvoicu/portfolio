@@ -57,22 +57,27 @@ test("dates and durations: parsing, validation, arithmetic, extractors, and form
   assert.equal(evalVal('formatDate(from(0))'), "1970-01-01T00:00:00.000Z");
   assert.equal(evalVal('toEpoch(from("1700000000000"))'), 1700000000000);
   // Invalid dates throw (preventing invalid return)
-  assert.throws(() => evalVal('from("2024-02-30")'), /Invalid day/);
+  assert.throws(() => evalVal('from("2024-02-30")'), /invalid|out of range|day/i);
   assert.throws(() => evalVal('from("not a date")'), /could not parse/);
   assert.throws(() => evalVal('from(1.5)'), /integer/);
 
-  // Date & duration arithmetic and default/custom formatting
+  // Date & duration arithmetic and default/custom formatting (Luxon Unicode tokens)
   assert.equal(evalVal('formatDuration(dateDiff(from("2024-05-03"), from("2024-05-01")))'), "2:00:00:00:000");
   assert.equal(evalVal('formatDuration(dateDiff(from("2024-05-01"), from("2024-05-03")))'), "-2:00:00:00:000");
   assert.equal(evalVal('formatDate(dateAdd(from("2024-05-01"), duration(1, 2, 3, 4, 5)))'), "2024-05-02T02:03:04.005Z");
   assert.equal(evalVal('formatDate(dateSub(from("2024-05-02"), days(1)))'), "2024-05-01T00:00:00.000Z");
-  assert.equal(evalVal('formatDate(from("2024-05-01T09:05:03.007Z"), "YYYY/MM/DD HH:mm:ss.SSS")'), "2024/05/01 09:05:03.007");
-  assert.equal(evalVal('formatDuration(duration(2, 3, 4, 5, 6), "D[d] HH:mm:ss")'), "2d 03:04:05");
+  assert.equal(evalVal('formatDate(from("2024-05-01T09:05:03.007Z"), "yyyy/MM/dd HH:mm:ss.SSS")'), "2024/05/01 09:05:03.007");
+  assert.equal(evalVal('formatDate(from("2026-11-29"), "cccc, LLLL d, yyyy")'), "Sunday, November 29, 2026");
+  assert.equal(evalVal('formatDuration(duration(2, 3, 4, 5, 6), "d\'d\' hh:mm:ss")'), "2d 03:04:05");
+  assert.equal(evalVal('formatDuration(durNeg(duration(2, 3, 0, 0, 0)), "d\'d\' hh:mm:ss")'), "-2d 03:00:00");
+  assert.equal(evalVal('formatDuration(parseDuration("P2DT3H4M5S"))'), "2:03:04:05:000");
+  assert.equal(evalVal('formatDuration(parseDuration("-1:02:03:04:005"))'), "-1:02:03:04:005");
   assert.equal(evalVal('toHours(durScale(hours(3), 2))'), 6);
   assert.equal(evalVal('durDiv(days(1), hours(6))'), 4);
   assert.equal(evalVal('year(dateOf(2025, 11, 29))'), 2025);
   assert.equal(evalVal('month(dateOf(2025, 11, 29))'), 11);
   assert.equal(evalVal('day(dateOf(2025, 11, 29))'), 29);
+  assert.equal(evalVal('weekday(dateOf(2026, 11, 29))'), 0);
 
   // Value equality & ordering on dates and durations
   assert.equal(evalVal('from("2024-05-01") === dateOf(2024, 5, 1)'), true);
@@ -140,4 +145,28 @@ test("graphability check allows only number -> number functions", () => {
   assert.equal(JsFormula.isNumberToNumberFn(JsFormula.compile('lambda(x, toString(x))').inferredType), false);
   assert.equal(JsFormula.isNumberToNumberFn(JsFormula.compile("lambda(x, y, x + y)").inferredType), false);
   assert.equal(JsFormula.isNumberToNumberFn(JsFormula.compile("42").inferredType), false);
+});
+
+test("blog showcase formulas: factorial, isPrime, and Singapore count change", () => {
+  const fact = "mu(lambda(f, x, x <= 0 ? 1 : x * f(x - 1)))";
+  assert.equal(evalVal(`(${fact})(0)`), 1);
+  assert.equal(evalVal(`(${fact})(6)`), 720);
+  assert.equal(evalVal(`(${fact})(10)`), 3628800);
+
+  const isPrime = "lambda(n, n < 2 || n !== floor(n) ? false : n === 2 ? true : n % 2 === 0 ? false : mu(lambda(check, d, d * d > n ? true : n % d === 0 ? false : check(d + 2)))(3))";
+  assert.equal(JsFormula.compile(isPrime).typeString, "number → boolean");
+  assert.equal(evalVal(`(${isPrime})(1)`), false);
+  assert.equal(evalVal(`(${isPrime})(2)`), true);
+  assert.equal(evalVal(`(${isPrime})(97)`), true);
+  assert.equal(evalVal(`(${isPrime})(99)`), false);
+  assert.equal(evalVal(`(${isPrime})(997)`), true);
+  assert.equal(evalVal(`(${isPrime})(2.5)`), false);
+
+  const cc = 'mu(lambda(cc, amount, coins, amount === 0 ? 1 : amount < 0 || length(coins) === 0 ? 0 : lambda(comma, cc(amount - toNumber(comma === -1 ? coins : substring(coins, 0, comma)), coins) + cc(amount, comma === -1 ? "" : substring(coins, comma + 1, length(coins) - comma - 1)))(find(coins, ","))))';
+  assert.equal(JsFormula.compile(cc).typeString, "(number, string) → number");
+  assert.equal(evalVal(`(${cc})(10, "50,20,10,5")`), 2);
+  assert.equal(evalVal(`(${cc})(20, "50,20,10,5")`), 4);
+  assert.equal(evalVal(`(${cc})(50, "50,20,10,5")`), 13);
+  assert.equal(evalVal(`(${cc})(100, "50,20,10,5")`), 49);
+  assert.equal(evalVal(`(${cc})(200, "50,20,10,5")`), 242);
 });

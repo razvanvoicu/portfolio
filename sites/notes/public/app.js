@@ -66,7 +66,21 @@ window.matchMedia("(min-width: 761px)").addEventListener("change", (event) => {
   if (event.matches) setMenuOpen(false);
 });
 
-if (location.hash) showChapter(decodeURIComponent(location.hash.slice(1)));
+function defaultChapterId() {
+  const firstLink = chapterLinks.find((item) => {
+    const id = item.getAttribute("href").slice(1);
+    return chapters.some((chapter) => chapter.dataset.chapter === id);
+  });
+  return firstLink ? firstLink.getAttribute("href").slice(1) : null;
+}
+
+const initialId = location.hash ? decodeURIComponent(location.hash.slice(1)) : "";
+if (!initialId || !chapters.some((chapter) => chapter.dataset.chapter === initialId)) {
+  const fallback = defaultChapterId();
+  if (fallback) showChapter(fallback);
+} else {
+  showChapter(initialId);
+}
 
 // Best-effort visit tracking, via the shared backend proxied at /stats/.
 // Runs once per page load; never blocks or breaks the page on failure.

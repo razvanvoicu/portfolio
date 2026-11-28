@@ -843,7 +843,7 @@ const JsFormula = (() => {
     switch (node.kind) {
       case "num": return block("f_num", {}, { NUM: node.value });
       case "bool": return block("f_bool", {}, { V: String(node.value) });
-      case "str": return block("f_str", {}, { TEXT: JSON.stringify(node.value) });
+      case "str": return block("f_str", {}, { TEXT: node.value });
       case "const": return constant(node.name);
       case "math": return constant(node.name);
 

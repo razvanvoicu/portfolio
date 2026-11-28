@@ -93,6 +93,31 @@ button:focus-visible, a:focus-visible { outline: 3px solid var(--accent); outlin
 .chapter-content p { margin: 0 0 1.35rem; }
 .chapter-content section { margin: 0; }
 .chapter-content a { color: var(--accent); }
+.chapter-content .docutils.literal,
+.chapter-content code {
+  padding: .1rem .35rem;
+  border: 1px solid var(--line);
+  border-radius: .3rem;
+  background: var(--paper);
+  font: .86em/1.35 ui-monospace, "Cascadia Mono", Consolas, monospace;
+}
+.chapter-content pre.literal-block,
+.chapter-content pre.code {
+  margin: 0 0 1.5rem;
+  padding: 1rem 1.2rem;
+  overflow-x: auto;
+  border: 1px solid var(--line);
+  border-radius: .5rem;
+  background: var(--paper);
+  font: .84em/1.5 ui-monospace, "Cascadia Mono", Consolas, monospace;
+}
+.chapter-content pre.literal-block code,
+.chapter-content pre.code code {
+  padding: 0;
+  border: 0;
+  background: transparent;
+  font-size: inherit;
+}
 .chapter-content .shots { display: grid; grid-auto-flow: column; grid-auto-columns: auto !important; justify-content: center; gap: 1rem; margin: 1.6rem 0 2rem; }
 .chapter-content .shots img { display: block; width: 100%; height: auto; border: 1px solid var(--line); border-radius: .9rem; }
 

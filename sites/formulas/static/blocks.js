@@ -295,9 +295,9 @@ const FormulaBlocks = (() => {
         tooltip: "Truth value",
       },
       {
-        type: "f_str", message0: "%1", inputsInline: true, output: STR, colour: COLOR.str,
-        args0: [{ type: "field_input", name: "TEXT", text: '""' }],
-        tooltip: 'String constant (keep double quotes, e.g. "hello")',
+        type: "f_str", message0: '"%1"', inputsInline: true, output: STR, colour: COLOR.str,
+        args0: [{ type: "field_input", name: "TEXT", text: "" }],
+        tooltip: "String constant",
       },
       {
         type: "f_lambda", message0: "λ( %1 ) → %2", inputsInline: true, output: FN, colour: COLOR.lambda,
@@ -390,7 +390,7 @@ const FormulaBlocks = (() => {
       case "f_num": return String(fields.NUM ?? 0);
       case "f_const": return (CONSTANTS[fields.C] || { label: "?" }).label;
       case "f_bool": return String(fields.V ?? "true");
-      case "f_str": return String(fields.TEXT ?? '""');
+      case "f_str": return JSON.stringify(String(fields.TEXT ?? ""));
       case "f_param": return String(fields.NAME ?? "x");
       case "f_var": return variableName(state);
       case "f_lambda": return `λ(${fields.PARAMS || "x"}) → ${describe(inputs.BODY && inputs.BODY.block, variableName)}`;
@@ -427,7 +427,7 @@ const FormulaBlocks = (() => {
       return [c.js, c.order];
     };
     gen.forBlock.f_bool = (block) => [block.getFieldValue("V"), O.ATOMIC];
-    gen.forBlock.f_str = (block) => [String(block.getFieldValue("TEXT") ?? '""').trim(), O.ATOMIC];
+    gen.forBlock.f_str = (block) => [JSON.stringify(String(block.getFieldValue("TEXT") ?? "")), O.ATOMIC];
     gen.forBlock.f_param = (block) => [String(block.getFieldValue("NAME") || "").trim(), O.ATOMIC];
     gen.forBlock.f_var = (block) => [block.getFieldValue("NAME"), O.ATOMIC];
     gen.forBlock.f_lambda = (block, g) => {
@@ -486,7 +486,7 @@ const FormulaBlocks = (() => {
     {
       id: "str", label: "Strings",
       items: [
-        { label: '""', title: "String constant", type: "f_str", fields: { TEXT: '""' } },
+        { label: '""', title: "String constant", type: "f_str", fields: { TEXT: "" } },
         ...paletteFor("str"),
       ],
     },

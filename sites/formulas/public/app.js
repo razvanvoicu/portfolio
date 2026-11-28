@@ -1365,6 +1365,50 @@ function createWorkspace(saved) {
   }).observe($("#blockly"));
 }
 
+function bindPaletteScroll() {
+  let scrollDrag = null;
+
+  const endScrollDrag = (event) => {
+    if (!scrollDrag || event.pointerId !== scrollDrag.pointerId) return;
+    if (paletteItems.hasPointerCapture(event.pointerId)) {
+      paletteItems.releasePointerCapture(event.pointerId);
+    }
+    scrollDrag = null;
+    paletteItems.classList.remove("is-scrolling");
+  };
+
+  paletteItems.addEventListener("pointerdown", (event) => {
+    if (event.button !== 0 || event.target.closest(".item")) return;
+    const rect = paletteItems.getBoundingClientRect();
+    // Leave clicks on the native horizontal scrollbar to the browser.
+    if (event.clientY > rect.top + paletteItems.clientHeight) return;
+    scrollDrag = {
+      pointerId: event.pointerId,
+      startX: event.clientX,
+      startScrollLeft: paletteItems.scrollLeft,
+    };
+    paletteItems.setPointerCapture(event.pointerId);
+    paletteItems.classList.add("is-scrolling");
+    event.preventDefault();
+  });
+
+  paletteItems.addEventListener("pointermove", (event) => {
+    if (!scrollDrag || event.pointerId !== scrollDrag.pointerId) return;
+    paletteItems.scrollLeft = scrollDrag.startScrollLeft - (event.clientX - scrollDrag.startX);
+  });
+
+  paletteItems.addEventListener("pointerup", endScrollDrag);
+  paletteItems.addEventListener("pointercancel", endScrollDrag);
+
+  paletteItems.addEventListener("wheel", (event) => {
+    if (paletteItems.scrollWidth <= paletteItems.clientWidth) return;
+    if (Math.abs(event.deltaY) > Math.abs(event.deltaX)) {
+      paletteItems.scrollLeft += event.deltaY;
+      event.preventDefault();
+    }
+  }, { passive: false });
+}
+
 // ---------------------------------------------------------------------- init
 
 function init() {
@@ -1391,6 +1435,7 @@ function init() {
   createWorkspace(saved);
   renderVariables();
   renderPalette();
+  bindPaletteScroll();
   renderStash();
   bindStashMenu();
 

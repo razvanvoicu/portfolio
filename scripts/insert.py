@@ -41,6 +41,27 @@ def _indent_width(line: str) -> int:
     return len(prefix.expandtabs(4))
 
 
+PRE_OPEN_PATTERN = re.compile(r"<pre\b[^>]*>", re.IGNORECASE)
+PRE_CLOSE_PATTERN = re.compile(r"</pre>", re.IGNORECASE)
+
+
+def _update_pre_state(line: str, in_pre: bool) -> bool:
+    pos = 0
+    while True:
+        if not in_pre:
+            match = PRE_OPEN_PATTERN.search(line, pos)
+            if not match:
+                return False
+            in_pre = True
+            pos = match.end()
+        else:
+            match = PRE_CLOSE_PATTERN.search(line, pos)
+            if not match:
+                return True
+            in_pre = False
+            pos = match.end()
+
+
 def insert_fragment(html: str, source_name: str, fragment: str) -> tuple[str, int]:
     lines = html.splitlines()
     output: list[str] = []
@@ -60,16 +81,24 @@ def insert_fragment(html: str, source_name: str, fragment: str) -> tuple[str, in
         marker_width = _indent_width(line)
 
         # The generated region consists of all following lines indented more
-        # deeply than the marker. Blank lines inside that region are discarded.
+        # deeply than the marker (plus any unindented lines inside <pre> blocks).
+        # Blank lines inside that region are discarded.
+        in_pre = False
         while index < len(lines):
             candidate = lines[index]
-            if candidate.strip() and _indent_width(candidate) <= marker_width:
+            if not in_pre and candidate.strip() and _indent_width(candidate) <= marker_width:
                 break
+            in_pre = _update_pre_state(candidate, in_pre)
             index += 1
 
         child_indent = match.group("indent") + "  "
+        in_pre = False
         for fragment_line in fragment.splitlines():
-            output.append(child_indent + fragment_line if fragment_line else "")
+            if in_pre:
+                output.append(fragment_line)
+            else:
+                output.append(child_indent + fragment_line if fragment_line else "")
+            in_pre = _update_pre_state(fragment_line, in_pre)
 
     trailing_newline = "\n" if html.endswith(("\n", "\r")) else ""
     return "\n".join(output) + trailing_newline, count
